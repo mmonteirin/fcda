@@ -23,8 +23,11 @@ export default function PerfilDeclararOcorrencia({ navigation }) {
 				</Text>
 
 				<View style={styles.input_wrapper}>
-					<Text style={styles.label}>Local: </Text>
-					<Text style={styles.location}>{text_local}</Text>
+					<View style={styles.locationContainer}>
+						<FontAwesome name="map-marker" size={30} color="white" style={styles.locationIcon}/>
+                        <Text style={styles.location}>{text_local}</Text>
+         
+                    </View>
 
 					<Text style={styles.label_instruction}>
 						Descreva sua ocorrência/feedback:
