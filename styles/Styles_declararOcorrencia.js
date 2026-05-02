@@ -1,6 +1,18 @@
 import { StyleSheet } from 'react-native';
 
 const styles = StyleSheet.create({
+
+
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: '1rem',
+  },
+  
+  locationIcon: {
+    marginRight: '0.65rem',
+  },
+
   container: {
     flex: 1,
     backgroundColor: '#202020',
@@ -35,7 +47,6 @@ const styles = StyleSheet.create({
     fontSize: '1.8rem',
     fontWeight: '500',
     color: 'white',
-    marginBottom: '.65rem',
     textDecorationLine: 'underline',
   },
 
