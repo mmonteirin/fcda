@@ -1,0 +1,30 @@
+import { createStackNavigator } from "@react-navigation/stack";
+
+import EventoHome from "../screens/EventoHome";
+import EventoProximo from "../screens/EventoApp";
+import EventoDetalhes from "../screens/EventoDetalhes";
+import EventoAvaliacao from "../screens/EventoAvaliacao";
+import EventosPublicos from "../screens/EventoPublico";
+
+const Stack = createStackNavigator();
+
+export default function EventoStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      
+      {/* 🔥 HUB */}
+      <Stack.Screen name="EventoHome" component={EventoHome} />
+
+      {/* 🔵 SEUS EVENTOS */}
+      <Stack.Screen name="EventosApp" component={EventoProximo} />
+
+      {/* 🟡 EVENTOS DO GOVERNO */}
+      <Stack.Screen name="EventosPublicos" component={EventosPublicos} />
+
+      {/* 🔁 COMPARTILHADO */}
+      <Stack.Screen name="Detalhes" component={EventoDetalhes} />
+      <Stack.Screen name="Avaliacao" component={EventoAvaliacao} />
+
+    </Stack.Navigator>
+  );
+}
