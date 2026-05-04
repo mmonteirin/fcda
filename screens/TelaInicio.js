@@ -182,64 +182,6 @@ export default function TelaInicio() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-<<<<<<< HEAD
-    backgroundColor: "#111",
-    padding: 15,
-  },
-  title: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "bold",
-  },
-  subtitle: {
-    color: "#aaa",
-    marginBottom: 15,
-  },
-  section: {
-    color: "#fff",
-    marginVertical: 15,
-    fontSize: 16,
-  },
-  banner: {
-    width: "100%",
-    height: 150,
-    borderRadius: 10,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-  },
-  smallImg: {
-    width: "32%",
-    height: 80,
-    borderRadius: 10,
-  },
-
-  // 🔹 NOVOS estilos
-  categoryCard: {
-    width: "48%",
-    backgroundColor: "#222",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
-    alignItems: "center",
-  },
-  categoryText: {
-    color: "#fff",
-    marginTop: 5,
-  },
-  eventCard: {
-    width: "48%",
-    marginBottom: 10,
-  },
-  eventImage: {
-    width: "100%",
-    height: 120,
-    borderRadius: 10,
-  },
-});
-=======
     backgroundColor: colors.background,
   },
 
@@ -343,4 +285,3 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
 });
->>>>>>> release/0.3.6
