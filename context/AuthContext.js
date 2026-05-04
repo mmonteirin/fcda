@@ -61,11 +61,6 @@ export function AuthProvider({ children, navigationRef }) {
     const unsubscribe = onAuthStateChanged(auth, async (userAuth) => {
       console.log("🔥 [AuthContext] Firebase state changed - userAuth:", userAuth?.email);
       
-      if (loggingOut) {
-        console.log("🔄 [AuthContext] Ignorando mudança de estado durante logout");
-        return;
-      }
-      
       if (!userAuth) {
         console.log("🔓 [AuthContext] Usuário deslogado detectado");
         setUser(null);
@@ -107,6 +102,10 @@ export function AuthProvider({ children, navigationRef }) {
       
       // Flag para ignorar listener durante logout
       setLoggingOut(true);
+
+      // 4️⃣ Sign out do Firebase
+      await signOut(auth);
+      console.log("✅ Firebase sign out completo");
       
       // 1️⃣ Limpa cache
       await AsyncStorage.removeItem("@auth_user");
@@ -136,10 +135,6 @@ export function AuthProvider({ children, navigationRef }) {
           console.warn("⚠️ Erro ao limpar localStorage:", e);
         }
       }
-
-      // 4️⃣ Sign out do Firebase
-      await signOut(auth);
-      console.log("✅ Firebase sign out completo");
       
       // 5️⃣ Redefine persistência para session
       try {
