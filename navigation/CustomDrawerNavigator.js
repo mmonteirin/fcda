@@ -6,6 +6,7 @@ import {
   Alert,
   Animated,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 
 import {
@@ -42,26 +43,30 @@ export default function CustomDrawerContent(props) {
     "Usuário";
 
   const handleLogout = () => {
-    Alert.alert("Sair", "Deseja sair da conta?", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Sair",
-        style: "destructive",
-        onPress: async () => {
+      const executeLogout = async () => {
+        try {
           setLoadingLogout(true);
-          try {
-            await logout();
-          } catch (error) {
-            Alert.alert(
-              "Erro",
-              "Não foi possível sair da conta. Tente novamente."
-            );
-            setLoadingLogout(false);
-          }
-        },
-      },
-    ]);
-  };
+          await logout();
+        } catch {
+          Alert.alert("Erro", "Não foi possível sair.");
+          setLoadingLogout(false);
+        }
+      };
+  
+      if (Platform.OS === "web") {
+        const confirm = window.confirm("Deseja sair da conta?");
+        if (confirm) executeLogout();
+      } else {
+        Alert.alert("Sair", "Deseja sair da conta?", [
+          { text: "Cancelar", style: "cancel" },
+          {
+            text: "Sair",
+            style: "destructive",
+            onPress: executeLogout,
+          },
+        ]);
+      }
+    };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
