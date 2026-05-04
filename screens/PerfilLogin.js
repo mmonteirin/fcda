@@ -3,114 +3,261 @@ import React, { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebaseConfig";
 
-import { View, TextInput, Text, TouchableOpacity } from "react-native";
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
+
 import { Feather } from "@expo/vector-icons";
-import styles from "../styles/Styles_Authenticate";
+import { LinearGradient } from "expo-linear-gradient";
 
-export default function PerfilLogin({ navigation, setIsLogged }) {
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
+import AppText from "../components/AppText";
+import { Colors } from "../styles/Colors";
 
-	const [hasEmptyField, setHasEmptyField] = useState(false);
-
+export default function PerfilLogin({ navigation }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [hasEmptyField, setHasEmptyField] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const isValidEmail = (email) => {
-		return /\S+@\S+\.\S+/.test(email);
-	};
+  const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
-	const handleSubmit = async () => {
-		const fields = [email, password];
-		const emptyField = fields.some((field) => field.trim() === "");
+  const handleSubmit = async () => {
+    const emptyField = [email, password].some((f) => f.trim() === "");
+    setHasEmptyField(emptyField);
 
-		setHasEmptyField(emptyField);
+    if (emptyField) return;
 
-		// valida email
-		if (!isValidEmail(email)) {
-			alert("Email inválido");
-			return;
-		}
+    if (!isValidEmail(email)) {
+      alert("Email inválido");
+      return;
+    }
 
-		try {
-			await signInWithEmailAndPassword(auth, email, password);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      if (error.code === "auth/user-not-found") {
+        alert("Usuário não encontrado");
+      } else if (error.code === "auth/wrong-password") {
+        alert("Senha incorreta");
+      } else {
+        alert("Erro ao fazer login");
+      }
+    }
+  };
 
-			setIsLogged(true);
-		} catch (error) {
-			console.log(error);
+  return (
+    <View style={styles.container}>
 
-			if (error.code === "auth/user-not-found") {
-				alert("Usuário não encontrado");
-			} else if (error.code === "auth/wrong-password") {
-				alert("Senha incorreta");
-			} else if (error.code === "auth/invalid-email") {
-				alert("Email inválido");
-			} else {
-				alert("Erro ao fazer login");
-			}
-		}
-	};
+      {/* 🔥 HEADER */}
+      <LinearGradient
+        colors={[Colors.background, Colors.surface]}
+        style={styles.header}
+      >
+        <AppText style={styles.title}>
+          Bem-vindo 👋
+        </AppText>
 
-	return (
-		<View style={styles.container}>
-			<View>
-				<Text style={styles.label}>email:</Text>
-				<TextInput
-					style={styles.input}
-					value={email}
-					onChangeText={setEmail}
-				/>
-			</View>
+        <AppText style={styles.subtitle}>
+          Acesse sua conta
+        </AppText>
+      </LinearGradient>
 
-			<View>
-				<Text style={styles.label}>senha:</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+
+        {/* EMAIL */}
+        <AppText style={styles.label}>Email</AppText>
+        <TextInput
+          style={styles.input}
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          placeholder="Digite seu email"
+          placeholderTextColor={Colors.textMuted}
+        />
+
+        {/* SENHA */}
+        <AppText style={styles.label}>Senha</AppText>
 
         <View style={{ position: "relative" }}>
-					<TextInput
-						style={[styles.input, { paddingRight: "2.5rem" }]}
-						value={password}
-						onChangeText={setPassword}
-						secureTextEntry={!showPassword}
-					/>
+          <TextInput
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            placeholder="Digite sua senha"
+            placeholderTextColor={Colors.textMuted}
+          />
 
-					<TouchableOpacity
-						style={styles.eyeIcon}
-						onPress={() => setShowPassword(!showPassword)}
-					>
-						<Feather
-							name={showPassword ? "eye" : "eye-off"}
-							size={18}
-							color="white"
-						/>
-					</TouchableOpacity>
-				</View>
-			</View>
+          <TouchableOpacity
+            style={styles.eye}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Feather
+              name={showPassword ? "eye" : "eye-off"}
+              size={20}
+              color={Colors.primary}
+            />
+          </TouchableOpacity>
+        </View>
 
-			{hasEmptyField && (
-				<Text style={styles.error}>Todos os campos são obrigatórios</Text>
-			)}
+        {/* ERRO */}
+        {hasEmptyField && (
+          <AppText style={styles.error}>
+            Todos os campos são obrigatórios
+          </AppText>
+        )}
 
-			<View>
-				<TouchableOpacity
-					style={styles.flex}
-					onPress={() => navigation.navigate("ResetPassword")}
-				>
-					<Text style={styles.forget_password}>Esqueci minha senha</Text>
-				</TouchableOpacity>
-			</View>
+        {/* ESQUECI SENHA */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("ResetPassword")}
+          style={styles.forgot}
+        >
+          <AppText style={styles.link}>
+            Esqueci minha senha
+          </AppText>
+        </TouchableOpacity>
 
-			<View>
-				<TouchableOpacity onPress={() => handleSubmit()}>
-					<Text style={styles.button}>Entrar</Text>
-				</TouchableOpacity>
-			</View>
+        {/* BOTÃO */}
+        <TouchableOpacity onPress={handleSubmit} style={styles.button}>
+          <AppText style={styles.buttonText}>
+            Entrar
+          </AppText>
+        </TouchableOpacity>
 
-			<View style={styles.row}>
-				<Text style={styles.p}> Não possui uma conta? </Text>
-				<TouchableOpacity onPress={() => navigation.navigate("Cadastro")}>
-					<Text style={styles.link}>Crie uma conta</Text>
-				</TouchableOpacity>
-				<Text style={styles.p}> agora!</Text>
-			</View>
-		</View>
-	);
+        {/* CADASTRO */}
+        <View style={styles.row}>
+          <AppText style={{ color: Colors.textSecondary }}>
+            Não possui uma conta?
+          </AppText>
+
+          <TouchableOpacity onPress={() => navigation.navigate("Cadastro")}>
+            <AppText style={styles.linkBold}>
+              Criar conta
+            </AppText>
+          </TouchableOpacity>
+        </View>
+
+        {/* DIVISOR */}
+        <AppText style={styles.divider}>ou</AppText>
+
+        {/* ORGANIZADOR */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("CadastroAdmin")}
+        >
+          <AppText style={styles.organizador}>
+            Cadastrar como Organizador
+          </AppText>
+        </TouchableOpacity>
+
+      </ScrollView>
+    </View>
+  );
 }
+
+/* 🎨 PADRÃO GLOBAL */
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+
+  header: {
+    padding: 30,
+    paddingTop: 60,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+
+  title: {
+    fontSize: 26,
+    fontWeight: "bold",
+    color: Colors.textPrimary,
+  },
+
+  subtitle: {
+    color: Colors.textSecondary,
+    marginTop: 5,
+  },
+
+  content: {
+    padding: 20,
+  },
+
+  label: {
+    color: Colors.textSecondary,
+    marginBottom: 6,
+  },
+
+  input: {
+    backgroundColor: Colors.surface,
+    color: Colors.textPrimary,
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+
+  eye: {
+    position: "absolute",
+    right: 15,
+    top: 14,
+  },
+
+  error: {
+    color: Colors.error,
+    marginTop: 10,
+  },
+
+  forgot: {
+    marginTop: 5,
+    alignSelf: "flex-end",
+  },
+
+  link: {
+    color: Colors.primary,
+  },
+
+  button: {
+    backgroundColor: Colors.primary,
+    padding: 16,
+    borderRadius: 16,
+    marginTop: 25,
+    alignItems: "center",
+  },
+
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  row: {
+    flexDirection: "row",
+    marginTop: 20,
+    justifyContent: "center",
+    gap: 6,
+  },
+
+  linkBold: {
+    color: Colors.primary,
+    fontWeight: "bold",
+  },
+
+  divider: {
+    textAlign: "center",
+    color: Colors.textMuted,
+    marginVertical: 20,
+  },
+
+  organizador: {
+    color: Colors.warning,
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+});

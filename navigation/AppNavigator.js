@@ -1,40 +1,39 @@
+import { View, ActivityIndicator } from "react-native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 
 import AuthNavigator from "./AuthNavigator";
-import DrawerNavigator from "./DrawerNavigator";
-
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../firebaseConfig";
+import MainNavigator from "./MainNavigator";
 
 const Stack = createStackNavigator();
 
 export default function AppNavigator() {
-  const [isLogged, setIsLogged] = useState(false);
-  const [loading, setLoading] = useState(true); // 👈 importante
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsLogged(!!user);
-      setLoading(false);
-    });
+  console.log("📊 AppNavigator - user:", user?.email, "loading:", loading);
 
-    return unsubscribe;
-  }, []);
-
-  // 👇 evita "flash" de tela errada
-  if (loading) return null;
+  // 🔄 loading global
+  if (loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#000",
+        }}
+      >
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
+    );
+  }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {isLogged ? (
-        <Stack.Screen name="Main" component={DrawerNavigator} />
+      {user ? (
+        <Stack.Screen name="Main" component={MainNavigator} />
       ) : (
-        <Stack.Screen name="Auth">
-          {(props) => (
-            <AuthNavigator {...props} setIsLogged={setIsLogged} />
-          )}
-        </Stack.Screen>
+        <Stack.Screen name="Auth" component={AuthNavigator} />
       )}
     </Stack.Navigator>
   );

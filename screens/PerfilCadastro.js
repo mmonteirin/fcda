@@ -1,149 +1,226 @@
 import React, { useState } from "react";
+import {
+  View,
+  TextInput,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 
-import { db } from "../firebaseConfig.js";
-import { collection, addDoc } from "firebase/firestore";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebaseConfig";
-
-import { View, TextInput, Text, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import styles from "../styles/Styles_Authenticate";
+import { useCadastro } from "../context/CadastroContext";
+import GlobalStyles from "../styles/GlobalStyles";
+
+const { colors } = GlobalStyles;
 
 export default function PerfilCadastro({ navigation }) {
-	const [user, setUser] = useState("");
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [confirmPassword, setConfirmPassword] = useState("");
+  const { registerUser } = useCadastro();
 
-	const [hasEmptyField, setHasEmptyField] = useState(false);
+  const [form, setForm] = useState({
+    nome: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-	const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-	const handleSubmit = async () => {
-		const fields = [user, email, password, confirmPassword];
-		const emptyField = fields.some((field) => field.trim() === "");
+  const handleChange = (field, value) => {
+    let newValue = value;
 
-		setHasEmptyField(emptyField);
+    if (field === "email") {
+      newValue = value.trim().toLowerCase();
+    }
 
-		if (!emptyField) {
-			await registerUser();
+    setForm({ ...form, [field]: newValue });
+  };
 
-			navigation.navigate("Login");
-		}
-	};
+  const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
-	const isValidEmail = (email) => {
-		return /\S+@\S+\.\S+/.test(email);
-	};
+  const handleSubmit = async () => {
+    setError("");
 
-	const registerUser = async () => {
-		try {
-			if (password !== confirmPassword) {
-				alert("'senha' e 'confirmar senha' devem ser iguais");
-				return;
-			}
+    const { nome, email, password, confirmPassword } = form;
 
-			if (!isValidEmail(email)) {
-				alert("Digite um email válido");
-				return;
-			}
+    if (!nome || !email || !password || !confirmPassword) {
+      setError("Preencha todos os campos");
+      return;
+    }
 
-			// cria usuário no Auth
-			const userCredential = await createUserWithEmailAndPassword(
-				auth,
-				email,
-				password
-			);
+    if (!isValidEmail(email)) {
+      setError("Email inválido");
+      return;
+    }
 
-			const uid = userCredential.user.uid;
+    if (password !== confirmPassword) {
+      setError("As senhas não coincidem");
+      return;
+    }
 
-			// salva dados extras no Firestore
-			await addDoc(collection(db, "users"), {
-				uid,
-				user,
-				email,
-				data: new Date().toISOString(),
-			});
+    const response = await registerUser({
+      nome,
+      email,
+      password,
+    });
 
-			alert("Usuário cadastrado com sucesso!");
-		} catch (error) {
-			console.log(error);
+    if (response.success) {
+      alert("Conta criada com sucesso!");
+      navigation.navigate("Login");
+    } else {
+      setError(response.message);
+    }
+  };
 
-			if (error.code === "auth/email-already-in-use") {
-				alert("Email já está em uso.");
-			} else if (error.code === "auth/weak-password") {
-				alert("A senha deve ter pelo menos 6 caracteres.");
-			} else {
-				alert("Erro ao cadastrar usuário.");
-			}
-		}
-	};
+  // 🔥 estilos padronizados
+  const input = {
+    backgroundColor: colors.surfaceAlt,
+    color: colors.text,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  };
 
-	return (
-		<View style={styles.container}>
-			<View>
-				<TouchableOpacity onPress={() => navigation.goBack()}>
-					<Feather
-						name="chevron-left"
-						size={24}
-						color="white"
-						style={styles.arrowLeft}
-					/>
-				</TouchableOpacity>
-			</View>
+  const label = {
+    color: colors.primary,
+    marginBottom: 3,
+    fontSize: 13,
+  };
 
-			<View>
-				<Text style={styles.label}>Usuário:</Text>
-				<TextInput style={styles.input} value={user} onChangeText={setUser} />
-			</View>
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: colors.primaryDark }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          padding: 18,
+          paddingBottom: 40,
+        }}
+      >
+        {/* 🔙 VOLTAR */}
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Feather
+            name="chevron-left"
+            size={24}
+            color={colors.primary}
+          />
+        </TouchableOpacity>
 
-			<View>
-				<Text style={styles.label}>Email:</Text>
-				<TextInput style={styles.input} value={email} onChangeText={setEmail} />
-			</View>
+        {/* 🧾 TÍTULO */}
+        <Text
+          style={{
+            fontSize: 22,
+            fontWeight: "bold",
+            color: colors.text,
+            marginVertical: 12,
+          }}
+        >
+          Criar Conta
+        </Text>
 
-			<View>
-				<Text style={[styles.label, { marginTop: "1.2rem" }]}>Senha:</Text>
-				<View style={{ position: "relative" }}>
-					<TextInput
-						style={[styles.input, { paddingRight: "2.5rem" }]}
-						value={password}
-						onChangeText={setPassword}
-						secureTextEntry={!showPassword}
-					/>
+        {/* 👤 NOME */}
+        <View style={{ marginBottom: 10 }}>
+          <Text style={label}>Nome</Text>
+          <TextInput
+            style={input}
+            value={form.nome}
+            onChangeText={(t) => handleChange("nome", t)}
+            placeholder="Seu nome"
+            placeholderTextColor={colors.textLight}
+          />
+        </View>
 
-					<TouchableOpacity
-						style={styles.eyeIcon}
-						onPress={() => setShowPassword(!showPassword)}
-					>
-						<Feather
-							name={showPassword ? "eye" : "eye-off"}
-							size={18}
-							color="white"
-						/>
-					</TouchableOpacity>
-				</View>
-			</View>
+        {/* 📧 EMAIL */}
+        <View style={{ marginBottom: 10 }}>
+          <Text style={label}>Email</Text>
+          <TextInput
+            style={input}
+            value={form.email}
+            onChangeText={(t) => handleChange("email", t)}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            placeholder="email@email.com"
+            placeholderTextColor={colors.textLight}
+          />
+        </View>
 
-			<View>
-				<Text style={styles.label}>Confirme sua senha:</Text>
-				<TextInput
-					style={styles.input}
-					value={confirmPassword}
-					onChangeText={setConfirmPassword}
-					secureTextEntry={!showPassword}
-				/>
-			</View>
+        {/* 🔐 SENHA */}
+        <Text style={label}>Senha</Text>
+        <View style={{ position: "relative", marginBottom: 10 }}>
+          <TextInput
+            style={input}
+            value={form.password}
+            onChangeText={(t) => handleChange("password", t)}
+            secureTextEntry={!showPassword}
+            placeholder="••••••••"
+            placeholderTextColor={colors.textLight}
+          />
 
-			{hasEmptyField && (
-				<Text style={styles.error}>Todos os campos são obrigatórios</Text>
-			)}
+          <TouchableOpacity
+            style={{ position: "absolute", right: 12, top: 12 }}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <Feather
+              name={showPassword ? "eye" : "eye-off"}
+              size={16}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+        </View>
 
-			<View>
-				<TouchableOpacity onPress={() => handleSubmit()}>
-					<Text style={styles.button}>Criar Conta</Text>
-				</TouchableOpacity>
-			</View>
-		</View>
-	);
+        {/* 🔐 CONFIRMAR SENHA */}
+        <Text style={label}>Confirmar Senha</Text>
+        <TextInput
+          style={input}
+          value={form.confirmPassword}
+          onChangeText={(t) =>
+            handleChange("confirmPassword", t)
+          }
+          secureTextEntry={!showPassword}
+          placeholder="••••••••"
+          placeholderTextColor={colors.textLight}
+        />
+
+        {/* ❌ ERRO */}
+        {error !== "" && (
+          <Text
+            style={{
+              color: colors.danger,
+              textAlign: "center",
+              marginTop: 10,
+            }}
+          >
+            {error}
+          </Text>
+        )}
+
+        {/* 🚀 BOTÃO */}
+        <TouchableOpacity
+          onPress={handleSubmit}
+          style={{
+            backgroundColor: colors.primary,
+            padding: 12,
+            borderRadius: 10,
+            alignItems: "center",
+            marginTop: 15,
+          }}
+        >
+          <Text
+            style={{
+              color: colors.primaryDark,
+              fontWeight: "bold",
+            }}
+          >
+            Criar Conta
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 }

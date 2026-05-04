@@ -15,6 +15,10 @@
       },
       "edgeToEdgeEnabled": true
     },
-    "web": {}
+    "web": {},
+    "plugins": [
+      "expo-font",
+      "@react-native-community/datetimepicker"
+    ]
   }
 }

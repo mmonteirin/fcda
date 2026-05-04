@@ -1,66 +1,230 @@
-import React from "react";
+import React, { useState } from "react";
+import {
+	View,
+	TouchableOpacity,
+	Image,
+	Alert,
+	ActivityIndicator,
+	ScrollView,
+	StyleSheet,
+	Platform,
+} from "react-native";
 
-import { signOut } from "firebase/auth";
-import { auth } from "../firebaseConfig";
-
-import { View, Text, TouchableOpacity, Image } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import styles from "../styles/Styles_Perfil";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useAuth } from "../context/AuthContext";
+import AppText from "../components/AppText";
+import { Colors } from "../styles/Colors";
 
 export default function TelaPerfil({ navigation }) {
-	const handleLogout = async () => {
-		await signOut(auth);
+	const { foto, nome, user, logout } = useAuth();
+	const [loadingLogout, setLoadingLogout] = useState(false);
+	const insets = useSafeAreaInsets();
+
+	const go = (screen) => {
+		navigation.navigate("Perfil", { screen });
+	};
+
+	const handleLogout = () => {
+		const executeLogout = async () => {
+			try {
+				setLoadingLogout(true);
+				await logout();
+			} catch {
+				Alert.alert("Erro", "Não foi possível sair.");
+				setLoadingLogout(false);
+			}
+		};
+
+		if (Platform.OS === "web") {
+			const confirm = window.confirm("Deseja sair da conta?");
+			if (confirm) executeLogout();
+		} else {
+			Alert.alert("Sair", "Deseja sair da conta?", [
+				{ text: "Cancelar", style: "cancel" },
+				{
+					text: "Sair",
+					style: "destructive",
+					onPress: executeLogout,
+				},
+			]);
+		}
 	};
 
 	return (
-		<View style={styles.principal}>
-			{/* 👤 HEADER */}
-			<View style={styles.header}>
-				<View style={styles.avatar_container}>
-					<Image
-						source={{ uri: "https://i.pravatar.cc/150" }}
-						style={styles.avatar}
-					/>
-					<Text style={styles.texto_editar}>Editar Perfil</Text>
+		<View style={styles.container}>
+			<ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+				{/* 🔥 HEADER */}
+				<LinearGradient
+					colors={[Colors.background, Colors.surface]}
+					style={[styles.header, { paddingTop: insets.top + 10 }]}
+				>
+					<View style={styles.profileRow}>
+						<Image
+							source={{
+								uri: foto || user?.photoURL || "https://i.pravatar.cc/150",
+							}}
+							style={styles.avatar}
+						/>
+
+						<View style={{ marginLeft: 12 }}>
+							<AppText style={styles.nome}>
+								{nome || user?.displayName || "Usuário"}
+							</AppText>
+
+							<AppText style={styles.email}>
+								{user?.email ?? "Email não disponível"}
+							</AppText>
+						</View>
+					</View>
+				</LinearGradient>
+
+				{/* 🔥 MENU */}
+				<View style={styles.menu}>
+					<AppText style={styles.section}>Conta</AppText>
+
+					<TouchableOpacity
+						style={styles.card}
+						onPress={() => go("PerfilEditar")}
+					>
+						<MaterialCommunityIcons
+							name="account-edit-outline"
+							size={22}
+							color={Colors.primary}
+						/>
+						<AppText style={styles.texto}>Editar Perfil</AppText>
+					</TouchableOpacity>
+
+					<TouchableOpacity
+						style={styles.card}
+						onPress={() => go("ResetPassword")}
+					>
+						<MaterialCommunityIcons
+							name="lock-reset"
+							size={22}
+							color={Colors.primary}
+						/>
+						<AppText style={styles.texto}>Alterar Senha</AppText>
+					</TouchableOpacity>
+
+					<AppText style={styles.section}>Atividade</AppText>
+
+					<TouchableOpacity
+						style={styles.card}
+						onPress={() => go("Ocorrencias")}
+					>
+						<MaterialCommunityIcons
+							name="history"
+							size={22}
+							color={Colors.primary}
+						/>
+						<AppText style={styles.texto}>Histórico de Ocorrências</AppText>
+					</TouchableOpacity>
+
+					{/* LOGOUT */}
+					<TouchableOpacity
+						onPress={handleLogout}
+						disabled={loadingLogout}
+						style={styles.logout}
+					>
+						{loadingLogout ? (
+							<ActivityIndicator size="small" color={Colors.error} />
+						) : (
+							<MaterialCommunityIcons
+								name="logout"
+								size={22}
+								color={Colors.error}
+							/>
+						)}
+
+						<AppText style={styles.logoutText}>
+							{loadingLogout ? "Saindo..." : "Sair da Conta"}
+						</AppText>
+					</TouchableOpacity>
 				</View>
-
-				<View style={styles.info}>
-					<Text style={styles.nome}>Marcos Monteiro</Text>
-					<Text style={styles.email}>marcos@email.com</Text>
-				</View>
-			</View>
-
-			{/* ⚙️ MENU */}
-			<View style={styles.menu}>
-				<TouchableOpacity style={styles.item}>
-					<MaterialCommunityIcons name="account-edit" size={24} color="#333" />
-					<Text style={styles.texto}>Editar Dados</Text>
-				</TouchableOpacity>
-
-				<TouchableOpacity style={styles.item}>
-					<MaterialCommunityIcons name="lock-reset" size={24} color="#333" />
-					<Text style={styles.texto}>Alterar Senha</Text>
-				</TouchableOpacity>
-
-				<TouchableOpacity style={styles.item}>
-					<MaterialCommunityIcons name="bell-outline" size={24} color="#333" />
-					<Text style={styles.texto}>Notificações</Text>
-				</TouchableOpacity>
-
-				<TouchableOpacity style={styles.item}>
-					<MaterialCommunityIcons
-						name="help-circle-outline"
-						size={24}
-						color="#333"
-					/>
-					<Text style={styles.texto}>Suporte</Text>
-				</TouchableOpacity>
-
-				<TouchableOpacity style={styles.item} onPress={() => handleLogout()}>
-					<MaterialCommunityIcons name="logout" size={24} color="#FF4C4C" />
-					<Text style={[styles.texto, { color: "#FF4C4C" }]}>Sair</Text>
-				</TouchableOpacity>
-			</View>
+			</ScrollView>
 		</View>
 	);
 }
+
+/* 🎨 PADRÃO GLOBAL */
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: Colors.background,
+	},
+
+	header: {
+		paddingHorizontal: 16,
+		paddingBottom: 20,
+	},
+
+	profileRow: {
+		flexDirection: "row",
+		alignItems: "center",
+	},
+
+	avatar: {
+		width: 65,
+		height: 65,
+		borderRadius: 40,
+		borderWidth: 2,
+		borderColor: Colors.primary,
+	},
+
+	nome: {
+		color: Colors.textPrimary,
+		fontSize: 18,
+		fontWeight: "bold",
+	},
+
+	email: {
+		color: Colors.textSecondary,
+		fontSize: 13,
+		marginTop: 2,
+	},
+
+	menu: {
+		padding: 16,
+	},
+
+	section: {
+		color: Colors.textSecondary,
+		marginTop: 10,
+		marginBottom: 10,
+	},
+
+	card: {
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: Colors.surface,
+		padding: 16,
+		borderRadius: 16,
+		marginBottom: 12,
+		borderWidth: 1,
+		borderColor: Colors.border,
+	},
+
+	texto: {
+		color: Colors.textPrimary,
+		marginLeft: 12,
+	},
+
+	logout: {
+		marginTop: 20,
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: Colors.surface,
+		padding: 16,
+		borderRadius: 16,
+		borderWidth: 1,
+		borderColor: Colors.error,
+	},
+
+	logoutText: {
+		color: Colors.error,
+		marginLeft: 12,
+	},
+});

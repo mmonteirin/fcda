@@ -1,73 +1,178 @@
 import React from "react";
-import { View, Text, Image, TouchableOpacity, Alert } from "react-native";
-import styles from "../styles/Styles_admMenu";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from "react-native";
+
+import { useNavigation } from "@react-navigation/native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+
+import GlobalStyles from "../styles/GlobalStyles";
+import { useAuth } from "../context/AuthContext";
+import { Colors } from "../styles/Colors";
+
+const styles = GlobalStyles;
 
 export default function AdmMenu() {
+  const navigation = useNavigation();
+  const { logout, nome, foto } = useAuth();
 
-  const handleCriarEvento = () => {
-    Alert.alert("Criar evento clicado");
-  };
-
-  const handleMeusEventos = () => {
-    Alert.alert("Meus eventos clicado");
-  };
-
-  const handleFavoritos = () => {
-    Alert.alert("Eventos favoritos clicado");
-  };
-
-  const handleAjuda = () => {
-    Alert.alert("Central de ajuda");
-  };
-
-  const handleSair = () => {
-    Alert.alert("Você saiu da conta");
+  const goToAdmin = (screen) => {
+    navigation.navigate("Admin", { screen });
   };
 
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
 
-      {/* Perfil */}
-      <View style={styles.headerMenu}>
-        <Image
-          source={{ uri: "https://snack-code-uploads.s3.us-west-1.amazonaws.com/~asset/2f7d32b1787708aba49b3586082d327b" }}
-          style={styles.avatarMenu}
-        />
-        <View>
-          <Text style={styles.nomeMenu}>Marcos Monteiro</Text>
-          <Text style={styles.subtituloMenu}>Área de Administrador</Text>
+      {/* HEADER */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          paddingTop: 50,
+          paddingHorizontal: 20,
+          marginBottom: 10,
+        }}
+      >
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={26}
+            color={Colors.primary}
+          />
+        </TouchableOpacity>
+
+        <Text
+          style={{
+            color: Colors.textPrimary,
+            fontSize: 18,
+            fontWeight: "bold",
+            marginLeft: 15,
+          }}
+        >
+          Área do Organizador
+        </Text>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* PERFIL */}
+        <View
+          style={{
+            alignItems: "center",
+            marginBottom: 30,
+          }}
+        >
+          <Image
+            source={{ uri: foto || "https://i.pravatar.cc/150" }}
+            style={{
+              width: 90,
+              height: 90,
+              borderRadius: 50,
+              borderWidth: 2,
+              borderColor: Colors.primary,
+            }}
+          />
+
+          <Text
+            style={{
+              color: Colors.textPrimary,
+              fontSize: 18,
+              fontWeight: "bold",
+              marginTop: 10,
+            }}
+          >
+            {nome || "Organizador"}
+          </Text>
+
+          <Text style={{ color: Colors.textSecondary }}>
+            Gerencie seus eventos
+          </Text>
         </View>
-      </View>
 
-      {/* Opções */}
-      <View style={styles.menuOptions}>
+        {/* MENU PRINCIPAL */}
+        <View style={{ gap: 12 }}>
+          <MenuCard
+            icon="plus-circle"
+            label="Criar evento"
+            onPress={() => goToAdmin("CriarEvento")}
+          />
 
-        <TouchableOpacity style={styles.itemMenu} onPress={handleCriarEvento}>
-          <Text style={styles.icone}>＋</Text>
-          <Text style={styles.textoMenu}>Criar evento</Text>
-        </TouchableOpacity>
+          <MenuCard
+            icon="calendar"
+            label="Meus eventos"
+            onPress={() => goToAdmin("AdmEvento")}
+          />
 
-        <TouchableOpacity style={styles.itemMenu} onPress={handleMeusEventos}>
-          <Text style={styles.icone}>📅</Text>
-          <Text style={styles.textoMenu}>Meus eventos</Text>
-        </TouchableOpacity>
+          <MenuCard
+            icon="chart-bar"
+            label="Métricas"
+            onPress={() => goToAdmin("Metricas")}
+          />
+        </View>
 
-        <TouchableOpacity style={styles.itemMenu} onPress={handleFavoritos}>
-          <Text style={styles.icone}>❤️</Text>
-          <Text style={styles.textoMenu}>Eventos Favoritos</Text>
-        </TouchableOpacity>
+        {/* OUTROS */}
+        <View style={{ marginTop: 30, gap: 12 }}>
+          <MenuCard
+            icon="help-circle"
+            label="Central de ajuda"
+            onPress={() => goToAdmin("Ajuda")}
+          />
 
-      </View>
-
-      {/* Outros */}
-      <View style={{ marginTop: 30 }}>
-      
-          <Text style={styles.tituloSecao}>Central de Ajuda</Text>
-
-        <TouchableOpacity onPress={handleSair}>
-          <Text style={styles.tituloSecao}>Sair</Text>
-        </TouchableOpacity>
-      </View>
+          <MenuCard
+            icon="logout"
+            label="Sair"
+            danger
+            onPress={() =>
+              Alert.alert("Sair", "Deseja sair?", [
+                { text: "Cancelar", style: "cancel" },
+                { text: "Sair", onPress: logout },
+              ])
+            }
+          />
+        </View>
+      </ScrollView>
     </View>
+  );
+}
+
+/* COMPONENTE */
+function MenuCard({ icon, label, onPress, danger }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{
+        backgroundColor: Colors.surface,
+        padding: 15,
+        borderRadius: 14,
+        flexDirection: "row",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: Colors.border,
+      }}
+    >
+      <MaterialCommunityIcons
+        name={icon}
+        size={22}
+        color={danger ? Colors.error : Colors.primary}
+      />
+
+      <Text
+        style={{
+          color: danger ? Colors.error : Colors.textPrimary,
+          fontSize: 15,
+          marginLeft: 12,
+          fontWeight: "500",
+        }}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
   );
 }
