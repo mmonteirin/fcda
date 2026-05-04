@@ -6,6 +6,7 @@ import {
   TextInput,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 
 import * as ImagePicker from "expo-image-picker";
@@ -14,8 +15,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "../context/AuthContext";
-import { uploadImagem } from "../services/uploadService";
-import { criarPost } from "../services/postService";
 import AppText from "../components/AppText";
 import { Colors } from "../styles/Colors";
 
@@ -27,44 +26,84 @@ export default function CriarPost({ navigation }) {
   const [descricao, setDescricao] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 📷 Escolher imagem
   const escolherImagem = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      quality: 0.7,
-      mediaTypes: ["images"],
-    });
+    try {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (!result.canceled) {
-      setImagem(result.assets[0].uri);
+      if (!permission.granted) {
+        Alert.alert("Permissão necessária", "Permita acesso à galeria.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.5,
+        allowsEditing: true,
+        aspect: [4, 3],
+      });
+
+      if (!result.canceled) {
+        setImagem(result.assets[0].uri);
+      }
+    } catch (e) {
+      console.log(e);
+      Alert.alert("Erro ao abrir galeria");
     }
   };
 
+  // 🚀 PUBLICAÇÃO FAKE
   const publicar = async () => {
-    if (!imagem || !descricao) return;
+    if (!imagem) {
+      Alert.alert("Atenção", "Selecione uma imagem");
+      return;
+    }
+
+    if (!descricao.trim()) {
+      Alert.alert("Atenção", "Digite uma descrição");
+      return;
+    }
 
     try {
       setLoading(true);
 
-      const url = await uploadImagem(imagem, user.uid);
+      // 🔥 SIMULA DELAY DE API
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      await criarPost({
-        userId: user.uid,
-        nome: user.displayName,
-        foto: user.photoURL,
-        imagem: url,
-        descricao,
-      });
+      // 🔥 POST FAKE
+      const postFake = {
+        id: Date.now().toString(),
+        userId: user?.uid || "fake-user",
+        nome: user?.displayName || "Usuário",
+        foto: user?.photoURL || "https://i.pravatar.cc/100",
+        imagem: imagem,
+        descricao: descricao.trim(),
+        createdAt: new Date(),
 
+        // extras pra parecer real
+        likes: Math.floor(Math.random() * 200),
+        comentarios: Math.floor(Math.random() * 50),
+      };
+
+      console.log("POST FAKE:", postFake);
+
+      Alert.alert("Sucesso", "Post publicado!");
       navigation.goBack();
+
     } catch (e) {
       console.log(e);
-      alert("Erro ao publicar");
+      Alert.alert("Erro", "Não foi possível publicar");
     } finally {
       setLoading(false);
     }
   };
 
+  const podePublicar = imagem && descricao.trim();
+
   return (
     <View style={styles.container}>
+      {/* HEADER */}
       <LinearGradient
         colors={[Colors.background, Colors.surface]}
         style={[styles.header, { paddingTop: insets.top + 10 }]}
@@ -80,16 +119,27 @@ export default function CriarPost({ navigation }) {
 
           <AppText style={styles.title}>Novo Post</AppText>
 
-          <TouchableOpacity onPress={publicar} disabled={loading}>
+          <TouchableOpacity
+            onPress={publicar}
+            disabled={!podePublicar || loading}
+          >
             {loading ? (
               <ActivityIndicator color={Colors.primary} />
             ) : (
-              <AppText style={styles.publicar}>Publicar</AppText>
+              <AppText
+                style={[
+                  styles.publicar,
+                  !podePublicar && { opacity: 0.4 },
+                ]}
+              >
+                Publicar
+              </AppText>
             )}
           </TouchableOpacity>
         </View>
       </LinearGradient>
 
+      {/* IMAGEM */}
       <TouchableOpacity style={styles.imageBox} onPress={escolherImagem}>
         {imagem ? (
           <Image source={{ uri: imagem }} style={styles.image} />
@@ -107,9 +157,10 @@ export default function CriarPost({ navigation }) {
         )}
       </TouchableOpacity>
 
+      {/* DESCRIÇÃO */}
       <View style={styles.inputContainer}>
         <TextInput
-          placeholder="Descrição..."
+          placeholder="Escreva algo sobre esse momento..."
           placeholderTextColor={Colors.textMuted}
           value={descricao}
           onChangeText={setDescricao}
@@ -121,7 +172,7 @@ export default function CriarPost({ navigation }) {
   );
 }
 
-/* 🎨 STYLES */
+/* STYLES */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -148,10 +199,11 @@ const styles = StyleSheet.create({
   publicar: {
     color: Colors.primary,
     fontWeight: "bold",
+    fontSize: 14,
   },
 
   imageBox: {
-    height: 250,
+    height: 260,
     backgroundColor: Colors.surface,
     margin: 16,
     borderRadius: 16,
@@ -180,14 +232,15 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     backgroundColor: Colors.surface,
     borderRadius: 14,
-    padding: 12,
+    padding: 14,
     borderWidth: 1,
     borderColor: Colors.border,
   },
 
   input: {
     color: Colors.textPrimary,
-    minHeight: 100,
+    minHeight: 120,
     textAlignVertical: "top",
+    fontSize: 14,
   },
 });

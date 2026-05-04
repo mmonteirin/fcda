@@ -1,450 +1,414 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  ScrollView,
   TextInput,
+  TouchableOpacity,
+  Image,
+  Alert,
+  ScrollView,
   Modal,
-  Pressable,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 
-import { getEventos } from "../services/mapaCulturalService";
+import { db, storage } from "../firebaseConfig";
+import { collection, addDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
 import { Colors } from "../styles/Colors";
 
-export default function TelaBusca({ navigation }) {
-  const insets = useSafeAreaInsets();
+/* 🔥 MÁSCARAS */
+const maskCEP = (t) =>
+  t.replace(/\D/g, "").replace(/^(\d{5})(\d)/, "$1-$2").slice(0, 9);
 
-  const [query, setQuery] = useState("");
-  const [eventos, setEventos] = useState([]);
+const maskData = (t) =>
+  t
+    .replace(/\D/g, "")
+    .replace(/^(\d{2})(\d)/, "$1/$2")
+    .replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2/$3")
+    .slice(0, 10);
 
-  const [modalFiltro, setModalFiltro] = useState(false);
-  const [categoria, setCategoria] = useState(null);
-  const [tipo, setTipo] = useState(null);
+const maskHora = (t) =>
+  t.replace(/\D/g, "").replace(/^(\d{2})(\d)/, "$1:$2").slice(0, 5);
 
-  useEffect(() => {
-    carregarEventos();
-  }, []);
-
-  const carregarEventos = async () => {
-    const response = await getEventos();
-
-    const lista =
-      Array.isArray(response)
-        ? response
-        : response?.data || response?.results || [];
-
-    const tratados = lista.map((item, index) => ({
-      id: item.id || index,
-      titulo: item.name || "Evento",
-
-      imagem:
-        item?.files?.avatar?.url ||
-        item?.files?.header?.url ||
-        "https://placehold.co/400x200/1a0533/ffffff?text=Evento",
-
-      local: item?.location?.name || "Local não informado",
-
-      categoria: item?.type || "outros",
-      tipoEvento: item?.gratis ? "Gratuito" : "Pago",
-
-      original: item,
-    }));
-
-    setEventos(tratados);
-  };
-
-  const filtrar = (lista) => {
-    return lista.filter((item) => {
-      const matchQuery =
-        item.titulo.toLowerCase().includes(query.toLowerCase()) ||
-        item.local.toLowerCase().includes(query.toLowerCase());
-
-      const matchCategoria = categoria
-        ? item.categoria?.toLowerCase().includes(categoria.toLowerCase())
-        : true;
-
-      const matchTipo = tipo
-        ? item.tipoEvento?.toLowerCase() === tipo.toLowerCase()
-        : true;
-
-      return matchQuery && matchCategoria && matchTipo;
-    });
-  };
-
-  const eventosFiltrados = filtrar(eventos);
-
-  const renderHorizontal = (lista) => (
-    <FlatList
-      horizontal
-      data={lista}
-      keyExtractor={(item) => item.id.toString()}
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 16 }}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() =>
-            navigation.navigate("Detalhes", { evento: item.original })
-          }
-        >
-          <Image source={{ uri: item.imagem }} style={styles.img} />
-
-          <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.9)"]}
-            style={styles.overlay}
-          >
-            <Text style={styles.titulo} numberOfLines={2}>
-              {item.titulo}
-            </Text>
-
-            <Text style={styles.local}>📍 {item.local}</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      )}
-    />
-  );
+/* 🔥 SELECT MODAL */
+const SelectModal = ({ label, value, options, onSelect }) => {
+  const [visible, setVisible] = useState(false);
 
   return (
-    <View style={styles.container}>
+    <>
+      <Text style={{ color: Colors.textPrimary, marginBottom: 8 }}>
+        {label}
+      </Text>
+
+      <TouchableOpacity
+        onPress={() => setVisible(true)}
+        style={selectStyle}
+      >
+        <Text
+          style={{
+            color: value ? Colors.textPrimary : Colors.textMuted,
+          }}
+        >
+          {value || "Selecione..."}
+        </Text>
+
+        <MaterialCommunityIcons
+          name="chevron-down"
+          size={22}
+          color={Colors.primary}
+        />
+      </TouchableOpacity>
+
+      <Modal visible={visible} transparent animationType="fade">
+        <View style={modalOverlay}>
+          <View style={modalBox}>
+            {options.map((item) => {
+              const ativo = value === item;
+
+              return (
+                <TouchableOpacity
+                  key={item}
+                  onPress={() => {
+                    onSelect(item);
+                    setVisible(false);
+                  }}
+                  style={[
+                    modalItem,
+                    {
+                      backgroundColor: ativo
+                        ? Colors.primary
+                        : "transparent",
+                    },
+                  ]}
+                >
+                  <Text
+                    style={{
+                      color: ativo
+                        ? Colors.background
+                        : Colors.textPrimary,
+                    }}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+
+            <TouchableOpacity onPress={() => setVisible(false)}>
+              <Text
+                style={{
+                  color: Colors.textSecondary,
+                  textAlign: "center",
+                }}
+              >
+                Cancelar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+};
+
+export default function AdmCadastroEvento({ navigation }) {
+  const [form, setForm] = useState({});
+  const [imagem, setImagem] = useState(null);
+
+  const setField = (key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  /* 📸 IMAGEM */
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setImagem(result.assets[0].uri);
+    }
+  };
+
+  const uploadImagem = async () => {
+    if (!imagem) return null;
+
+    const response = await fetch(imagem);
+    const blob = await response.blob();
+
+    const storageRef = ref(storage, `eventos/${Date.now()}`);
+    await uploadBytes(storageRef, blob);
+
+    return await getDownloadURL(storageRef);
+  };
+
+  /* 🔍 CEP */
+  const buscarCEP = async () => {
+    const cepLimpo = form.cep?.replace(/\D/g, "");
+
+    if (!cepLimpo || cepLimpo.length !== 8) {
+      Alert.alert("Digite um CEP válido");
+      return;
+    }
+
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+      const data = await res.json();
+
+      if (data.erro) {
+        Alert.alert("CEP não encontrado");
+        return;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        rua: data.logradouro || "",
+        bairro: data.bairro || "",
+        cidade: data.localidade || "",
+        uf: data.uf || "",
+      }));
+    } catch {
+      Alert.alert("Erro ao buscar CEP");
+    }
+  };
+
+  /* 🚀 SUBMIT */
+  const handleSubmit = async () => {
+    if (!form.titulo) {
+      Alert.alert("Preencha o nome do evento");
+      return;
+    }
+
+    try {
+      const imageUrl = await uploadImagem();
+
+      await addDoc(collection(db, "eventos"), {
+        ...form,
+        imagem: imageUrl,
+        createdAt: new Date(),
+      });
+
+      Alert.alert("Evento criado!");
+      navigation.goBack();
+    } catch {
+      Alert.alert("Erro ao salvar");
+    }
+  };
+
+  return (
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      {/* HEADER */}
       <LinearGradient
         colors={[Colors.background, Colors.surface]}
-        style={[styles.header, { paddingTop: insets.top + 10 }]}
+        style={header}
       >
-        <Text style={styles.headerTitle}>Buscar Eventos</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={26}
+            color={Colors.primary}
+          />
+        </TouchableOpacity>
 
-        <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
+        <Text style={title}>Criar Evento</Text>
+      </LinearGradient>
+
+      <ScrollView contentContainerStyle={{ padding: 20 }}>
+        {/* TOPO */}
+        <View style={{ flexDirection: "row" }}>
+          <TouchableOpacity onPress={pickImage} style={{ flex: 1, marginRight: 10 }}>
+            {imagem ? (
+              <Image source={{ uri: imagem }} style={image} />
+            ) : (
+              <View style={imagePlaceholder}>
+                <MaterialCommunityIcons
+                  name="image-plus"
+                  size={40}
+                  color={Colors.primary}
+                />
+                <Text style={{ color: Colors.textSecondary }}>
+                  Adicionar imagem
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <View style={{ flex: 1 }}>
+            <SelectModal
+              label="Categoria"
+              value={form.categoria}
+              options={["Teatro", "Shows", "Cinema"]}
+              onSelect={(v) => setField("categoria", v)}
+            />
+
+            <View style={{ marginTop: 10 }}>
+              <SelectModal
+                label="Tipo"
+                value={form.tipoEvento}
+                options={["gratuito", "pago"]}
+                onSelect={(v) => setField("tipoEvento", v)}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* NOME */}
+        <TextInput
+          placeholder="Nome do evento"
+          placeholderTextColor={Colors.textMuted}
+          onChangeText={(v) => setField("titulo", v)}
+          style={input}
+        />
+
+        {/* DATA */}
+        <TextInput
+          placeholder="Data"
+          placeholderTextColor={Colors.textMuted}
+          keyboardType="numeric"
+          value={form.data || ""}
+          onChangeText={(v) => setField("data", maskData(v))}
+          style={input}
+        />
+
+        {/* HORÁRIOS */}
+        <View style={{ flexDirection: "row" }}>
+          <TextInput
+            placeholder="Início"
+            placeholderTextColor={Colors.textMuted}
+            keyboardType="numeric"
+            value={form.horaInicio || ""}
+            onChangeText={(v) => setField("horaInicio", maskHora(v))}
+            style={[input, { flex: 1, marginRight: 10 }]}
+          />
+
+          <TextInput
+            placeholder="Término"
+            placeholderTextColor={Colors.textMuted}
+            keyboardType="numeric"
+            value={form.horaFim || ""}
+            onChangeText={(v) => setField("horaFim", maskHora(v))}
+            style={[input, { flex: 1 }]}
+          />
+        </View>
+
+        {/* CEP + RUA */}
+        <View style={{ flexDirection: "row", marginTop: 10 }}>
+          <TextInput
+            value={form.cep || ""}
+            placeholder="CEP"
+            placeholderTextColor={Colors.textMuted}
+            keyboardType="numeric"
+            onChangeText={(v) => setField("cep", maskCEP(v))}
+            style={[input, { flex: 1, marginRight: 10 }]}
+          />
+
+          <TextInput
+            value={form.rua || ""}
+            placeholder="Rua"
+            placeholderTextColor={Colors.textMuted}
+            style={[input, { flex: 2 }]}
+          />
+
+          <TouchableOpacity onPress={buscarCEP} style={btnCep}>
             <MaterialCommunityIcons
               name="magnify"
-              size={20}
-              color={Colors.primary}
-            />
-
-            <TextInput
-              placeholder="O que você quer encontrar?"
-              placeholderTextColor={Colors.textMuted}
-              value={query}
-              onChangeText={setQuery}
-              style={styles.input}
-            />
-
-            {query.length > 0 && (
-              <TouchableOpacity onPress={() => setQuery("")}>
-                <MaterialCommunityIcons
-                  name="close-circle"
-                  size={20}
-                  color={Colors.textMuted}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => setModalFiltro(true)}
-          >
-            <MaterialCommunityIcons
-              name="tune-variant"
-              size={20}
-              color={Colors.primary}
+              size={22}
+              color={Colors.textPrimary}
             />
           </TouchableOpacity>
         </View>
-      </LinearGradient>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {query.length > 0 ? (
-          <>
-            <Text style={styles.section}>Resultados</Text>
-            {renderHorizontal(eventosFiltrados)}
-          </>
-        ) : (
-          <>
-            <Text style={styles.section}>🔥 Destaques</Text>
-            {renderHorizontal(eventos.slice(0, 6))}
-
-            <Text style={styles.section}>🎭 Eventos</Text>
-            {renderHorizontal(eventos)}
-          </>
-        )}
-
-        <View style={{ height: 100 }} />
+        {/* BOTÃO */}
+        <TouchableOpacity onPress={handleSubmit} style={btn}>
+          <Text style={{ fontWeight: "bold", color: Colors.background }}>
+            Cadastrar Evento
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
-
-      <Modal visible={modalFiltro} animationType="slide" transparent>
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setModalFiltro(false)}
-        >
-          <Pressable style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filtrar Eventos</Text>
-
-              <TouchableOpacity onPress={() => setModalFiltro(false)}>
-                <MaterialCommunityIcons
-                  name="close"
-                  size={24}
-                  color={Colors.textSecondary}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.modalLabel}>Categoria</Text>
-            <View style={styles.chipsRow}>
-              {["Teatro", "Shows", "Cinema", "Gastronomia"].map((item) => (
-                <TouchableOpacity
-                  key={item}
-                  onPress={() =>
-                    setCategoria(categoria === item ? null : item)
-                  }
-                  style={[
-                    styles.chip,
-                    categoria === item && styles.chipActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      categoria === item && styles.chipTextActive,
-                    ]}
-                  >
-                    {item}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={styles.modalLabel}>Tipo</Text>
-            <View style={styles.chipsRow}>
-              {["Gratuito", "Pago"].map((item) => (
-                <TouchableOpacity
-                  key={item}
-                  onPress={() => setTipo(tipo === item ? null : item)}
-                  style={[
-                    styles.chip,
-                    tipo === item && styles.chipActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      tipo === item && styles.chipTextActive,
-                    ]}
-                  >
-                    {item}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                onPress={() => {
-                  setCategoria(null);
-                  setTipo(null);
-                  setModalFiltro(false);
-                }}
-              >
-                <Text style={styles.clear}>Limpar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.apply}
-                onPress={() => setModalFiltro(false)}
-              >
-                <Text style={{ fontWeight: "bold", color: "#fff" }}>
-                  Aplicar
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+/* 🎨 STYLES */
+const header = {
+  paddingTop: 50,
+  padding: 20,
+  borderBottomLeftRadius: 20,
+  borderBottomRightRadius: 20,
+};
 
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
+const title = {
+  color: Colors.textPrimary,
+  fontSize: 24,
+  marginTop: 10,
+};
 
-  headerTitle: {
-    color: Colors.textPrimary,
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 12,
-  },
+const input = {
+  backgroundColor: Colors.surface,
+  color: Colors.textPrimary,
+  padding: 14,
+  borderRadius: 14,
+  marginTop: 10,
+};
 
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+const selectStyle = {
+  backgroundColor: Colors.surface,
+  padding: 16,
+  borderRadius: 16,
+  borderWidth: 1,
+  borderColor: Colors.border,
+  flexDirection: "row",
+  justifyContent: "space-between",
+};
 
-  searchBox: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
+const btnCep = {
+  backgroundColor: Colors.primary,
+  padding: 14,
+  marginLeft: 10,
+  borderRadius: 14,
+  justifyContent: "center",
+};
 
-  input: {
-    flex: 1,
-    color: Colors.textPrimary,
-    paddingVertical: 10,
-    marginLeft: 8,
-  },
+const btn = {
+  backgroundColor: Colors.primary,
+  padding: 16,
+  borderRadius: 14,
+  marginTop: 20,
+  alignItems: "center",
+};
 
-  filterButton: {
-    marginLeft: 10,
-    height: 48,
-    width: 48,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
+const image = {
+  height: 180,
+  borderRadius: 16,
+};
 
-  section: {
-    color: Colors.textPrimary,
-    fontSize: 16,
-    marginTop: 20,
-    marginBottom: 10,
-    marginLeft: 16,
-    fontWeight: "bold",
-  },
+const imagePlaceholder = {
+  height: 180,
+  borderRadius: 16,
+  backgroundColor: Colors.surface,
+  justifyContent: "center",
+  alignItems: "center",
+};
 
-  card: {
-    width: 140,
-    height: 170,
-    borderRadius: 14,
-    overflow: "hidden",
-    backgroundColor: Colors.card,
-    marginRight: 10,
-  },
+const modalOverlay = {
+  flex: 1,
+  backgroundColor: "rgba(0,0,0,0.6)",
+  justifyContent: "center",
+  padding: 20,
+};
 
-  img: {
-    width: "100%",
-    height: "100%",
-    position: "absolute",
-  },
+const modalBox = {
+  backgroundColor: Colors.surface,
+  borderRadius: 20,
+  padding: 15,
+};
 
-  overlay: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    padding: 10,
-  },
-
-  titulo: {
-    color: Colors.textPrimary,
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-
-  local: {
-    color: Colors.textSecondary,
-    fontSize: 10,
-    marginTop: 3,
-  },
-
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-
-  modalContainer: {
-    backgroundColor: Colors.surface,
-    padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderTopWidth: 1,
-    borderColor: Colors.border,
-  },
-
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  modalTitle: {
-    color: Colors.textPrimary,
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-
-  modalLabel: {
-    color: Colors.textSecondary,
-    marginTop: 15,
-    marginBottom: 8,
-  },
-
-  chipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginRight: 8,
-    marginBottom: 8,
-    backgroundColor: Colors.surface,
-  },
-
-  chipActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-
-  chipText: {
-    color: Colors.textSecondary,
-  },
-
-  chipTextActive: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 25,
-  },
-
-  clear: {
-    color: Colors.textSecondary,
-  },
-
-  apply: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-});
+const modalItem = {
+  padding: 15,
+  borderRadius: 12,
+  marginBottom: 8,
+};

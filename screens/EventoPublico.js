@@ -1,90 +1,94 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
-  Text,
-  StyleSheet,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   Image,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { WebView } from "react-native-webview";
 
+import { getEventos } from "../services/mapaCulturalService";
 import GlobalStyles from "../styles/GlobalStyles";
 
 const { colors } = GlobalStyles;
 
-export default function EventoPublico({ route, navigation }) {
+export default function EventoPublico({ navigation }) {
   const insets = useSafeAreaInsets();
-  const [abrirWeb, setAbrirWeb] = useState(false);
 
-  const evento = route?.params?.evento;
+  const [eventos, setEventos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!evento) {
-    return (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Evento não encontrado 😢</Text>
+  useEffect(() => {
+    carregar();
+  }, []);
 
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.voltar}>Voltar</Text>
-        </TouchableOpacity>
+  const carregar = async () => {
+    try {
+      const response = await getEventos();
+
+      const lista =
+        Array.isArray(response)
+          ? response
+          : response?.data || response?.results || [];
+
+      const tratados = lista.map((item, index) => ({
+        id: item.id || index,
+        titulo: item.name || "Evento",
+        imagem:
+          item?.image?.url ||
+          item?.files?.header?.url ||
+          "https://placehold.co/400x200",
+        local: item?.location?.name || "Local",
+        original: item,
+      }));
+
+      setEventos(tratados);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() =>
+        navigation.navigate("EventoPublico", {
+          evento: item.original,
+        })
+      }
+    >
+      <Image source={{ uri: item.imagem }} style={styles.img} />
+
+      <LinearGradient
+        colors={["transparent", "rgba(0,0,0,0.9)"]}
+        style={styles.overlay}
+      />
+
+      <View style={styles.info}>
+        <Text style={styles.titulo}>{item.titulo}</Text>
+        <Text style={styles.local}>📍 {item.local}</Text>
       </View>
-    );
-  }
+    </TouchableOpacity>
+  );
 
-  const titulo = evento?.name || evento?.titulo || "Evento";
-
-  const descricao =
-    evento?.shortDescription ||
-    evento?.descricao ||
-    "Sem descrição disponível.";
-
-  const local =
-    evento?.location?.name ||
-    evento?.local ||
-    "Local não informado";
-
-  const imagem =
-    evento?.image?.url ||
-    evento?.imagem ||
-    "https://placehold.co/600x400";
-
-  const url = "https://www.secult.ce.gov.br/";
-
-  // 🌐 WEBVIEW
-  if (abrirWeb) {
+  if (loading) {
     return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={[colors.primaryDark, colors.secondary]}
-          style={[
-            styles.webHeader,
-            { paddingTop: insets.top + 10 },
-          ]}
-        >
-          <TouchableOpacity onPress={() => setAbrirWeb(false)}>
-            <MaterialCommunityIcons
-              name="arrow-left"
-              size={28}
-              color={colors.primary}
-            />
-          </TouchableOpacity>
-
-          <Text style={styles.webHeaderTitle}>Site oficial</Text>
-        </LinearGradient>
-
-        <WebView source={{ uri: url }} style={{ flex: 1 }} />
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      
-      {/* 🔥 HEADER */}
       <LinearGradient
         colors={[colors.primaryDark, colors.secondary]}
         style={[styles.header, { paddingTop: insets.top + 10 }]}
@@ -92,84 +96,23 @@ export default function EventoPublico({ route, navigation }) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialCommunityIcons
             name="arrow-left"
-            size={26}
+            size={24}
             color={colors.primary}
           />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Evento</Text>
+        <Text style={styles.headerTitle}>Eventos Públicos</Text>
       </LinearGradient>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        
-        {/* 🖼️ BANNER */}
-        <View style={styles.bannerContainer}>
-          <Image source={{ uri: imagem }} style={styles.banner} />
-
-          <LinearGradient
-            colors={["transparent", colors.overlay]}
-            style={styles.bannerOverlay}
-          >
-            <Text style={styles.titulo}>{titulo}</Text>
-            <Text style={styles.local}>📍 {local}</Text>
-          </LinearGradient>
-        </View>
-
-        {/* 📄 DESCRIÇÃO */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Sobre o evento</Text>
-          <Text style={styles.descricao}>{descricao}</Text>
-        </View>
-
-        {/* 🔥 AÇÕES */}
-        <View style={styles.actions}>
-          
-          <TouchableOpacity
-            style={styles.btnPrimary}
-            onPress={() => setAbrirWeb(true)}
-          >
-            <MaterialCommunityIcons
-              name="open-in-new"
-              size={20}
-              color={colors.primaryDark}
-            />
-            <Text style={styles.btnPrimaryText}>
-              Ver no site oficial
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.btnSecondary}>
-            <MaterialCommunityIcons
-              name="heart-outline"
-              size={20}
-              color={colors.primary}
-            />
-            <Text style={styles.btnSecondaryText}>
-              Favoritar
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.btnSecondary}>
-            <MaterialCommunityIcons
-              name="share-variant"
-              size={20}
-              color={colors.primary}
-            />
-            <Text style={styles.btnSecondaryText}>
-              Compartilhar
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={{ height: 100 }} />
-      </ScrollView>
+      <FlatList
+        data={eventos}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderItem}
+        contentContainerStyle={{ padding: 16 }}
+      />
     </View>
   );
 }
-
-// ============================================
-// 🎨 STYLES
-// ============================================
 
 const styles = StyleSheet.create({
   container: {
@@ -178,8 +121,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    padding: 16,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -191,124 +133,46 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
-  webHeader: {
-    padding: 20,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  webHeaderTitle: {
-    color: colors.text,
-    fontSize: 18,
-    marginLeft: 10,
-    fontWeight: "bold",
-  },
-
-  bannerContainer: {
-    height: 250,
-    margin: 16,
+  card: {
+    height: 180,
     borderRadius: 16,
+    marginBottom: 16,
     overflow: "hidden",
   },
 
-  banner: {
+  img: {
     width: "100%",
     height: "100%",
     position: "absolute",
   },
 
-  bannerOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
+  overlay: {
+    position: "absolute",
+    bottom: 0,
+    height: "100%",
+    width: "100%",
+  },
+
+  info: {
+    position: "absolute",
+    bottom: 0,
     padding: 16,
   },
 
   titulo: {
-    color: colors.text,
-    fontSize: 20,
+    color: "#fff",
     fontWeight: "bold",
+    fontSize: 16,
   },
 
   local: {
-    color: colors.primary,
-    marginTop: 4,
-    fontSize: 13,
+    color: "#ccc",
+    fontSize: 12,
   },
 
-  card: {
-    backgroundColor: colors.secondary,
-    marginHorizontal: 16,
-    marginTop: 10,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-
-  descricao: {
-    color: colors.textTertiary,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-
-  actions: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-
-  btnPrimary: {
-    flexDirection: "row",
-    backgroundColor: colors.primary,
-    padding: 14,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-
-  btnPrimaryText: {
-    color: colors.primaryDark,
-    fontWeight: "bold",
-  },
-
-  btnSecondary: {
-    flexDirection: "row",
-    borderWidth: 1,
-    borderColor: colors.primary,
-    padding: 14,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-  },
-
-  btnSecondaryText: {
-    color: colors.primary,
-    fontWeight: "bold",
-  },
-
-  emptyContainer: {
+  loading: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.primaryDark,
-  },
-
-  emptyText: {
-    color: colors.text,
-    fontSize: 16,
-  },
-
-  voltar: {
-    color: colors.primary,
-    marginTop: 10,
   },
 });

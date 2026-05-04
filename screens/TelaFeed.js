@@ -1,411 +1,213 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
-  Image,
   FlatList,
+  Image,
   TouchableOpacity,
-  Animated,
-  StyleSheet,
-  Modal,
-  TextInput,
-  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRoute } from "@react-navigation/native";
 
 import AppText from "../components/AppText";
-import { useAuth } from "../context/AuthContext";
-import GlobalStyles from "../styles/GlobalStyles";
+import { Colors } from "../styles/Colors";
 
-import {
-  escutarFeed,
-  toggleLike,
-  escutarComentarios,
-  adicionarComentario,
-} from "../services/postService";
-
-const { colors } = GlobalStyles;
-
-export default function TelaFeed({ navigation }) {
-  const insets = useSafeAreaInsets();
-  const { user } = useAuth();
+export default function TelaFeed() {
+  const route = useRoute();
 
   const [posts, setPosts] = useState([]);
-  const [comentarios, setComentarios] = useState([]);
-  const [postSelecionado, setPostSelecionado] = useState(null);
-  const [novoComentario, setNovoComentario] = useState("");
-  const [modalVisible, setModalVisible] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const scaleAnim = useRef({});
-  const unsubscribeComentarios = useRef(null);
-
+  // 🔥 POSTS INICIAIS FAKE
   useEffect(() => {
-    const unsubscribe = escutarFeed((data) => {
-      setPosts(data);
-      setLoading(false);
-    });
+    const fakePosts = [
+      {
+        id: "1",
+        nome: "Marcos Monteiro",
+        foto: "https://i.pravatar.cc/100?img=1",
+        imagem: "https://placehold.co/600x400/0f172a/ffffff?text=Evento",
+        descricao: "Que evento absurdo 🔥",
+        likes: 132,
+        comentarios: 21,
+      },
+      {
+        id: "2",
+        nome: "Ana Souza",
+        foto: "https://i.pravatar.cc/100?img=5",
+        imagem: "https://placehold.co/600x400/7c3aed/ffffff?text=Festa",
+        descricao: "Melhor noite do ano 💜",
+        likes: 89,
+        comentarios: 12,
+      },
+      {
+        id: "3",
+        nome: "Lucas Lima",
+        foto: "https://i.pravatar.cc/100?img=8",
+        imagem: "https://placehold.co/600x400/1e293b/ffffff?text=Show",
+        descricao: "Lotado demais 🔥🔥",
+        likes: 201,
+        comentarios: 45,
+      },
+    ];
 
-    return unsubscribe;
+    setPosts(fakePosts);
   }, []);
 
-  const handleLike = async (postId) => {
-    if (!scaleAnim.current[postId]) {
-      scaleAnim.current[postId] = new Animated.Value(1);
+  // 🔥 RECEBE NOVO POST
+  useEffect(() => {
+    if (route.params?.novoPost) {
+      setPosts((prev) => [route.params.novoPost, ...prev]);
     }
+  }, [route.params?.novoPost]);
 
-    await toggleLike(postId, user);
+  // 🔄 REFRESH FAKE
+  const onRefresh = async () => {
+    setRefreshing(true);
 
-    Animated.sequence([
-      Animated.timing(scaleAnim.current[postId], {
-        toValue: 1.3,
-        duration: 120,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim.current[postId], {
-        toValue: 1,
-        friction: 4,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    setRefreshing(false);
   };
 
-  const abrirComentarios = (post) => {
-    setPostSelecionado(post);
-    setModalVisible(true);
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <Image source={{ uri: item.foto }} style={styles.avatar} />
+        <AppText style={styles.nome}>{item.nome}</AppText>
+      </View>
 
-    if (unsubscribeComentarios.current) {
-      unsubscribeComentarios.current();
-    }
+      {/* IMAGEM */}
+      <Image source={{ uri: item.imagem }} style={styles.image} />
 
-    unsubscribeComentarios.current = escutarComentarios(
-      post.id,
-      setComentarios
-    );
-  };
-
-  const fecharModal = () => {
-    setModalVisible(false);
-    setComentarios([]);
-    setPostSelecionado(null);
-
-    if (unsubscribeComentarios.current) {
-      unsubscribeComentarios.current();
-      unsubscribeComentarios.current = null;
-    }
-  };
-
-  const enviarComentario = async () => {
-    if (!novoComentario.trim()) return;
-
-    await adicionarComentario(postSelecionado.id, {
-      user,
-      texto: novoComentario,
-    });
-
-    setNovoComentario("");
-  };
-
-  const renderItem = ({ item }) => {
-    if (!scaleAnim.current[item.id]) {
-      scaleAnim.current[item.id] = new Animated.Value(1);
-    }
-
-    return (
-      <View style={styles.card}>
-        <Image source={{ uri: item.imagem }} style={styles.imagem} />
-
-        <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.85)"]}
-          style={styles.overlay}
-        />
-
-        <View style={styles.conteudo}>
-          <View style={styles.userRow}>
-            <Image source={{ uri: item.foto }} style={styles.avatar} />
-            <AppText style={styles.nome}>{item.nome}</AppText>
-          </View>
-
-          <AppText style={styles.descricao}>{item.descricao}</AppText>
-
-          <View style={styles.actions}>
-            <View style={styles.leftActions}>
-              <TouchableOpacity onPress={() => handleLike(item.id)}>
-                <Animated.View
-                  style={{
-                    transform: [{ scale: scaleAnim.current[item.id] }],
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name="heart"
-                    size={26}
-                    color={colors.primary}
-                  />
-                </Animated.View>
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={() => abrirComentarios(item)}>
-                <MaterialCommunityIcons
-                  name="comment-outline"
-                  size={24}
-                  color={colors.primary}
-                />
-              </TouchableOpacity>
-            </View>
-
+      {/* AÇÕES */}
+      <View style={styles.actions}>
+        <View style={{ flexDirection: "row", gap: 14 }}>
+          <TouchableOpacity>
             <MaterialCommunityIcons
-              name="share-variant"
-              size={22}
-              color={colors.primary}
+              name="heart-outline"
+              size={24}
+              color={Colors.textPrimary}
             />
-          </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity>
+            <MaterialCommunityIcons
+              name="comment-outline"
+              size={24}
+              color={Colors.textPrimary}
+            />
+          </TouchableOpacity>
         </View>
       </View>
-    );
-  };
 
-  if (loading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      {/* INFO */}
+      <View style={styles.info}>
+        <AppText style={styles.likes}>
+          {item.likes} curtidas
+        </AppText>
+
+        <AppText style={styles.descricao}>
+          <AppText style={{ fontWeight: "bold" }}>
+            {item.nome}{" "}
+          </AppText>
+          {item.descricao}
+        </AppText>
+
+        <AppText style={styles.comentarios}>
+          {item.comentarios} comentários
+        </AppText>
       </View>
-    );
-  }
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={[colors.background, colors.surface]}
-        style={[styles.header, { paddingTop: insets.top + 10 }]}
-      >
-        <AppText style={styles.headerTitle}>Feed</AppText>
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate("CriarPost")}
-          style={styles.addButton}
-        >
-          <MaterialCommunityIcons
-            name="plus"
-            size={24}
-            color={colors.textPrimary}
-          />
-        </TouchableOpacity>
-      </LinearGradient>
-
       <FlatList
         data={posts}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
-        ListEmptyComponent={
-          <AppText style={styles.empty}>
-            Nenhum post ainda 😢
-          </AppText>
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.primary}
+          />
         }
         contentContainerStyle={{
           padding: 16,
-          paddingBottom: insets.bottom + 100,
+          paddingBottom: 100,
         }}
       />
-
-      <Modal visible={modalVisible} animationType="slide">
-        <View style={styles.modal}>
-          <AppText style={styles.modalTitle}>Comentários</AppText>
-
-          <FlatList
-            data={comentarios}
-            keyExtractor={(item) => item.id}
-            ListEmptyComponent={
-              <AppText style={styles.empty}>
-                Nenhum comentário ainda
-              </AppText>
-            }
-            renderItem={({ item }) => (
-              <View style={styles.comment}>
-                <Image source={{ uri: item.foto }} style={styles.avatar} />
-                <View>
-                  <AppText style={styles.commentNome}>
-                    {item.nome}
-                  </AppText>
-                  <AppText style={styles.commentTexto}>
-                    {item.texto}
-                  </AppText>
-                </View>
-              </View>
-            )}
-          />
-
-          <View style={styles.inputRow}>
-            <TextInput
-              placeholder="Comentar..."
-              placeholderTextColor={colors.textMuted}
-              value={novoComentario}
-              onChangeText={setNovoComentario}
-              style={styles.input}
-            />
-
-            <TouchableOpacity onPress={enviarComentario}>
-              <MaterialCommunityIcons
-                name="send"
-                size={24}
-                color={colors.primary}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity onPress={fecharModal}>
-            <AppText style={styles.fechar}>Fechar</AppText>
-          </TouchableOpacity>
-        </View>
-      </Modal>
     </View>
   );
 }
 
 /* 🎨 STYLES */
-const styles = StyleSheet.create({
+const styles = {
   container: {
     flex: 1,
-    backgroundColor: colors.background,
-  },
-
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: colors.textPrimary,
-  },
-
-  addButton: {
-    backgroundColor: colors.primary,
-    padding: 10,
-    borderRadius: 20,
+    backgroundColor: Colors.background,
   },
 
   card: {
+    backgroundColor: Colors.card,
+    marginBottom: 16,
     borderRadius: 16,
     overflow: "hidden",
-    marginBottom: 16,
-    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
 
-  imagem: {
-    width: "100%",
-    height: 230,
-  },
-
-  overlay: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    height: 140,
-  },
-
-  conteudo: {
-    position: "absolute",
-    bottom: 0,
-    padding: 16,
-    width: "100%",
-  },
-
-  userRow: {
+  header: {
     flexDirection: "row",
     alignItems: "center",
+    padding: 12,
   },
 
   avatar: {
-    width: 28,
-    height: 28,
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    marginRight: 8,
+    marginRight: 10,
   },
 
   nome: {
-    color: colors.primary,
+    color: Colors.textPrimary,
+    fontWeight: "bold",
+  },
+
+  image: {
+    width: "100%",
+    height: 280,
+  },
+
+  actions: {
+    padding: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+
+  info: {
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+
+  likes: {
+    color: Colors.textPrimary,
     fontWeight: "bold",
   },
 
   descricao: {
+    color: Colors.textPrimary,
     marginTop: 4,
-    color: colors.textPrimary,
   },
 
-  actions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 12,
+  comentarios: {
+    color: Colors.textMuted,
+    fontSize: 12,
+    marginTop: 6,
   },
-
-  leftActions: {
-    flexDirection: "row",
-    gap: 16,
-  },
-
-  modal: {
-    flex: 1,
-    backgroundColor: colors.background,
-    padding: 16,
-  },
-
-  modalTitle: {
-    fontSize: 18,
-    marginBottom: 10,
-    color: colors.textPrimary,
-  },
-
-  comment: {
-    flexDirection: "row",
-    marginBottom: 12,
-  },
-
-  commentNome: {
-    color: colors.primary,
-    fontWeight: "bold",
-  },
-
-  commentTexto: {
-    color: colors.textPrimary,
-  },
-
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-  },
-
-  input: {
-    flex: 1,
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: 10,
-    color: colors.textPrimary,
-    marginRight: 10,
-  },
-
-  fechar: {
-    color: colors.error,
-    textAlign: "center",
-    marginTop: 10,
-  },
-
-  loading: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.background,
-  },
-
-  empty: {
-    textAlign: "center",
-    marginTop: 40,
-    color: colors.textSecondary,
-  },
-});
+};

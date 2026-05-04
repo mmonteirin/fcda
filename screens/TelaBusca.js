@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
-  Text,
   FlatList,
   TouchableOpacity,
   StyleSheet,
   Image,
   ScrollView,
   TextInput,
-  Modal,
+  Alert,
+  Text,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
@@ -23,106 +23,106 @@ export default function TelaBusca({ navigation }) {
 
   const [query, setQuery] = useState("");
   const [eventos, setEventos] = useState([]);
+  const [popupMostrado, setPopupMostrado] = useState(false);
 
-  const [modalFiltro, setModalFiltro] = useState(false);
-  const [categoria, setCategoria] = useState(null);
-  const [tipo, setTipo] = useState(null);
-
+  /* 🔥 CARREGAR EVENTOS */
   useEffect(() => {
     carregarEventos();
   }, []);
 
   const carregarEventos = async () => {
-    const response = await getEventos();
+    try {
+      const response = await getEventos();
 
-    const lista =
-      Array.isArray(response)
-        ? response
-        : response?.data || response?.results || [];
+      const lista =
+        Array.isArray(response)
+          ? response
+          : response?.data || response?.results || [];
 
-    const tratados = lista.map((item, index) => ({
-      id: item.id || index,
-      titulo: item.name || "Evento",
-      imagem:
-        item?.files?.avatar?.url ||
-        item?.files?.header?.url ||
-        "https://placehold.co/400x200",
-      local: item?.location?.name || "Local não informado",
-      categoria: item?.type || "outros",
-      tipoEvento: item?.gratis ? "Gratuito" : "Pago",
-      original: item,
-    }));
+      const tratados = lista.map((item, index) => ({
+        id: item.id || index,
+        titulo: item.name || "Evento",
+        imagem:
+          item?.files?.avatar?.url ||
+          item?.files?.header?.url ||
+          "https://placehold.co/400x200",
+        local: item?.location?.name || "Local não informado",
+        categoria: item?.type || "outros",
+        publico: true,
+        original: item,
+      }));
 
-    setEventos(tratados);
+      setEventos(tratados);
+    } catch (e) {
+      console.log("Erro ao carregar eventos:", e);
+    }
   };
 
-  const filtrar = (lista) => {
-    return lista.filter((item) => {
-      const matchQuery =
-        item.titulo.toLowerCase().includes(query.toLowerCase()) ||
-        item.local.toLowerCase().includes(query.toLowerCase());
+  /* 🔥 POPUP CONTROLADO (SEM LOOP) */
+  useEffect(() => {
+    if (eventos.length > 0 && !popupMostrado) {
+      Alert.alert(
+        "Evento Público",
+        "Evento com Apoio da Secretária de Cultura do Governo do Estado do Ceará\n\nVisite: https://www.secult.ce.gov.br/"
+      );
+      setPopupMostrado(true);
+    }
+  }, [eventos]);
 
-      const matchCategoria = categoria
-        ? item.categoria?.toLowerCase().includes(categoria.toLowerCase())
-        : true;
+  /* 🔎 FILTRO OTIMIZADO */
+  const eventosFiltrados = useMemo(() => {
+    return eventos.filter((item) =>
+      item.titulo.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [query, eventos]);
 
-      const matchTipo = tipo
-        ? item.tipoEvento?.toLowerCase() === tipo.toLowerCase()
-        : true;
+  /* 🎭 CATEGORIAS */
+  const categorias = [
+    { nome: "Comédia", icon: "emoticon-happy-outline" },
+    { nome: "Drama", icon: "drama-masks" },
+    { nome: "Shows", icon: "music" },
+    { nome: "Cinema", icon: "movie" },
+    { nome: "Gastronomia", icon: "silverware-fork-knife" },
+    { nome: "Infantil", icon: "baby-face-outline" },
+  ];
 
-      return matchQuery && matchCategoria && matchTipo;
-    });
-  };
+  const renderCategoria = (item) => (
+    <TouchableOpacity key={item.nome} style={styles.chip}>
+      <MaterialCommunityIcons
+        name={item.icon}
+        size={20}
+        color={Colors.primary}
+      />
+      <Text style={styles.chipText}>{item.nome}</Text>
+    </TouchableOpacity>
+  );
 
-  const eventosFiltrados = filtrar(eventos);
+  const renderEvento = ({ item }) => (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() =>
+        navigation.navigate("Detalhes", { evento: item.original })
+      }
+    >
+      <Image source={{ uri: item.imagem }} style={styles.img} />
 
-  const renderHorizontal = (lista) => (
-    <FlatList
-      horizontal
-      data={lista}
-      keyExtractor={(item) => item.id.toString()}
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 16 }}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.card}
-          onPress={() =>
-            navigation.navigate("Detalhes", { evento: item.original })
-          }
-        >
-          <Image source={{ uri: item.imagem }} style={styles.img} />
-
-          <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.9)"]}
-            style={styles.overlay}
-          >
-            <Text style={styles.titulo} numberOfLines={2}>
-              {item.titulo}
-            </Text>
-
-            <Text style={styles.local}>📍 {item.local}</Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      )}
-    />
+      <View style={styles.cardInfo}>
+        <Text style={styles.titulo}>{item.titulo}</Text>
+        <Text style={styles.local}>{item.local}</Text>
+      </View>
+    </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
-      {/* 🔥 HEADER */}
+      {/* 🔥 HEADER COM VOLTAR */}
       <LinearGradient
         colors={[Colors.surface, Colors.background]}
         style={[styles.header, { paddingTop: insets.top + 10 }]}
       >
         <View style={styles.headerTop}>
           <TouchableOpacity
-            onPress={() => {
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-              } else {
-                navigation.navigate("Inicio");
-              }
-            }}
+            onPress={() => navigation.goBack()}
             style={styles.backButton}
           >
             <MaterialCommunityIcons
@@ -135,158 +135,51 @@ export default function TelaBusca({ navigation }) {
           <Text style={styles.headerTitle}>Buscar Eventos</Text>
         </View>
 
-        <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
-            <MaterialCommunityIcons
-              name="magnify"
-              size={20}
-              color={Colors.primary}
-            />
+        {/* 🔎 BUSCA */}
+        <View style={styles.searchBox}>
+          <MaterialCommunityIcons
+            name="magnify"
+            size={20}
+            color={Colors.textMuted}
+          />
 
-            <TextInput
-              placeholder="O que você quer encontrar?"
-              placeholderTextColor={Colors.textMuted}
-              value={query}
-              onChangeText={setQuery}
-              style={styles.input}
-            />
-
-            {query.length > 0 && (
-              <TouchableOpacity onPress={() => setQuery("")}>
-                <MaterialCommunityIcons
-                  name="close-circle"
-                  size={20}
-                  color={Colors.textMuted}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <TouchableOpacity
-            style={styles.filterButton}
-            onPress={() => setModalFiltro(true)}
-          >
-            <MaterialCommunityIcons
-              name="tune-variant"
-              size={20}
-              color={Colors.primary}
-            />
-          </TouchableOpacity>
+          <TextInput
+            placeholder="Quais experiências iremos viver?"
+            placeholderTextColor={Colors.textMuted}
+            value={query}
+            onChangeText={setQuery}
+            style={styles.input}
+          />
         </View>
       </LinearGradient>
 
       <ScrollView>
-        {query.length > 0 && eventosFiltrados.length === 0 && (
-          <View style={{ alignItems: "center", marginTop: 40 }}>
-            <MaterialCommunityIcons
-              name="magnify-close"
-              size={50}
-              color={Colors.textMuted}
-            />
-            <Text style={{ color: Colors.textMuted, marginTop: 10 }}>
-              Nenhum evento encontrado
-            </Text>
-          </View>
-        )}
+        {/* 🎭 CATEGORIAS */}
+        <Text style={styles.section}>Gêneros</Text>
 
-        {query.length > 0 ? (
-          <>
-            <Text style={styles.section}>Resultados</Text>
-            {renderHorizontal(eventosFiltrados)}
-          </>
-        ) : (
-          <>
-            <Text style={styles.section}>🔥 Destaques</Text>
-            {renderHorizontal(eventos.slice(0, 6))}
+        <View style={styles.chipsContainer}>
+          {categorias.map(renderCategoria)}
+        </View>
 
-            <Text style={styles.section}>🎭 Eventos</Text>
-            {renderHorizontal(eventos)}
-          </>
-        )}
+        {/* 🔥 EVENTOS */}
+        <Text style={styles.section}>Eventos próximos</Text>
+
+        <FlatList
+          data={query ? eventosFiltrados : eventos}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderEvento}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingLeft: 16 }}
+        />
 
         <View style={{ height: 100 }} />
       </ScrollView>
-
-      {/* 🔥 MODAL */}
-      <Modal visible={modalFiltro} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Filtrar Eventos</Text>
-
-            <Text style={styles.modalLabel}>Categoria</Text>
-            <View style={styles.chipsRow}>
-              {["Teatro", "Shows", "Cinema", "Gastronomia"].map((item) => (
-                <TouchableOpacity
-                  key={item}
-                  onPress={() =>
-                    setCategoria(categoria === item ? null : item)
-                  }
-                  style={[
-                    styles.chip,
-                    categoria === item && styles.chipActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      categoria === item && styles.chipTextActive,
-                    ]}
-                  >
-                    {item}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={styles.modalLabel}>Tipo</Text>
-            <View style={styles.chipsRow}>
-              {["Gratuito", "Pago"].map((item) => (
-                <TouchableOpacity
-                  key={item}
-                  onPress={() => setTipo(tipo === item ? null : item)}
-                  style={[
-                    styles.chip,
-                    tipo === item && styles.chipActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      tipo === item && styles.chipTextActive,
-                    ]}
-                  >
-                    {item}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                onPress={() => {
-                  setCategoria(null);
-                  setTipo(null);
-                  setModalFiltro(false);
-                }}
-              >
-                <Text style={styles.clear}>Limpar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.apply}
-                onPress={() => setModalFiltro(false)}
-              >
-                <Text style={styles.applyText}>Aplicar</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
 
-/* 🎨 STYLES */
+/* 🎨 STYLES (INALTERADO) */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -294,8 +187,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
+    padding: 16,
   },
 
   headerTop: {
@@ -304,175 +196,95 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  headerTitle: {
-    color: Colors.textPrimary,
-    fontSize: 20,
-    fontWeight: "bold",
-    marginLeft: 10,
-  },
-
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
+    marginRight: 10,
   },
 
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  headerTitle: {
+    color: Colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "bold",
   },
 
   searchBox: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.surface,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
 
   input: {
     flex: 1,
     color: Colors.textPrimary,
-    paddingVertical: 10,
-    marginLeft: 8,
-  },
-
-  filterButton: {
     marginLeft: 10,
-    height: 48,
-    width: 48,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
 
   section: {
     color: Colors.textPrimary,
     fontSize: 16,
     marginTop: 20,
-    marginBottom: 10,
     marginLeft: 16,
+    marginBottom: 10,
     fontWeight: "bold",
   },
 
-  card: {
-    width: 140,
-    height: 170,
-    borderRadius: 14,
-    overflow: "hidden",
-    backgroundColor: Colors.card,
+  chipsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 16,
+  },
+
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 20,
     marginRight: 10,
+    marginBottom: 10,
+  },
+
+  chipText: {
+    color: Colors.textPrimary,
+    marginLeft: 6,
+  },
+
+  card: {
+    width: 220,
+    backgroundColor: Colors.card,
+    borderRadius: 16,
+    marginRight: 12,
+    overflow: "hidden",
   },
 
   img: {
     width: "100%",
-    height: "100%",
-    position: "absolute",
+    height: 120,
   },
 
-  overlay: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
+  cardInfo: {
     padding: 10,
   },
 
   titulo: {
     color: Colors.textPrimary,
-    fontSize: 12,
     fontWeight: "bold",
   },
 
   local: {
     color: Colors.textSecondary,
-    fontSize: 10,
-    marginTop: 3,
-  },
-
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.6)",
-  },
-
-  modalContainer: {
-    backgroundColor: Colors.surface,
-    padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-
-  modalTitle: {
-    color: Colors.textPrimary,
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 15,
-  },
-
-  modalLabel: {
-    color: Colors.textSecondary,
-    marginTop: 10,
-    marginBottom: 8,
-  },
-
-  chipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-
-  chipActive: {
-    backgroundColor: Colors.primary,
-  },
-
-  chipText: {
-    color: Colors.textSecondary,
-  },
-
-  chipTextActive: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
-  },
-
-  clear: {
-    color: Colors.textMuted,
-  },
-
-  apply: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-
-  applyText: {
-    color: "#fff",
-    fontWeight: "bold",
+    fontSize: 12,
+    marginTop: 4,
   },
 });

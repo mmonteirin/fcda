@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
@@ -26,23 +27,63 @@ import { Colors } from "../styles/Colors";
 
 export default function AdmEvento({ navigation }) {
   const { user, nome, foto } = useAuth();
+
   const [eventos, setEventos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // 🔥 AGORA USANDO MOCK
   const fetchEventos = async () => {
-    const q = query(collection(db, "eventos"), where("uid", "==", user.uid));
-    const snapshot = await getDocs(q);
+    setLoading(true);
 
-    const lista = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    try {
+      const eventosFake = [
+        {
+          id: "1",
+          titulo: "WOW 5 Anos",
+          nomeLocal: "São Paulo Expo",
+          data: "24 de Agosto • 22:00",
+          imagem:
+            "https://images.sympla.com.br/64f8b1f4c2c6f-lg.jpg",
+        },
+        {
+          id: "2",
+          titulo: "Festival Eletrônico SP",
+          nomeLocal: "Allianz Parque",
+          data: "12 de Setembro • 18:00",
+          imagem:
+            "https://placehold.co/600x400/0f172a/ffffff?text=Festival",
+        },
+        {
+          id: "3",
+          titulo: "Noite do Trap",
+          nomeLocal: "Audio Club",
+          data: "05 de Outubro • 23:00",
+          imagem:
+            "https://placehold.co/600x400/1e293b/ffffff?text=Trap",
+        },
+        {
+          id: "4",
+          titulo: "Sunset Party Rooftop",
+          nomeLocal: "Vila Madalena",
+          data: "20 de Outubro • 16:00",
+          imagem:
+            "https://placehold.co/600x400/7c3aed/ffffff?text=Sunset",
+        },
+      ];
 
-    setEventos(lista);
+      setTimeout(() => {
+        setEventos(eventosFake);
+        setLoading(false);
+      }, 800);
+    } catch (e) {
+      console.log("Erro ao carregar mock:", e);
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    if (user) fetchEventos();
-  }, [user]);
+    fetchEventos();
+  }, []);
 
   const deletarEvento = (id) => {
     Alert.alert("Excluir", "Deseja excluir este evento?", [
@@ -51,8 +92,12 @@ export default function AdmEvento({ navigation }) {
         text: "Excluir",
         style: "destructive",
         onPress: async () => {
-          await deleteDoc(doc(db, "eventos", id));
-          fetchEventos();
+          try {
+            // 🔥 remove do mock (sem Firebase)
+            setEventos((prev) => prev.filter((item) => item.id !== id));
+          } catch {
+            Alert.alert("Erro ao excluir");
+          }
         },
       },
     ]);
@@ -72,9 +117,13 @@ export default function AdmEvento({ navigation }) {
       <View style={{ padding: 14 }}>
         <Text style={styles.titulo}>{item.titulo}</Text>
 
-        <Text style={styles.local}>📍 {item.nomeLocal}</Text>
+        <Text style={styles.local}>
+          📍 {item.nomeLocal || "Local não informado"}
+        </Text>
 
-        <Text style={styles.data}>📅 {item.data}</Text>
+        <Text style={styles.data}>
+          📅 {item.data || "Data não informada"}
+        </Text>
 
         <View style={styles.actions}>
           <TouchableOpacity onPress={() => deletarEvento(item.id)}>
@@ -99,6 +148,14 @@ export default function AdmEvento({ navigation }) {
       </View>
     </View>
   );
+
+  if (loading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -127,7 +184,7 @@ export default function AdmEvento({ navigation }) {
           />
 
           <View>
-            <Text style={styles.nome}>{nome}</Text>
+            <Text style={styles.nome}>{nome || "Usuário"}</Text>
             <Text style={styles.sub}>Organizador</Text>
           </View>
         </View>
@@ -151,6 +208,7 @@ export default function AdmEvento({ navigation }) {
         }
       />
 
+      {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.navigate("CriarEvento")}
@@ -161,6 +219,7 @@ export default function AdmEvento({ navigation }) {
   );
 }
 
+/* 🎨 STYLES */
 const styles = {
   header: {
     paddingTop: 50,
@@ -267,5 +326,12 @@ const styles = {
     color: Colors.textMuted,
     textAlign: "center",
     marginTop: 40,
+  },
+
+  loading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background,
   },
 };
