@@ -25,6 +25,7 @@ export default function TelaInicio() {
 
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [categoriaAtiva, setCategoriaAtiva] = useState("Todos");
 
   const categorias = ["Todos", "Shows", "Teatro", "Cinema", "Gastronomia"];
 
@@ -49,6 +50,7 @@ export default function TelaInicio() {
           item?.files?.header?.url ||
           "https://placehold.co/400x200",
         local: item?.location?.name || "Local",
+        categoria: item?.type || "outros",
         original: item,
       }));
 
@@ -60,8 +62,17 @@ export default function TelaInicio() {
     }
   };
 
+  /* 🎯 FILTRO POR CATEGORIA */
+  const eventosFiltrados =
+    categoriaAtiva === "Todos"
+      ? eventos
+      : eventos.filter((e) =>
+          e.categoria.toLowerCase().includes(categoriaAtiva.toLowerCase())
+        );
+
   const CardHorizontal = ({ item }) => (
     <TouchableOpacity
+      activeOpacity={0.85}
       style={styles.cardHorizontal}
       onPress={() =>
         navigation.navigate("Detalhes", { evento: item.original })
@@ -79,6 +90,7 @@ export default function TelaInicio() {
 
   const CardVertical = ({ item }) => (
     <TouchableOpacity
+      activeOpacity={0.9}
       style={styles.cardVertical}
       onPress={() =>
         navigation.navigate("Detalhes", { evento: item.original })
@@ -86,7 +98,7 @@ export default function TelaInicio() {
     >
       <Image source={{ uri: item.imagem }} style={styles.imgVertical} />
 
-      <View style={{ padding: 10 }}>
+      <View style={{ padding: 12 }}>
         <Text style={styles.titleCard} numberOfLines={2}>
           {item.titulo}
         </Text>
@@ -105,13 +117,13 @@ export default function TelaInicio() {
   }
 
   return (
-    <ScrollView style={styles.container}>
-
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* HEADER */}
       <View style={styles.header}>
-        <Text style={styles.saudacao}>
-          Olá, {nomeUsuario}
-        </Text>
+        <View>
+          <Text style={styles.saudacao}>Olá,</Text>
+          <Text style={styles.nome}>{nomeUsuario}</Text>
+        </View>
 
         <TouchableOpacity style={styles.iconBtn}>
           <MaterialCommunityIcons
@@ -126,6 +138,7 @@ export default function TelaInicio() {
       <TouchableOpacity
         style={styles.searchBox}
         onPress={() => navigation.navigate("Busca")}
+        activeOpacity={0.85}
       >
         <MaterialCommunityIcons
           name="magnify"
@@ -144,18 +157,41 @@ export default function TelaInicio() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categorias}
-        renderItem={({ item }) => (
-          <View style={styles.categoria}>
-            <Text style={styles.categoriaText}>{item}</Text>
-          </View>
-        )}
+        renderItem={({ item }) => {
+          const ativo = item === categoriaAtiva;
+
+          return (
+            <TouchableOpacity
+              onPress={() => setCategoriaAtiva(item)}
+              style={[
+                styles.categoria,
+                {
+                  backgroundColor: ativo
+                    ? colors.primary
+                    : colors.surface,
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  color: ativo
+                    ? colors.background
+                    : colors.textSecondary,
+                  fontWeight: ativo ? "bold" : "normal",
+                }}
+              >
+                {item}
+              </Text>
+            </TouchableOpacity>
+          );
+        }}
       />
 
       {/* DESTAQUES */}
       <Text style={styles.section}>Destaques</Text>
 
       <FlatList
-        data={eventos.slice(0, 6)}
+        data={eventosFiltrados.slice(0, 6)}
         keyExtractor={(item) => item.id.toString()}
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -166,19 +202,26 @@ export default function TelaInicio() {
       {/* PERTO DE VOCÊ */}
       <Text style={styles.section}>Perto de você</Text>
 
-      <FlatList
-        data={eventos}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => <CardVertical item={item} />}
-        scrollEnabled={false}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-      />
+      {eventosFiltrados.length === 0 ? (
+        <Text style={styles.empty}>
+          Nenhum evento encontrado 😕
+        </Text>
+      ) : (
+        <FlatList
+          data={eventosFiltrados}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => <CardVertical item={item} />}
+          scrollEnabled={false}
+          contentContainerStyle={{ paddingHorizontal: 16 }}
+        />
+      )}
 
       <View style={{ height: 100 }} />
     </ScrollView>
   );
 }
 
+/* 🎨 STYLES */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -193,13 +236,20 @@ const styles = StyleSheet.create({
   },
 
   saudacao: {
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+
+  nome: {
     color: colors.textPrimary,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
   },
 
   iconBtn: {
     padding: 10,
+    backgroundColor: colors.surface,
+    borderRadius: 10,
   },
 
   searchBox: {
@@ -226,12 +276,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: colors.surface,
     marginRight: 10,
-  },
-
-  categoriaText: {
-    color: colors.textSecondary,
   },
 
   section: {
@@ -276,6 +321,12 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 12,
     marginTop: 3,
+  },
+
+  empty: {
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginTop: 20,
   },
 
   loading: {

@@ -7,8 +7,8 @@ import {
   Image,
   ScrollView,
   TextInput,
-  Alert,
   Text,
+  ActivityIndicator,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
@@ -23,7 +23,8 @@ export default function TelaBusca({ navigation }) {
 
   const [query, setQuery] = useState("");
   const [eventos, setEventos] = useState([]);
-  const [popupMostrado, setPopupMostrado] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
 
   /* 🔥 CARREGAR EVENTOS */
   useEffect(() => {
@@ -32,6 +33,8 @@ export default function TelaBusca({ navigation }) {
 
   const carregarEventos = async () => {
     try {
+      setLoading(true);
+
       const response = await getEventos();
 
       const lista =
@@ -47,55 +50,74 @@ export default function TelaBusca({ navigation }) {
           item?.files?.header?.url ||
           "https://placehold.co/400x200",
         local: item?.location?.name || "Local não informado",
-        categoria: item?.type || "outros",
-        publico: true,
+        categoria: item?.type?.toLowerCase() || "outros",
         original: item,
       }));
 
       setEventos(tratados);
     } catch (e) {
       console.log("Erro ao carregar eventos:", e);
+    } finally {
+      setLoading(false);
     }
   };
 
-  /* 🔥 POPUP CONTROLADO (SEM LOOP) */
-  useEffect(() => {
-    if (eventos.length > 0 && !popupMostrado) {
-      Alert.alert(
-        "Evento Público",
-        "Evento com Apoio da Secretária de Cultura do Governo do Estado do Ceará\n\nVisite: https://www.secult.ce.gov.br/"
-      );
-      setPopupMostrado(true);
-    }
-  }, [eventos]);
-
-  /* 🔎 FILTRO OTIMIZADO */
+  /* 🔎 FILTRO */
   const eventosFiltrados = useMemo(() => {
-    return eventos.filter((item) =>
-      item.titulo.toLowerCase().includes(query.toLowerCase())
-    );
-  }, [query, eventos]);
+    return eventos.filter((item) => {
+      const matchQuery = item.titulo
+        .toLowerCase()
+        .includes(query.toLowerCase());
+
+      const matchCategoria = categoriaSelecionada
+        ? item.categoria === categoriaSelecionada
+        : true;
+
+      return matchQuery && matchCategoria;
+    });
+  }, [query, eventos, categoriaSelecionada]);
 
   /* 🎭 CATEGORIAS */
   const categorias = [
-    { nome: "Comédia", icon: "emoticon-happy-outline" },
-    { nome: "Drama", icon: "drama-masks" },
-    { nome: "Shows", icon: "music" },
-    { nome: "Cinema", icon: "movie" },
-    { nome: "Gastronomia", icon: "silverware-fork-knife" },
-    { nome: "Infantil", icon: "baby-face-outline" },
+    { nome: "comédia", icon: "emoticon-happy-outline" },
+    { nome: "drama", icon: "drama-masks" },
+    { nome: "shows", icon: "music" },
+    { nome: "cinema", icon: "movie" },
+    { nome: "gastronomia", icon: "silverware-fork-knife" },
+    { nome: "infantil", icon: "baby-face-outline" },
   ];
 
-  const renderCategoria = (item) => (
-    <TouchableOpacity key={item.nome} style={styles.chip}>
-      <MaterialCommunityIcons
-        name={item.icon}
-        size={20}
-        color={Colors.primary}
-      />
-      <Text style={styles.chipText}>{item.nome}</Text>
-    </TouchableOpacity>
-  );
+  const renderCategoria = (item) => {
+    const ativo = categoriaSelecionada === item.nome;
+
+    return (
+      <TouchableOpacity
+        key={item.nome}
+        style={[
+          styles.chip,
+          ativo && { backgroundColor: Colors.primary },
+        ]}
+        onPress={() =>
+          setCategoriaSelecionada(ativo ? null : item.nome)
+        }
+      >
+        <MaterialCommunityIcons
+          name={item.icon}
+          size={20}
+          color={ativo ? Colors.background : Colors.primary}
+        />
+
+        <Text
+          style={[
+            styles.chipText,
+            ativo && { color: Colors.background },
+          ]}
+        >
+          {item.nome}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   const renderEvento = ({ item }) => (
     <TouchableOpacity
@@ -115,7 +137,7 @@ export default function TelaBusca({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* 🔥 HEADER COM VOLTAR */}
+      {/* 🔥 HEADER */}
       <LinearGradient
         colors={[Colors.surface, Colors.background]}
         style={[styles.header, { paddingTop: insets.top + 10 }]}
@@ -150,36 +172,59 @@ export default function TelaBusca({ navigation }) {
             onChangeText={setQuery}
             style={styles.input}
           />
+
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => setQuery("")}>
+              <MaterialCommunityIcons
+                name="close"
+                size={18}
+                color={Colors.textMuted}
+              />
+            </TouchableOpacity>
+          )}
         </View>
       </LinearGradient>
 
-      <ScrollView>
-        {/* 🎭 CATEGORIAS */}
-        <Text style={styles.section}>Gêneros</Text>
-
-        <View style={styles.chipsContainer}>
-          {categorias.map(renderCategoria)}
+      {/* 🔄 LOADING */}
+      {loading ? (
+        <View style={styles.loading}>
+          <ActivityIndicator size="large" color={Colors.primary} />
         </View>
+      ) : (
+        <ScrollView>
+          {/* 🎭 CATEGORIAS */}
+          <Text style={styles.section}>Gêneros</Text>
 
-        {/* 🔥 EVENTOS */}
-        <Text style={styles.section}>Eventos próximos</Text>
+          <View style={styles.chipsContainer}>
+            {categorias.map(renderCategoria)}
+          </View>
 
-        <FlatList
-          data={query ? eventosFiltrados : eventos}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderEvento}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingLeft: 16 }}
-        />
+          {/* 🔥 EVENTOS */}
+          <Text style={styles.section}>Eventos próximos</Text>
 
-        <View style={{ height: 100 }} />
-      </ScrollView>
+          {eventosFiltrados.length === 0 ? (
+            <Text style={styles.empty}>
+              Nenhum evento encontrado 😕
+            </Text>
+          ) : (
+            <FlatList
+              data={eventosFiltrados}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={renderEvento}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingLeft: 16 }}
+            />
+          )}
+
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      )}
     </View>
   );
 }
 
-/* 🎨 STYLES (INALTERADO) */
+/* 🎨 STYLES */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -258,6 +303,7 @@ const styles = StyleSheet.create({
   chipText: {
     color: Colors.textPrimary,
     marginLeft: 6,
+    textTransform: "capitalize",
   },
 
   card: {
@@ -286,5 +332,17 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: 12,
     marginTop: 4,
+  },
+
+  loading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  empty: {
+    color: Colors.textSecondary,
+    textAlign: "center",
+    marginTop: 20,
   },
 });
