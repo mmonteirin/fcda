@@ -2,7 +2,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 
 import PerfilGeral from "../screens/TelaPerfil";
 import PerfilCadastro from "../screens/PerfilCadastro";
-import PerfilOcorrencia from "../screens/PerfilOcorrencia";
+import PerfilHistorico from "../screens/PerfilHistorico";
 import PerfilDeclararOcorrencia from "../screens/PerfilDeclararOcorrencia";
 import EventoDetalhes from "../screens/EventoDetalhes";
 import PerfilEditar from "../screens/PerfilEditar";
@@ -21,7 +21,7 @@ export default function PerfilStack() {
       <Stack.Screen name="PerfilEditar" component={PerfilEditar} />
       <Stack.Screen name="Cadastro" component={PerfilCadastro} />
       <Stack.Screen name="ResetPassword" component={ResetPassword} />
-      <Stack.Screen name="Ocorrencias" component={PerfilOcorrencia} />
+      <Stack.Screen name="Ocorrencias" component={PerfilHistorico} />
       <Stack.Screen name="NovaOcorrencia" component={PerfilDeclararOcorrencia} />
       <Stack.Screen name="Detalhes" component={EventoDetalhes} />
     </Stack.Navigator>

@@ -1,213 +1,300 @@
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  RefreshControl,
+	View,
+	Text,
+	Image,
+	TouchableOpacity,
+	FlatList,
+	Alert,
+	ActivityIndicator,
+	Platform,
 } from "react-native";
 
+import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRoute } from "@react-navigation/native";
+import {
+	collection,
+	query,
+	where,
+	onSnapshot,
+	deleteDoc,
+	doc,
+	orderBy,
+} from "firebase/firestore";
 
-import AppText from "../components/AppText";
+import { db } from "../firebaseConfig";
+import { useAuth } from "../context/AuthContext";
 import { Colors } from "../styles/Colors";
 
-export default function TelaFeed() {
-  const route = useRoute();
+export default function TelaFeed({ navigation }) {
+	const { user, nome, foto, isAdmin } = useAuth();
+	const [eventos, setEventos] = useState([]);
+	const [loading, setLoading] = useState(true);
 
-  const [posts, setPosts] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
+	const goToAdmin = (screen) => {
+		navigation.navigate("Admin", { screen });
+	};
 
-  // 🔥 POSTS INICIAIS FAKE
-  useEffect(() => {
-    const fakePosts = [
-      {
-        id: "1",
-        nome: "Marcos Monteiro",
-        foto: "https://i.pravatar.cc/100?img=1",
-        imagem: "https://placehold.co/600x400/0f172a/ffffff?text=Evento",
-        descricao: "Que evento absurdo 🔥",
-        likes: 132,
-        comentarios: 21,
-      },
-      {
-        id: "2",
-        nome: "Ana Souza",
-        foto: "https://i.pravatar.cc/100?img=5",
-        imagem: "https://placehold.co/600x400/7c3aed/ffffff?text=Festa",
-        descricao: "Melhor noite do ano 💜",
-        likes: 89,
-        comentarios: 12,
-      },
-      {
-        id: "3",
-        nome: "Lucas Lima",
-        foto: "https://i.pravatar.cc/100?img=8",
-        imagem: "https://placehold.co/600x400/1e293b/ffffff?text=Show",
-        descricao: "Lotado demais 🔥🔥",
-        likes: 201,
-        comentarios: 45,
-      },
-    ];
+	// 🔥 Filtra por uidEvento (campo real do banco)
+	useEffect(() => {
+		if (!user?.uid) return;
 
-    setPosts(fakePosts);
-  }, []);
+		let q;
 
-  // 🔥 RECEBE NOVO POST
-  useEffect(() => {
-    if (route.params?.novoPost) {
-      setPosts((prev) => [route.params.novoPost, ...prev]);
-    }
-  }, [route.params?.novoPost]);
+		// ✅ ADMIN -> apenas eventos dele
+		if (isAdmin) {
+			q = query(
+				collection(db, "eventos"),
+				where("uidEvento", "==", user.uid),
+				orderBy("createdAt", "desc")
+			);
+		}
 
-  // 🔄 REFRESH FAKE
-  const onRefresh = async () => {
-    setRefreshing(true);
+		// ✅ USER -> todos os eventos
+		else {
+			q = query(collection(db, "eventos"), orderBy("createdAt", "desc"));
+		}
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+		const unsub = onSnapshot(
+			q,
+			(snapshot) => {
+				const lista = snapshot.docs
+					.map((d) => ({
+						id: d.id,
+						...d.data(),
+					}))
+					.filter((item) => item.id !== "_init");
 
-    setRefreshing(false);
-  };
+				setEventos(lista);
+				setLoading(false);
+			},
+			(err) => {
+				console.log("Erro ao carregar eventos:", err);
+				setLoading(false);
+			}
+		);
 
-  const renderItem = ({ item }) => (
-    <View style={styles.card}>
-      {/* HEADER */}
-      <View style={styles.header}>
-        <Image source={{ uri: item.foto }} style={styles.avatar} />
-        <AppText style={styles.nome}>{item.nome}</AppText>
-      </View>
+		return () => unsub();
+	}, [user?.uid, isAdmin]);
 
-      {/* IMAGEM */}
-      <Image source={{ uri: item.imagem }} style={styles.image} />
+	const deletarEvento = async (id) => {
+		try {
+			let confirmado = false;
 
-      {/* AÇÕES */}
-      <View style={styles.actions}>
-        <View style={{ flexDirection: "row", gap: 14 }}>
-          <TouchableOpacity>
-            <MaterialCommunityIcons
-              name="heart-outline"
-              size={24}
-              color={Colors.textPrimary}
-            />
-          </TouchableOpacity>
+			// 🔥 WEB
+			if (Platform.OS === "web") {
+				confirmado = window.confirm("Deseja excluir este evento?");
+			}
 
-          <TouchableOpacity>
-            <MaterialCommunityIcons
-              name="comment-outline"
-              size={24}
-              color={Colors.textPrimary}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
+			// 🔥 MOBILE
+			else {
+				return Alert.alert("Excluir", "Deseja excluir este evento?", [
+					{
+						text: "Cancelar",
+						style: "cancel",
+					},
+					{
+						text: "Excluir",
+						style: "destructive",
+						onPress: async () => {
+							try {
+								await deleteDoc(doc(db, "eventos", id));
+							} catch (error) {
+								console.log(error);
+								Alert.alert("Erro ao excluir");
+							}
+						},
+					},
+				]);
+			}
 
-      {/* INFO */}
-      <View style={styles.info}>
-        <AppText style={styles.likes}>
-          {item.likes} curtidas
-        </AppText>
+			// 🔥 WEB DELETE
+			if (confirmado) {
+				await deleteDoc(doc(db, "eventos", id));
+			}
+		} catch (error) {
+			console.log(error);
 
-        <AppText style={styles.descricao}>
-          <AppText style={{ fontWeight: "bold" }}>
-            {item.nome}{" "}
-          </AppText>
-          {item.descricao}
-        </AppText>
+			if (Platform.OS === "web") {
+				window.alert("Erro ao excluir");
+			} else {
+				Alert.alert("Erro ao excluir");
+			}
+		}
+	};
 
-        <AppText style={styles.comentarios}>
-          {item.comentarios} comentários
-        </AppText>
-      </View>
-    </View>
-  );
+	const renderItem = ({ item }) => (
+		<TouchableOpacity
+			style={styles.card}
+			activeOpacity={0.9}
+			onPress={() =>
+				navigation.navigate("Detalhes", {
+					evento: item,
+				})
+			}
+		>
+			<Image
+				source={{
+					uri:
+						item.imagemEvento ||
+						"https://placehold.co/400x200/1a0533/ffffff?text=Evento",
+				}}
+				style={styles.image}
+			/>
+			<View style={{ padding: 14 }}>
+				{/* tituloEvento */}
+				<Text style={styles.titulo}>{item.tituloEvento || "Sem título"}</Text>
 
-  return (
-    <View style={styles.container}>
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={Colors.primary}
-          />
-        }
-        contentContainerStyle={{
-          padding: 16,
-          paddingBottom: 100,
-        }}
-      />
-    </View>
-  );
+				{/* localEvento */}
+				<Text style={styles.local}>
+					📍 {item.localEvento || item.nomeLocal || "Local não informado"}
+				</Text>
+
+				{/* dataEvento */}
+				<Text style={styles.data}>
+					📅 {item.dataEvento || "Data não informada"}
+				</Text>
+
+				{isAdmin && (
+					<View style={styles.actions}>
+						<TouchableOpacity onPress={() => deletarEvento(item.id)}>
+							<MaterialCommunityIcons
+								name="delete-outline"
+								size={22}
+								color={Colors.error}
+							/>
+						</TouchableOpacity>
+
+						<TouchableOpacity
+							style={styles.dashboardBtn}
+							onPress={() =>
+								navigation.navigate("Metricas", { eventoId: item.id })
+							}
+						>
+							<Text style={styles.dashboardText}>Dashboard</Text>
+						</TouchableOpacity>
+					</View>
+				)}
+			</View>
+		</TouchableOpacity>
+	);
+
+	if (loading) {
+		return (
+			<View style={styles.loading}>
+				<ActivityIndicator size="large" color={Colors.primary} />
+			</View>
+		);
+	}
+
+	return (
+		<View style={{ flex: 1, backgroundColor: Colors.background }}>
+			<LinearGradient
+				colors={[Colors.background, Colors.surface]}
+				style={styles.header}
+			>
+				<TouchableOpacity
+					onPress={() => navigation.goBack()}
+					style={{ marginBottom: 10 }}
+				>
+					<MaterialCommunityIcons
+						name="arrow-left"
+						size={24}
+						color={Colors.textPrimary}
+					/>
+				</TouchableOpacity>
+
+				<View style={styles.headerContent}>
+					<Image
+						source={{ uri: foto || "https://i.pravatar.cc/100" }}
+						style={styles.avatar}
+					/>
+					<View>
+						<Text style={styles.nome}>{nome || "Usuário"}</Text>
+						{isAdmin && <Text style={styles.sub}>Organizador</Text>}
+					</View>
+				</View>
+
+				<Text style={styles.title}>Meus Eventos</Text>
+			</LinearGradient>
+
+			<FlatList
+				data={eventos}
+				keyExtractor={(item) => item.id}
+				renderItem={renderItem}
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+				ListEmptyComponent={
+					<Text style={styles.empty}>Nenhum evento cadastrado 😢</Text>
+				}
+			/>
+
+			{/* FAB */}
+			{isAdmin && (
+				<TouchableOpacity
+					style={styles.fab}
+					onPress={() => goToAdmin("CriarEvento")}
+				>
+					<MaterialCommunityIcons name="plus" size={26} color="#fff" />
+				</TouchableOpacity>
+			)}
+		</View>
+	);
 }
 
-/* 🎨 STYLES */
 const styles = {
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-
-  card: {
-    backgroundColor: Colors.card,
-    marginBottom: 16,
-    borderRadius: 16,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-  },
-
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 10,
-  },
-
-  nome: {
-    color: Colors.textPrimary,
-    fontWeight: "bold",
-  },
-
-  image: {
-    width: "100%",
-    height: 280,
-  },
-
-  actions: {
-    padding: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-
-  info: {
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-  },
-
-  likes: {
-    color: Colors.textPrimary,
-    fontWeight: "bold",
-  },
-
-  descricao: {
-    color: Colors.textPrimary,
-    marginTop: 4,
-  },
-
-  comentarios: {
-    color: Colors.textMuted,
-    fontSize: 12,
-    marginTop: 6,
-  },
+	header: { paddingTop: 50, paddingBottom: 20, paddingHorizontal: 16 },
+	headerContent: {
+		flexDirection: "row",
+		alignItems: "center",
+		marginBottom: 15,
+	},
+	avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 12 },
+	nome: { color: Colors.textPrimary, fontSize: 16, fontWeight: "bold" },
+	sub: { color: Colors.textSecondary, fontSize: 12 },
+	title: { color: Colors.textPrimary, fontSize: 20, fontWeight: "bold" },
+	card: {
+		backgroundColor: Colors.card,
+		borderRadius: 16,
+		marginBottom: 16,
+		overflow: "hidden",
+		borderWidth: 1,
+		borderColor: Colors.border,
+	},
+	image: { width: "100%", height: 160 },
+	titulo: { color: Colors.textPrimary, fontSize: 15, fontWeight: "bold" },
+	local: { color: Colors.textSecondary, fontSize: 13, marginTop: 4 },
+	data: { color: Colors.primary, fontSize: 12, marginTop: 4 },
+	actions: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		marginTop: 12,
+		alignItems: "center",
+	},
+	dashboardBtn: {
+		backgroundColor: Colors.primary,
+		paddingVertical: 8,
+		paddingHorizontal: 14,
+		borderRadius: 10,
+	},
+	dashboardText: { color: "#fff", fontWeight: "bold", fontSize: 12 },
+	fab: {
+		position: "absolute",
+		bottom: 125,
+		right: 20,
+		backgroundColor: Colors.primary,
+		width: 60,
+		height: 60,
+		borderRadius: 30,
+		justifyContent: "center",
+		alignItems: "center",
+		elevation: 5,
+	},
+	empty: { color: Colors.textMuted, textAlign: "center", marginTop: 40 },
+	loading: {
+		flex: 1,
+		justifyContent: "center",
+		alignItems: "center",
+		backgroundColor: Colors.background,
+	},
 };

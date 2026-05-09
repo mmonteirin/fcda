@@ -187,7 +187,7 @@ Para adicionar novo estilo ou modificar cores:
 ✅ LocalCard.js
 ✅ TelaBusca.js
 ✅ ResetPassword.js
-✅ PerfilOcorrencia.js
+✅ PerfilHistorico.js
 ✅ AdmMenu.js
 
 ---

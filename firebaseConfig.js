@@ -1,9 +1,10 @@
 // firebaseConfig.js
+// ✅ Removido Firebase Storage (não disponível no plano gratuito Spark)
+// Use ImgBB via uploadService.js para upload de imagens
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth, initializeAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
 import { Platform } from "react-native";
 
 /* 🔧 CONFIG */
@@ -29,22 +30,23 @@ if (Platform.OS === "web") {
   // 🌐 WEB
   auth = getAuth(app);
 } else {
-  // 📱 MOBILE (carregamento dinâmico seguro)
-  const rnAuth = eval('require("firebase/auth/react-native")');
-  const { initializeAuth } = require("firebase/auth");
-  const AsyncStorage =
-    require("@react-native-async-storage/async-storage").default;
+  // 📱 MOBILE
+  try {
+    const rnAuth = require("firebase/auth/react-native");
+    const AsyncStorage =
+      require("@react-native-async-storage/async-storage").default;
 
-  auth = initializeAuth(app, {
-    persistence: rnAuth.getReactNativePersistence(AsyncStorage),
-  });
+    auth = initializeAuth(app, {
+      persistence: rnAuth.getReactNativePersistence(AsyncStorage),
+    });
+  } catch {
+    // fallback: se já inicializado
+    auth = getAuth(app);
+  }
 }
 
 /* 🔥 FIRESTORE */
 const db = getFirestore(app);
 
-/* 📦 STORAGE */
-const storage = getStorage(app);
-
-/* 📤 EXPORT */
-export { app, db, auth, storage };
+/* 📤 EXPORT — storage removido intencionalmente (plano Spark não suporta) */
+export { app, db, auth };

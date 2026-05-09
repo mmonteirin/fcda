@@ -13,20 +13,27 @@ import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 import { useAuth } from "../context/AuthContext";
 import AppText from "../components/AppText";
 import { Colors } from "../styles/Colors";
+import { db } from "../firebaseConfig";
 
+// ✅ Usa ImgBB em vez de Firebase Storage
+import { uploadImagem } from "../services/uploadService";
+
+// Tela ignorada/não usada, substituida por AdmCadastroEvento, ou seja, so adm criam post, usuários só vao ver o feed e detalhes do evento(para avaliar e declarar ocorrencia), sem criar posts
 export default function CriarPost({ navigation }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const insets = useSafeAreaInsets();
 
-  const [imagem, setImagem] = useState(null);
+  const [imagem, setImagem] = useState(null); // URI local (preview)
   const [descricao, setDescricao] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  // 📷 Escolher imagem
+  /* 📷 Escolher imagem */
   const escolherImagem = async () => {
     try {
       const permission =
@@ -53,7 +60,7 @@ export default function CriarPost({ navigation }) {
     }
   };
 
-  // 🚀 PUBLICAÇÃO FAKE
+  /* 🚀 PUBLICAR */
   const publicar = async () => {
     if (!imagem) {
       Alert.alert("Atenção", "Selecione uma imagem");
@@ -68,34 +75,29 @@ export default function CriarPost({ navigation }) {
     try {
       setLoading(true);
 
-      // 🔥 SIMULA DELAY DE API
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // 1. Faz upload da imagem para ImgBB e obtém URL pública
+      const imageUrl = await uploadImagem(imagem, user?.uid, (p) =>
+        setUploadProgress(p)
+      );
 
-      // 🔥 POST FAKE
-      const postFake = {
-        id: Date.now().toString(),
-        userId: user?.uid || "fake-user",
-        nome: user?.displayName || "Usuário",
-        foto: user?.photoURL || "https://i.pravatar.cc/100",
-        imagem: imagem,
+      // 2. Salva post no Firestore com a URL (string) da imagem
+      await addDoc(collection(db, "posts"), {
+        userId: user?.uid,
+        nome: profile?.nome || user?.displayName || "Usuário",
+        foto: profile?.foto || user?.photoURL || "https://i.pravatar.cc/100",
+        imagemUrl: imageUrl,   // URL pública do ImgBB
         descricao: descricao.trim(),
-        createdAt: new Date(),
-
-        // extras pra parecer real
-        likes: Math.floor(Math.random() * 200),
-        comentarios: Math.floor(Math.random() * 50),
-      };
-
-      console.log("POST FAKE:", postFake);
+        createdAt: serverTimestamp(),
+      });
 
       Alert.alert("Sucesso", "Post publicado!");
       navigation.goBack();
-
     } catch (e) {
       console.log(e);
-      Alert.alert("Erro", "Não foi possível publicar");
+      Alert.alert("Erro", "Não foi possível publicar. Tente novamente.");
     } finally {
       setLoading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -137,6 +139,13 @@ export default function CriarPost({ navigation }) {
             )}
           </TouchableOpacity>
         </View>
+
+        {/* Barra de progresso do upload */}
+        {loading && uploadProgress > 0 && uploadProgress < 1 && (
+          <AppText style={styles.progressText}>
+            Enviando imagem: {Math.round(uploadProgress * 100)}%
+          </AppText>
+        )}
       </LinearGradient>
 
       {/* IMAGEM */}
@@ -200,6 +209,13 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: "bold",
     fontSize: 14,
+  },
+
+  progressText: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 6,
   },
 
   imageBox: {
