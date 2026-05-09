@@ -25,7 +25,7 @@ Todos agora importam de `GlobalStyles`:
 4. **LocalCard.js** - Card de local
 5. **TelaBusca.js** - Tela de busca
 6. **ResetPassword.js** - Reset de senha
-7. **PerfilOcorrencia.js** - Histórico de ocorrências
+7. **PerfilHistorico.js** - Histórico de ocorrências
 8. **AdmMenu.js** - Menu do admin
 
 ---
@@ -45,9 +45,9 @@ Os arquivos antigos continuam na pasta `styles/` para compatibilidade. Podem ser
 - ❌ Styles_Feed.js
 - ❌ Styles_Perfil.js
 - ❌ Styles_PerfilEditar.js
-- ❌ Styles_perfilDetalhes.js
-- ❌ Styles_perfilGeral.js
-- ❌ Styles_perfilOcorrencia.js
+- ❌ Styles_PerfilDetalhes.js
+- ❌ Styles_PerfilGeral.js
+- ❌ Styles_PerfilHistorico.js
 - ❌ StylesIdentidadeVisual.js
 
 ---

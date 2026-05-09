@@ -77,7 +77,7 @@ export default function PerfilMenu({ navigation }) {
 
 				<TouchableOpacity
 					style={[styles.menu_item, { marginTop: 15 }]}
-					onPress={() => navigation.navigate("PerfilOcorrencia")}
+					onPress={() => navigation.navigate("PerfilHistorico")}
 				>
 					<Text style={styles.menu_texto_destaque}>Mensagens de Suporte</Text>
 				</TouchableOpacity>
