@@ -8,6 +8,7 @@ import {
 	Alert,
 	ActivityIndicator,
 	Platform,
+	Animated,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,20 +21,32 @@ import {
 	deleteDoc,
 	doc,
 	orderBy,
+	updateDoc,
+	arrayUnion,
+	arrayRemove,
 } from "firebase/firestore";
 
 import { db } from "../firebaseConfig";
 import { useAuth } from "../context/AuthContext";
 import { Colors } from "../styles/Colors";
+import { getUserFeedLikes } from "../services/feedService";
 
 export default function TelaFeed({ navigation }) {
 	const { user, nome, foto, isAdmin } = useAuth();
 	const [eventos, setEventos] = useState([]);
 	const [loading, setLoading] = useState(true);
+	const [likedIds, setLikedIds] = useState([]);
 
-	const goToAdmin = (screen) => {
-		navigation.navigate("Admin", { screen });
-	};
+	// 🔥 Carregar likes do usuário
+	useEffect(() => {
+		const carregarLikes = async () => {
+			if (user?.uid) {
+				const likes = await getUserFeedLikes(user.uid);
+				setLikedIds(likes);
+			}
+		};
+		carregarLikes();
+	}, [user?.uid]);
 
 	// 🔥 Filtra por uidEvento (campo real do banco)
 	useEffect(() => {
@@ -76,6 +89,29 @@ export default function TelaFeed({ navigation }) {
 
 		return () => unsub();
 	}, [user?.uid, isAdmin]);
+
+	const toggleLike = async (eventoId) => {
+		if (!user?.uid) return;
+
+		try {
+			const eventoRef = doc(db, "eventos", eventoId);
+			const isLiked = likedIds.includes(eventoId);
+
+			if (isLiked) {
+				await updateDoc(eventoRef, {
+					likes: Math.max(0, (eventos.find(e => e.id === eventoId)?.likes || 1) - 1),
+				});
+				setLikedIds(likedIds.filter(id => id !== eventoId));
+			} else {
+				await updateDoc(eventoRef, {
+					likes: (eventos.find(e => e.id === eventoId)?.likes || 0) + 1,
+				});
+				setLikedIds([...likedIds, eventoId]);
+			}
+		} catch (error) {
+			console.log("Erro ao fazer like:", error);
+		}
+	};
 
 	const deletarEvento = async (id) => {
 		try {
@@ -123,61 +159,191 @@ export default function TelaFeed({ navigation }) {
 		}
 	};
 
-	const renderItem = ({ item }) => (
-		<TouchableOpacity
-			style={styles.card}
-			activeOpacity={0.9}
-			onPress={() =>
-				navigation.navigate("Detalhes", {
-					evento: item,
-				})
-			}
-		>
-			<Image
-				source={{
-					uri:
-						item.imagemEvento ||
-						"https://placehold.co/400x200/1a0533/ffffff?text=Evento",
-				}}
-				style={styles.image}
-			/>
-			<View style={{ padding: 14 }}>
-				{/* tituloEvento */}
-				<Text style={styles.titulo}>{item.tituloEvento || "Sem título"}</Text>
+	const formatarNumero = (num) => {
+		if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+		if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+		return num.toString();
+	};
 
-				{/* localEvento */}
-				<Text style={styles.local}>
-					📍 {item.localEvento || item.nomeLocal || "Local não informado"}
-				</Text>
+	const formatarData = (timestamp) => {
+		if (!timestamp) return "Há pouco";
+		const date = timestamp.toDate?.() || new Date(timestamp);
+		const agora = new Date();
+		const diff = agora - date;
+		const minutos = Math.floor(diff / 60000);
+		const horas = Math.floor(diff / 3600000);
+		const dias = Math.floor(diff / 86400000);
 
-				{/* dataEvento */}
-				<Text style={styles.data}>
-					📅 {item.dataEvento || "Data não informada"}
-				</Text>
+		if (minutos < 1) return "Agora";
+		if (minutos < 60) return `${minutos}m atrás`;
+		if (horas < 24) return `${horas}h atrás`;
+		if (dias < 7) return `${dias}d atrás`;
 
-				{isAdmin && (
-					<View style={styles.actions}>
-						<TouchableOpacity onPress={() => deletarEvento(item.id)}>
+		return date.toLocaleDateString("pt-BR");
+	};
+
+	const CardInstagram = ({ item }) => {
+		const isLiked = likedIds.includes(item.id);
+
+		return (
+			<View style={styles.instagramCard}>
+				{/* 📸 HEADER - Info do Criador */}
+				<View style={styles.cardHeader}>
+					<View style={styles.creatorInfo}>
+						<Image
+							source={{
+								uri: item.userPhoto || "https://via.placeholder.com/40",
+							}}
+							style={styles.creatorAvatar}
+						/>
+						<View style={{ flex: 1 }}>
+							<Text style={styles.creatorName} numberOfLines={1}>
+								{item.adminNome || "Organizador"}
+							</Text>
+							<Text style={styles.creatorDate}>
+								{formatarData(item.createdAt)}
+							</Text>
+						</View>
+					</View>
+
+					{isAdmin && item.uidEvento === user?.uid && (
+						<TouchableOpacity
+							style={styles.menuBtn}
+							onPress={() => deletarEvento(item.id)}
+						>
 							<MaterialCommunityIcons
-								name="delete-outline"
-								size={22}
+								name="trash-can-outline"
+								size={20}
 								color={Colors.error}
 							/>
 						</TouchableOpacity>
+					)}
+				</View>
 
-						<TouchableOpacity
-							style={styles.dashboardBtn}
-							onPress={() =>
-								navigation.navigate("Metricas", { eventoId: item.id })
-							}
-						>
-							<Text style={styles.dashboardText}>Dashboard</Text>
-						</TouchableOpacity>
+				{/* 🖼️ IMAGEM PRINCIPAL */}
+				<TouchableOpacity
+					activeOpacity={0.9}
+					onPress={() =>
+						navigation.navigate("Detalhes", { evento: item })
+					}
+				>
+					<Image
+						source={{
+							uri:
+								item.imagemEvento ||
+								"https://placehold.co/400x400/1a0533/ffffff?text=Evento",
+						}}
+						style={styles.mainImage}
+					/>
+					
+					{/* Overlay com info rápida */}
+					<LinearGradient
+						colors={["transparent", "rgba(0,0,0,0.8)"]}
+						style={styles.imageOverlay}
+					>
+						<Text style={styles.eventTitle} numberOfLines={2}>
+							{item.tituloEvento || "Sem título"}
+						</Text>
+						<Text style={styles.eventLocal} numberOfLines={1}>
+							📍 {item.localEvento || item.nomeLocal || "Local"}
+						</Text>
+					</LinearGradient>
+				</TouchableOpacity>
+
+				{/* 🎯 BOTÕES DE INTERAÇÃO */}
+				<View style={styles.actionButtons}>
+					<TouchableOpacity
+						style={styles.actionBtn}
+						onPress={() => toggleLike(item.id)}
+					>
+						<MaterialCommunityIcons
+							name={isLiked ? "heart" : "heart-outline"}
+							size={24}
+							color={isLiked ? Colors.error : Colors.textSecondary}
+						/>
+					</TouchableOpacity>
+
+					<TouchableOpacity
+						style={styles.actionBtn}
+						onPress={() =>
+							navigation.navigate("Detalhes", { evento: item })
+						}
+					>
+						<MaterialCommunityIcons
+							name="comment-outline"
+							size={24}
+							color={Colors.textSecondary}
+						/>
+					</TouchableOpacity>
+
+					<TouchableOpacity style={styles.actionBtn}>
+						<MaterialCommunityIcons
+							name="share-outline"
+							size={24}
+							color={Colors.textSecondary}
+						/>
+					</TouchableOpacity>
+
+					<View style={{ flex: 1 }} />
+
+					<TouchableOpacity
+						style={styles.actionBtn}
+						onPress={() =>
+							navigation.navigate("Detalhes", { evento: item })
+						}
+					>
+						<MaterialCommunityIcons
+							name="bookmark-outline"
+							size={24}
+							color={Colors.textSecondary}
+						/>
+					</TouchableOpacity>
+				</View>
+
+				{/* 📊 MÉTRICAS */}
+				<View style={styles.metrics}>
+					<Text style={styles.metricsText}>
+						<Text style={styles.metricsBold}>
+							{formatarNumero(item.likes || 0)}
+						</Text>
+						{" likes"}
+					</Text>
+					<Text style={styles.metricsText}>
+						<Text style={styles.metricsBold}>
+							{formatarNumero(item.views || 0)}
+						</Text>
+						{" visualizações"}
+					</Text>
+				</View>
+
+				{/* 📝 DESCRIÇÃO */}
+				{item.descricao && (
+					<View style={styles.descriptionBox}>
+						<Text style={styles.descriptionText} numberOfLines={3}>
+							<Text style={styles.creatorName}>{item.adminNome}: </Text>
+							{item.descricao}
+						</Text>
 					</View>
 				)}
+
+				{/* 📅 DATA E HORA */}
+				<View style={styles.infoFooter}>
+					<Text style={styles.infoFooterText}>
+						📅 {item.dataEvento || "Data TBA"}
+					</Text>
+					{item.horaInicio && (
+						<Text style={styles.infoFooterText}>
+							🕐 {item.horaInicio}
+							{item.horaFim ? ` às ${item.horaFim}` : ""}
+						</Text>
+					)}
+				</View>
+
+				{/* DIVIDER */}
+				<View style={styles.divider} />
 			</View>
-		</TouchableOpacity>
-	);
+		);
+	};
 
 	if (loading) {
 		return (
@@ -193,108 +359,207 @@ export default function TelaFeed({ navigation }) {
 				colors={[Colors.background, Colors.surface]}
 				style={styles.header}
 			>
+				<Text style={styles.headerTitle}>Feed</Text>
 				<TouchableOpacity
-					onPress={() => navigation.goBack()}
-					style={{ marginBottom: 10 }}
+					onPress={() => navigation.navigate("CriarPost")}
+					style={styles.createBtn}
 				>
 					<MaterialCommunityIcons
-						name="arrow-left"
-						size={24}
-						color={Colors.textPrimary}
+						name="plus"
+						size={26}
+						color={Colors.primary}
 					/>
 				</TouchableOpacity>
-
-				<View style={styles.headerContent}>
-					<Image
-						source={{ uri: foto || "https://i.pravatar.cc/100" }}
-						style={styles.avatar}
-					/>
-					<View>
-						<Text style={styles.nome}>{nome || "Usuário"}</Text>
-						{isAdmin && <Text style={styles.sub}>Organizador</Text>}
-					</View>
-				</View>
-
-				<Text style={styles.title}>Meus Eventos</Text>
 			</LinearGradient>
 
 			<FlatList
 				data={eventos}
+				renderItem={({ item }) => <CardInstagram item={item} />}
 				keyExtractor={(item) => item.id}
-				renderItem={renderItem}
-				showsVerticalScrollIndicator={false}
-				contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+				scrollEnabled={true}
+				showsVerticalScrollIndicator={true}
+				initialNumToRender={3}
+				maxToRenderPerBatch={5}
+				updateCellsBatchingPeriod={50}
 				ListEmptyComponent={
-					<Text style={styles.empty}>Nenhum evento cadastrado 😢</Text>
+					<View style={styles.emptyState}>
+						<MaterialCommunityIcons
+							name="inbox-outline"
+							size={60}
+							color={Colors.textSecondary}
+						/>
+						<Text style={styles.emptyStateText}>
+							Nenhum evento ainda
+						</Text>
+					</View>
 				}
 			/>
-
-			{/* FAB */}
-			{isAdmin && (
-				<TouchableOpacity
-					style={styles.fab}
-					onPress={() => goToAdmin("CriarEvento")}
-				>
-					<MaterialCommunityIcons name="plus" size={26} color="#fff" />
-				</TouchableOpacity>
-			)}
 		</View>
 	);
 }
 
 const styles = {
-	header: { paddingTop: 50, paddingBottom: 20, paddingHorizontal: 16 },
-	headerContent: {
-		flexDirection: "row",
-		alignItems: "center",
-		marginBottom: 15,
-	},
-	avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 12 },
-	nome: { color: Colors.textPrimary, fontSize: 16, fontWeight: "bold" },
-	sub: { color: Colors.textSecondary, fontSize: 12 },
-	title: { color: Colors.textPrimary, fontSize: 20, fontWeight: "bold" },
-	card: {
-		backgroundColor: Colors.card,
-		borderRadius: 16,
-		marginBottom: 16,
-		overflow: "hidden",
-		borderWidth: 1,
-		borderColor: Colors.border,
-	},
-	image: { width: "100%", height: 160 },
-	titulo: { color: Colors.textPrimary, fontSize: 15, fontWeight: "bold" },
-	local: { color: Colors.textSecondary, fontSize: 13, marginTop: 4 },
-	data: { color: Colors.primary, fontSize: 12, marginTop: 4 },
-	actions: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		marginTop: 12,
-		alignItems: "center",
-	},
-	dashboardBtn: {
-		backgroundColor: Colors.primary,
-		paddingVertical: 8,
-		paddingHorizontal: 14,
-		borderRadius: 10,
-	},
-	dashboardText: { color: "#fff", fontWeight: "bold", fontSize: 12 },
-	fab: {
-		position: "absolute",
-		bottom: 125,
-		right: 20,
-		backgroundColor: Colors.primary,
-		width: 60,
-		height: 60,
-		borderRadius: 30,
-		justifyContent: "center",
-		alignItems: "center",
-		elevation: 5,
-	},
-	empty: { color: Colors.textMuted, textAlign: "center", marginTop: 40 },
 	loading: {
 		flex: 1,
 		justifyContent: "center",
 		alignItems: "center",
+		backgroundColor: Colors.background,
+	},
+	header: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		paddingHorizontal: 16,
+		paddingTop: 12,
+		paddingBottom: 12,
+		backgroundColor: Colors.background,
+	},
+	headerTitle: {
+		color: Colors.textPrimary,
+		fontSize: 28,
+		fontWeight: "bold",
+	},
+	createBtn: {
+		padding: 8,
+	},
+	emptyState: {
+		flex: 1,
+		justifyContent: "center",
+		alignItems: "center",
+		paddingVertical: 60,
+	},
+	emptyStateText: {
+		color: Colors.textSecondary,
+		fontSize: 14,
+		marginTop: 12,
+		textAlign: "center",
+	},
+
+	/* 📸 CARD INSTAGRAM */
+	instagramCard: {
+		backgroundColor: Colors.surface,
+		marginBottom: 12,
+		borderBottomWidth: 0.5,
+		borderBottomColor: Colors.border,
+	},
+
+	/* HEADER DO CARD */
+	cardHeader: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		paddingHorizontal: 12,
+		paddingVertical: 12,
+	},
+	creatorInfo: {
+		flexDirection: "row",
+		alignItems: "center",
+		flex: 1,
+	},
+	creatorAvatar: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		marginRight: 12,
+		backgroundColor: Colors.border,
+	},
+	creatorName: {
+		color: Colors.textPrimary,
+		fontSize: 13,
+		fontWeight: "600",
+	},
+	creatorDate: {
+		color: Colors.textSecondary,
+		fontSize: 12,
+		marginTop: 2,
+	},
+	menuBtn: {
+		padding: 8,
+	},
+
+	/* IMAGEM PRINCIPAL */
+	mainImage: {
+		width: "100%",
+		height: 380,
+		backgroundColor: Colors.border,
+	},
+	imageOverlay: {
+		position: "absolute",
+		bottom: 0,
+		left: 0,
+		right: 0,
+		height: 120,
+		justifyContent: "flex-end",
+		paddingHorizontal: 12,
+		paddingBottom: 12,
+	},
+	eventTitle: {
+		color: "#fff",
+		fontSize: 16,
+		fontWeight: "bold",
+		marginBottom: 4,
+	},
+	eventLocal: {
+		color: "#fff",
+		fontSize: 12,
+	},
+
+	/* BOTÕES DE AÇÃO */
+	actionButtons: {
+		flexDirection: "row",
+		alignItems: "center",
+		paddingHorizontal: 12,
+		paddingVertical: 10,
+		backgroundColor: Colors.surface,
+	},
+	actionBtn: {
+		marginRight: 16,
+		padding: 6,
+	},
+
+	/* MÉTRICAS */
+	metrics: {
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		backgroundColor: Colors.surface,
+	},
+	metricsText: {
+		color: Colors.textSecondary,
+		fontSize: 12,
+		marginBottom: 4,
+	},
+	metricsBold: {
+		color: Colors.textPrimary,
+		fontWeight: "bold",
+	},
+
+	/* DESCRIÇÃO */
+	descriptionBox: {
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		backgroundColor: Colors.surface,
+	},
+	descriptionText: {
+		color: Colors.textSecondary,
+		fontSize: 12,
+		lineHeight: 16,
+	},
+
+	/* INFO FOOTER */
+	infoFooter: {
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		backgroundColor: Colors.surface,
+	},
+	infoFooterText: {
+		color: Colors.textSecondary,
+		fontSize: 11,
+		marginBottom: 4,
+	},
+
+	/* DIVIDER */
+	divider: {
+		height: 8,
 		backgroundColor: Colors.background,
 	},
 };

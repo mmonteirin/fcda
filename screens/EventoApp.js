@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+} from "react";
+
 import {
   View,
   Text,
@@ -7,6 +11,10 @@ import {
   TouchableOpacity,
   Animated,
   Alert,
+  StyleSheet,
+  StatusBar,
+  ImageBackground,
+  ActivityIndicator,
 } from "react-native";
 
 import {
@@ -19,285 +27,797 @@ import {
 } from "firebase/firestore";
 
 import { db } from "../firebaseConfig";
-import { useAuth } from "../context/AuthContext";
-import { useNavigation } from "@react-navigation/native";
 
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Swipeable } from "react-native-gesture-handler";
+import {
+  useAuth,
+} from "../context/AuthContext";
 
-import GlobalStyles from "../styles/GlobalStyles";
-import { Colors } from "../styles/Colors";
+import {
+  useNavigation,
+} from "@react-navigation/native";
 
-const styles = GlobalStyles;
+import {
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
+
+import {
+  Swipeable,
+} from "react-native-gesture-handler";
+
+import {
+  LinearGradient,
+} from "expo-linear-gradient";
+
+import {
+  BlurView,
+} from "expo-blur";
+
+import {
+  MotiView,
+} from "moti";
+
+import {
+  Colors,
+} from "../styles/Colors";
 
 export default function EventosApp() {
-  const { user, nome, foto } = useAuth();
-  const navigation = useNavigation();
+  const { user, nome, foto } =
+    useAuth();
 
-  const [eventos, setEventos] = useState([]);
+  const navigation =
+    useNavigation();
+
+  const [eventos, setEventos] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
     if (!user) return;
 
     const q = query(
       collection(db, "inscricoes"),
+
       where("uid", "==", user.uid)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const lista = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+    const unsubscribe =
+      onSnapshot(q, (snapshot) => {
+        const lista =
+          snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
 
-      setEventos(lista);
-    });
+        setEventos(lista);
+
+        setLoading(false);
+      });
 
     return () => unsubscribe();
   }, [user]);
 
-  const cancelarInscricao = (id) => {
-    Alert.alert("Cancelar", "Deseja cancelar inscrição?", [
-      { text: "Não" },
-      {
-        text: "Sim",
-        onPress: async () => {
-          await deleteDoc(doc(db, "inscricoes", id));
+  const cancelarInscricao = (
+    id
+  ) => {
+    Alert.alert(
+      "Cancelar inscrição",
+      "Deseja cancelar sua inscrição neste evento?",
+      [
+        {
+          text: "Não",
+          style: "cancel",
         },
-      },
-    ]);
+
+        {
+          text: "Sim",
+
+          style: "destructive",
+
+          onPress: async () => {
+            await deleteDoc(
+              doc(
+                db,
+                "inscricoes",
+                id
+              )
+            );
+          },
+        },
+      ]
+    );
   };
 
-  const renderRightActions = (id, progress) => {
-    const scale = progress.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.7, 1],
-    });
+  const renderRightActions = (
+    id,
+    progress
+  ) => {
+    const scale =
+      progress.interpolate({
+        inputRange: [0, 1],
+
+        outputRange: [0.7, 1],
+      });
 
     return (
       <Animated.View
-        style={{
-          transform: [{ scale }],
-          justifyContent: "center",
-          alignItems: "center",
-          width: 100,
-          backgroundColor: Colors.error,
-          borderRadius: 16,
-          marginBottom: 15,
-        }}
+        style={[
+          styles.swipeDelete,
+
+          {
+            transform: [
+              {
+                scale,
+              },
+            ],
+          },
+        ]}
       >
-        <TouchableOpacity onPress={() => cancelarInscricao(id)}>
-          <MaterialCommunityIcons name="delete" size={26} color="#fff" />
+
+        <TouchableOpacity
+          onPress={() =>
+            cancelarInscricao(id)
+          }
+        >
+
+          <MaterialCommunityIcons
+            name="trash-can"
+            size={28}
+            color="#FFF"
+          />
+
         </TouchableOpacity>
+
       </Animated.View>
     );
   };
 
-  const renderItem = ({ item }) => {
-    const confirmado = item.status === "confirmado";
+  const renderItem = ({
+    item,
+    index,
+  }) => {
+    const confirmado =
+      item.status ===
+      "confirmado";
 
     return (
       <Swipeable
-        renderRightActions={(progress) =>
-          renderRightActions(item.id, progress)
+        overshootRight={false}
+        renderRightActions={(
+          progress
+        ) =>
+          renderRightActions(
+            item.id,
+            progress
+          )
         }
       >
-        <View
-          style={{
-            backgroundColor: Colors.surface,
-            borderRadius: 16,
-            marginBottom: 15,
-            overflow: "hidden",
-            borderWidth: 1,
-            borderColor: Colors.border,
+
+        <MotiView
+          from={{
+            opacity: 0,
+            translateY: 20,
+          }}
+          animate={{
+            opacity: 1,
+            translateY: 0,
+          }}
+          transition={{
+            type: "timing",
+            duration: 500,
+            delay: index * 80,
           }}
         >
-          <Image
-            source={{ uri: item.imagem || "https://picsum.photos/400/200" }}
-            style={{ width: "100%", height: 160 }}
-          />
 
-          <View style={{ padding: 15 }}>
-            <Text
-              style={{
-                color: Colors.textPrimary,
-                fontSize: 16,
-                fontWeight: "bold",
+          <View style={styles.card}>
+
+            {/* IMAGEM */}
+            <ImageBackground
+              source={{
+                uri:
+                  item.imagem ||
+                  "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200",
               }}
+              style={styles.image}
             >
-              {item.titulo}
-            </Text>
 
-            {/* DATA */}
-            <View style={{ flexDirection: "row", marginTop: 6 }}>
-              <MaterialCommunityIcons
-                name="calendar"
-                size={16}
-                color={Colors.textSecondary}
-              />
-              <Text
-                style={{
-                  color: Colors.textSecondary,
-                  marginLeft: 6,
-                }}
-              >
-                {item.data}
-              </Text>
-            </View>
-
-            {/* LOCAL */}
-            <View style={{ flexDirection: "row", marginTop: 4 }}>
-              <MaterialCommunityIcons
-                name="map-marker"
-                size={16}
-                color={Colors.textSecondary}
-              />
-              <Text
-                style={{
-                  color: Colors.textSecondary,
-                  marginLeft: 6,
-                }}
-              >
-                {item.local}
-              </Text>
-            </View>
-
-            {/* STATUS */}
-            <View
-              style={{
-                marginTop: 10,
-                alignSelf: "flex-start",
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                borderRadius: 10,
-                backgroundColor: confirmado
-                  ? Colors.success
-                  : Colors.warning,
-              }}
-            >
-              <Text style={{ color: "#fff", fontSize: 12 }}>
-                {confirmado ? "Confirmado" : "Pendente"}
-              </Text>
-            </View>
-
-            {/* AÇÕES */}
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginTop: 15,
-              }}
-            >
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate("EventoPublico", {
-                    evento: item,
-                  })
+              <LinearGradient
+                colors={[
+                  "transparent",
+                  "rgba(0,0,0,0.92)",
+                ]}
+                style={
+                  styles.overlay
                 }
-                style={{
-                  backgroundColor: Colors.primary,
-                  paddingVertical: 8,
-                  paddingHorizontal: 14,
-                  borderRadius: 10,
-                }}
               >
-                <Text style={{ color: "#fff", fontWeight: "bold" }}>
-                  Ver Evento
-                </Text>
-              </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => cancelarInscricao(item.id)}>
-                <Text
-                  style={{
-                    color: Colors.error,
-                    fontWeight: "bold",
-                  }}
+                <View
+                  style={
+                    confirmado
+                      ? styles.statusConfirmado
+                      : styles.statusPendente
+                  }
                 >
-                  Cancelar
+
+                  <Text
+                    style={
+                      styles.statusText
+                    }
+                  >
+                    {confirmado
+                      ? "Confirmado"
+                      : "Pendente"}
+                  </Text>
+
+                </View>
+
+              </LinearGradient>
+
+            </ImageBackground>
+
+            {/* CONTENT */}
+            <BlurView
+              intensity={50}
+              tint="dark"
+              style={styles.content}
+            >
+
+              <Text
+                style={styles.titulo}
+                numberOfLines={1}
+              >
+                {item.titulo}
+              </Text>
+
+              {/* DATA */}
+              <View
+                style={
+                  styles.infoRow
+                }
+              >
+
+                <MaterialCommunityIcons
+                  name="calendar"
+                  size={17}
+                  color={
+                    Colors.primary
+                  }
+                />
+
+                <Text
+                  style={
+                    styles.infoText
+                  }
+                >
+                  {item.data}
                 </Text>
-              </TouchableOpacity>
-            </View>
+
+              </View>
+
+              {/* LOCAL */}
+              <View
+                style={
+                  styles.infoRow
+                }
+              >
+
+                <MaterialCommunityIcons
+                  name="map-marker"
+                  size={17}
+                  color={
+                    Colors.primary
+                  }
+                />
+
+                <Text
+                  style={
+                    styles.infoText
+                  }
+                  numberOfLines={1}
+                >
+                  {item.local}
+                </Text>
+
+              </View>
+
+              {/* BUTTONS */}
+              <View
+                style={
+                  styles.actions
+                }
+              >
+
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() =>
+                    navigation.navigate(
+                      "EventoPublico",
+                      {
+                        evento: item,
+                      }
+                    )
+                  }
+                >
+
+                  <LinearGradient
+                    colors={[
+                      "#7C3AED",
+                      "#5B21B6",
+                    ]}
+                    style={
+                      styles.eventBtn
+                    }
+                  >
+
+                    <MaterialCommunityIcons
+                      name="eye"
+                      size={18}
+                      color="#FFF"
+                    />
+
+                    <Text
+                      style={
+                        styles.eventBtnText
+                      }
+                    >
+                      Ver Evento
+                    </Text>
+
+                  </LinearGradient>
+
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() =>
+                    cancelarInscricao(
+                      item.id
+                    )
+                  }
+                >
+
+                  <Text
+                    style={
+                      styles.cancelar
+                    }
+                  >
+                    Cancelar
+                  </Text>
+
+                </TouchableOpacity>
+
+              </View>
+
+            </BlurView>
+
           </View>
-        </View>
+
+        </MotiView>
+
       </Swipeable>
     );
   };
 
-  return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      {/* HEADER */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingTop: 50,
-          paddingHorizontal: 20,
-          marginBottom: 10,
-        }}
-      >
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialCommunityIcons
-            name="arrow-left"
-            size={26}
-            color={Colors.primary}
-          />
-        </TouchableOpacity>
-
-        <Text
-          style={{
-            color: Colors.textPrimary,
-            fontSize: 18,
-            fontWeight: "bold",
-            marginLeft: 15,
-          }}
-        >
-          Meus Eventos
-        </Text>
-      </View>
-
-      {/* PERFIL */}
-      <View style={{ alignItems: "center", marginBottom: 15 }}>
-        <Image
-          source={{ uri: foto || "https://i.pravatar.cc/150" }}
-          style={{
-            width: 70,
-            height: 70,
-            borderRadius: 50,
-            borderWidth: 2,
-            borderColor: Colors.primary,
-          }}
+  if (loading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator
+          size="large"
+          color={Colors.primary}
         />
 
         <Text
-          style={{
-            color: Colors.textPrimary,
-            marginTop: 8,
-            fontWeight: "bold",
-          }}
+          style={styles.loadingText}
         >
-          {nome}
+          Carregando eventos...
         </Text>
       </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+
+      <StatusBar
+        barStyle="light-content"
+      />
+
+      {/* HEADER */}
+      <LinearGradient
+        colors={[
+          "#0F172A",
+          "#111827",
+          "#1E1B4B",
+        ]}
+        style={styles.header}
+      >
+
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() =>
+            navigation.goBack()
+          }
+        >
+
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color="#FFF"
+          />
+
+        </TouchableOpacity>
+
+        <Text style={styles.headerTitle}>
+          Meus Eventos
+        </Text>
+
+      </LinearGradient>
+
+      {/* PERFIL */}
+      <MotiView
+        from={{
+          opacity: 0,
+          scale: 0.9,
+        }}
+        animate={{
+          opacity: 1,
+          scale: 1,
+        }}
+        transition={{
+          type: "timing",
+          duration: 600,
+        }}
+      >
+
+        <BlurView
+          intensity={60}
+          tint="dark"
+          style={styles.profileCard}
+        >
+
+          <LinearGradient
+            colors={[
+              "#7C3AED",
+              "#5B21B6",
+            ]}
+            style={styles.avatarBorder}
+          >
+
+            <Image
+              source={{
+                uri:
+                  foto ||
+                  "https://i.pravatar.cc/150",
+              }}
+              style={styles.avatar}
+            />
+
+          </LinearGradient>
+
+          <Text style={styles.nome}>
+            {nome}
+          </Text>
+
+          <Text style={styles.subtitle}>
+            Eventos inscritos
+          </Text>
+
+        </BlurView>
+
+      </MotiView>
 
       {/* LISTA */}
       <FlatList
         data={eventos}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) =>
+          item.id
+        }
         renderItem={renderItem}
-        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
-        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          padding: 20,
+          paddingBottom: 50,
+        }}
+        showsVerticalScrollIndicator={
+          false
+        }
         ListEmptyComponent={
-          <Text
-            style={{
-              color: Colors.textMuted,
-              textAlign: "center",
-              marginTop: 40,
-            }}
+          <View
+            style={
+              styles.emptyContainer
+            }
           >
-            Você ainda não se inscreveu em eventos 😢
-          </Text>
+
+            <MaterialCommunityIcons
+              name="calendar-remove"
+              size={70}
+              color="rgba(255,255,255,0.2)"
+            />
+
+            <Text style={styles.empty}>
+              Você ainda não se inscreveu
+              em eventos
+            </Text>
+
+          </View>
         }
       />
+
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#070B14",
+  },
+
+  /* HEADER */
+  header: {
+    paddingTop: 58,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+
+    flexDirection: "row",
+    alignItems: "center",
+
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+  },
+
+  backBtn: {
+    width: 44,
+    height: 44,
+
+    borderRadius: 16,
+
+    backgroundColor:
+      "rgba(255,255,255,0.08)",
+
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  headerTitle: {
+    color: "#FFF",
+
+    fontSize: 22,
+    fontWeight: "bold",
+
+    marginLeft: 16,
+  },
+
+  /* PROFILE */
+  profileCard: {
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 10,
+
+    borderRadius: 28,
+
+    alignItems: "center",
+
+    paddingVertical: 26,
+
+    overflow: "hidden",
+
+    borderWidth: 1,
+
+    borderColor:
+      "rgba(255,255,255,0.08)",
+  },
+
+  avatarBorder: {
+    padding: 4,
+
+    borderRadius: 60,
+  },
+
+  avatar: {
+    width: 92,
+    height: 92,
+
+    borderRadius: 50,
+  },
+
+  nome: {
+    color: "#FFF",
+
+    fontSize: 22,
+    fontWeight: "bold",
+
+    marginTop: 14,
+  },
+
+  subtitle: {
+    color:
+      "rgba(255,255,255,0.65)",
+
+    marginTop: 5,
+  },
+
+  /* CARD */
+  card: {
+    marginBottom: 22,
+
+    borderRadius: 28,
+
+    overflow: "hidden",
+
+    backgroundColor:
+      "rgba(255,255,255,0.04)",
+
+    borderWidth: 1,
+
+    borderColor:
+      "rgba(255,255,255,0.06)",
+  },
+
+  image: {
+    height: 190,
+
+    justifyContent: "flex-end",
+  },
+
+  overlay: {
+    flex: 1,
+
+    justifyContent: "flex-end",
+
+    padding: 16,
+  },
+
+  content: {
+    padding: 18,
+  },
+
+  titulo: {
+    color: "#FFF",
+
+    fontSize: 20,
+    fontWeight: "bold",
+
+    marginBottom: 14,
+  },
+
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+
+    marginBottom: 10,
+  },
+
+  infoText: {
+    color:
+      "rgba(255,255,255,0.72)",
+
+    marginLeft: 8,
+
+    fontSize: 13,
+
+    flex: 1,
+  },
+
+  /* STATUS */
+  statusConfirmado: {
+    alignSelf: "flex-start",
+
+    backgroundColor:
+      "rgba(34,197,94,0.95)",
+
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+
+    borderRadius: 18,
+  },
+
+  statusPendente: {
+    alignSelf: "flex-start",
+
+    backgroundColor:
+      "rgba(245,158,11,0.95)",
+
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+
+    borderRadius: 18,
+  },
+
+  statusText: {
+    color: "#FFF",
+
+    fontSize: 12,
+
+    fontWeight: "bold",
+  },
+
+  /* ACTIONS */
+  actions: {
+    marginTop: 18,
+
+    flexDirection: "row",
+
+    justifyContent:
+      "space-between",
+
+    alignItems: "center",
+  },
+
+  eventBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+
+    borderRadius: 18,
+
+    gap: 8,
+  },
+
+  eventBtnText: {
+    color: "#FFF",
+
+    fontWeight: "bold",
+
+    fontSize: 13,
+  },
+
+  cancelar: {
+    color: "#EF4444",
+
+    fontWeight: "bold",
+
+    fontSize: 14,
+  },
+
+  /* SWIPE */
+  swipeDelete: {
+    justifyContent: "center",
+    alignItems: "center",
+
+    width: 90,
+
+    borderRadius: 24,
+
+    backgroundColor:
+      "#DC2626",
+
+    marginBottom: 22,
+  },
+
+  /* EMPTY */
+  emptyContainer: {
+    alignItems: "center",
+
+    marginTop: 90,
+  },
+
+  empty: {
+    color:
+      "rgba(255,255,255,0.55)",
+
+    marginTop: 16,
+
+    fontSize: 15,
+
+    textAlign: "center",
+  },
+
+  /* LOADING */
+  loading: {
+    flex: 1,
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    backgroundColor: "#070B14",
+  },
+
+  loadingText: {
+    color:
+      "rgba(255,255,255,0.65)",
+
+    marginTop: 14,
+  },
+});

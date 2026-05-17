@@ -1,23 +1,30 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   Image,
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
+  Dimensions,
+  Alert,
 } from "react-native";
-
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { FlashList } from "@shopify/flash-list";
 
-import { getEventos } from "../services/mapaCulturalService";
+import { getUserLocation } from "../services/locationService";
+import { calcularDistancia } from "../utils/distance";
+import {
+  getEventosApp,
+  getUserLikes,
+} from "../services/eventosAppService";
 import { useAuth } from "../context/AuthContext";
 import { Colors } from "../styles/Colors";
 
-const colors = Colors;
+const windowWidth = Dimensions.get("window").width;
+const DEFAULT_IMAGE = "https://placehold.co/600x400?text=Evento";
 
 export default function TelaInicio() {
   const navigation = useNavigation();
@@ -26,8 +33,9 @@ export default function TelaInicio() {
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categoriaAtiva, setCategoriaAtiva] = useState("Todos");
-
-  const categorias = ["Todos", "Shows", "Teatro", "Cinema", "Gastronomia"];
+  const [location, setLocation] = useState(null);
+  const [locationError, setLocationError] = useState("");
+  const [likedIds, setLikedIds] = useState([]);
 
   const nomeUsuario =
     nome ||
@@ -39,52 +47,178 @@ export default function TelaInicio() {
     carregarEventos();
   }, []);
 
+  useEffect(() => {
+    if (user?.uid) {
+      carregarLikes();
+    }
+  }, [user?.uid]);
+
+  const carregarLikes = async () => {
+    try {
+      const ids = await getUserLikes(user.uid);
+      setLikedIds(ids);
+    } catch (error) {
+      console.log("Erro ao carregar likes:", error);
+    }
+  };
+
   const carregarEventos = async () => {
     try {
-      const data = await getEventos();
-
-      const tratados = data.map((item, index) => ({
-        id: item.id || index,
-        titulo: item?.name || "Evento",
-        imagem:
-          item?.files?.header?.url ||
-          "https://placehold.co/400x200",
-        local: item?.location?.name || "Local",
-        categoria: item?.type || "outros",
+      const data = await getEventosApp();
+      const tratados = data.map((item) => ({
+        id: item.id,
+        titulo: item.tituloEvento || item.name || "Evento",
+        imagem: item.imagemEvento || item.files?.header?.url || DEFAULT_IMAGE,
+        local:
+          item.localEvento || item.nomeLocal || item.location?.name || "Local",
+        categoria: item.categoria || item.tipoEvento || "Outros",
+        latitude: item.latitude ?? null,
+        longitude: item.longitude ?? null,
+        likes: item.likes || 0,
+        views: item.views || 0,
+        comentarios: item.comentarios || 0,
+        score: item.score || 0,
         original: item,
       }));
 
+      const usuario = await getUserLocation();
+      if (usuario) {
+        setLocation(usuario);
+      } else {
+        setLocationError("Permissão de localização negada ou localização indisponível.");
+      }
+
       setEventos(tratados);
-    } catch (e) {
-      console.log(e);
+    } catch (error) {
+      console.log("Erro ao carregar eventos:", error);
+      Alert.alert("Erro", "Não foi possível carregar os eventos.");
     } finally {
       setLoading(false);
     }
   };
 
-  /* 🎯 FILTRO POR CATEGORIA */
-  const eventosFiltrados =
-    categoriaAtiva === "Todos"
-      ? eventos
-      : eventos.filter((e) =>
-          e.categoria.toLowerCase().includes(categoriaAtiva.toLowerCase())
-        );
+  const formatarDistancia = (distancia) => {
+    if (distancia == null) return "Localização indisponível";
+    if (distancia < 1) {
+      return `${Math.round(distancia * 1000)} m`;
+    }
+    return `${distancia.toFixed(1)} km`;
+  };
+
+  const eventosComDistancia = useMemo(
+    () =>
+      eventos.map((item) => ({
+        ...item,
+        distancia:
+          location && item.latitude != null && item.longitude != null
+            ? calcularDistancia(
+                location.latitude,
+                location.longitude,
+                item.latitude,
+                item.longitude
+              )
+            : null,
+      })),
+    [eventos, location]
+  );
+
+  const categorias = useMemo(() => {
+    const valores = eventos
+      .map((item) => item.categoria || "Outros")
+      .filter(Boolean);
+
+    return ["Todos", ...new Set(valores)];
+  }, [eventos]);
+
+  const eventosFiltrados = useMemo(() => {
+    if (categoriaAtiva === "Todos") return eventosComDistancia;
+
+    return eventosComDistancia.filter((evento) =>
+      evento.categoria
+        .toLowerCase()
+        .includes(categoriaAtiva.toLowerCase())
+    );
+  }, [categoriaAtiva, eventosComDistancia]);
+
+  const destaques = useMemo(
+    () =>
+      eventosFiltrados
+        .slice()
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 8),
+    [eventosFiltrados]
+  );
+
+  const proximos = useMemo(
+    () =>
+      eventosFiltrados
+        .filter((item) => typeof item.distancia === "number")
+        .sort((a, b) => a.distancia - b.distancia)
+        .slice(0, 6),
+    [eventosFiltrados]
+  );
+
+  const recomendados = useMemo(
+    () =>
+      eventosFiltrados
+        .slice()
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 6),
+    [eventosFiltrados]
+  );
+
+  const estaCurtir = (eventoId) => likedIds.includes(eventoId);
+
+  const HeroCard = ({ item }) => (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      style={styles.heroCard}
+      onPress={() => navigation.navigate("Detalhes", { evento: item.original })}
+    >
+      <Image source={{ uri: item.imagem }} style={styles.heroImage} />
+      <View style={styles.heroOverlay} />
+      <View style={styles.heroInfo}>
+        <Text style={styles.heroTag}>{item.categoria}</Text>
+        <Text style={styles.heroTitle} numberOfLines={2}>
+          {item.titulo}
+        </Text>
+        <View style={styles.heroMetrics}>
+          <View style={styles.heroMetric}>
+            <MaterialCommunityIcons
+              name="heart"
+              size={16}
+              color={Colors.error}
+            />
+            <Text style={styles.heroMetricText}>{item.likes || 0}</Text>
+          </View>
+          <View style={styles.heroMetric}>
+            <MaterialCommunityIcons
+              name="eye-outline"
+              size={16}
+              color={Colors.textSecondary}
+            />
+            <Text style={styles.heroMetricText}>{item.views || 0}</Text>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
 
   const CardHorizontal = ({ item }) => (
     <TouchableOpacity
       activeOpacity={0.85}
       style={styles.cardHorizontal}
-      onPress={() =>
-        navigation.navigate("Detalhes", { evento: item.original })
-      }
+      onPress={() => navigation.navigate("Detalhes", { evento: item.original })}
     >
       <Image source={{ uri: item.imagem }} style={styles.imgHorizontal} />
-
       <Text style={styles.titleCard} numberOfLines={2}>
         {item.titulo}
       </Text>
-
       <Text style={styles.localCard}>📍 {item.local}</Text>
+      <View style={styles.cardFooter}>
+        <Text style={styles.footerLabel}>{formatarDistancia(item.distancia)}</Text>
+        <Text style={styles.footerLabel}>⭐ {Math.round(item.score)}</Text>
+      </View>
     </TouchableOpacity>
   );
 
@@ -92,18 +226,25 @@ export default function TelaInicio() {
     <TouchableOpacity
       activeOpacity={0.9}
       style={styles.cardVertical}
-      onPress={() =>
-        navigation.navigate("Detalhes", { evento: item.original })
-      }
+      onPress={() => navigation.navigate("Detalhes", { evento: item.original })}
     >
       <Image source={{ uri: item.imagem }} style={styles.imgVertical} />
-
-      <View style={{ padding: 12 }}>
+      <View style={styles.cardVerticalContent}>
         <Text style={styles.titleCard} numberOfLines={2}>
           {item.titulo}
         </Text>
-
         <Text style={styles.localCard}>📍 {item.local}</Text>
+        <View style={styles.cardFooterRow}>
+          <View style={styles.badge}>
+            <MaterialCommunityIcons
+              name={estaCurtir(item.id) ? "heart" : "heart-outline"}
+              size={14}
+              color={estaCurtir(item.id) ? Colors.error : Colors.textSecondary}
+            />
+            <Text style={styles.badgeText}>{item.likes || 0}</Text>
+          </View>
+          <Text style={styles.smallText}>{formatarDistancia(item.distancia)}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -111,30 +252,27 @@ export default function TelaInicio() {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={Colors.primary} />
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* HEADER */}
       <View style={styles.header}>
         <View>
           <Text style={styles.saudacao}>Olá,</Text>
           <Text style={styles.nome}>{nomeUsuario}</Text>
         </View>
-
         <TouchableOpacity style={styles.iconBtn}>
           <MaterialCommunityIcons
             name="bell-outline"
             size={22}
-            color={colors.primary}
+            color={Colors.primary}
           />
         </TouchableOpacity>
       </View>
 
-      {/* BUSCA */}
       <TouchableOpacity
         style={styles.searchBox}
         onPress={() => navigation.navigate("Busca")}
@@ -143,77 +281,94 @@ export default function TelaInicio() {
         <MaterialCommunityIcons
           name="magnify"
           size={20}
-          color={colors.textSecondary}
+          color={Colors.textSecondary}
         />
         <Text style={styles.searchText}>
           Buscar eventos, shows, teatros...
         </Text>
       </TouchableOpacity>
 
-      {/* CATEGORIAS */}
-      <FlatList
-        data={categorias}
-        keyExtractor={(item) => item}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categorias}
-        renderItem={({ item }) => {
-          const ativo = item === categoriaAtiva;
+      <View style={styles.sectionHeader}>
+        <Text style={styles.section}>Para você</Text>
+        <Text style={styles.sectionHint}>Baseado em likes, views e relevância</Text>
+      </View>
 
-          return (
-            <TouchableOpacity
-              onPress={() => setCategoriaAtiva(item)}
-              style={[
-                styles.categoria,
-                {
-                  backgroundColor: ativo
-                    ? colors.primary
-                    : colors.surface,
-                },
-              ]}
-            >
-              <Text
-                style={{
-                  color: ativo
-                    ? colors.background
-                    : colors.textSecondary,
-                  fontWeight: ativo ? "bold" : "normal",
-                }}
-              >
-                {item}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-      />
-
-      {/* DESTAQUES */}
-      <Text style={styles.section}>Destaques</Text>
-
-      <FlatList
-        data={eventosFiltrados.slice(0, 6)}
+      <FlashList
+        data={destaques}
+        renderItem={({ item }) => <HeroCard item={item} />}
         keyExtractor={(item) => item.id.toString()}
         horizontal
         showsHorizontalScrollIndicator={false}
+        estimatedItemSize={250}
         contentContainerStyle={{ paddingHorizontal: 16 }}
-        renderItem={({ item }) => <CardHorizontal item={item} />}
       />
 
-      {/* PERTO DE VOCÊ */}
-      <Text style={styles.section}>Perto de você</Text>
+      <View style={styles.categoryWrapper}>
+        <FlashList
+          data={categorias}
+          keyExtractor={(item) => item}
+          renderItem={({ item }) => {
+            const ativo = item === categoriaAtiva;
+            return (
+              <TouchableOpacity
+                onPress={() => setCategoriaAtiva(item)}
+                style={[
+                  styles.categoria,
+                  {
+                    backgroundColor: ativo ? Colors.primary : Colors.surface,
+                  },
+                ]}
+              >
+                <Text
+                  style={{
+                    color: ativo ? Colors.background : Colors.textSecondary,
+                    fontWeight: ativo ? "bold" : "normal",
+                  }}
+                >
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            );
+          }}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          estimatedItemSize={120}
+          contentContainerStyle={styles.categorias}
+        />
+      </View>
 
-      {eventosFiltrados.length === 0 ? (
-        <Text style={styles.empty}>
-          Nenhum evento encontrado 😕
-        </Text>
-      ) : (
-        <FlatList
-          data={eventosFiltrados}
-          keyExtractor={(item) => item.id.toString()}
+      <Text style={styles.section}>Próximos de você</Text>
+      {proximos.length > 0 ? (
+        <FlashList
+          data={proximos}
           renderItem={({ item }) => <CardVertical item={item} />}
-          scrollEnabled={false}
+          keyExtractor={(item) => item.id.toString()}
+          estimatedItemSize={220}
           contentContainerStyle={{ paddingHorizontal: 16 }}
         />
+      ) : (
+        <View style={styles.emptyStateBox}>
+          <Text style={styles.emptyStateText}>
+            {locationError
+              ? locationError
+              : "Nenhum evento com coordenadas disponíveis."}
+          </Text>
+        </View>
+      )}
+
+      <Text style={styles.section}>Recomendados</Text>
+      {recomendados.length > 0 ? (
+        <FlashList
+          data={recomendados}
+          renderItem={({ item }) => <CardHorizontal item={item} />}
+          keyExtractor={(item) => item.id.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          estimatedItemSize={200}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
+        />
+      ) : (
+        <Text style={styles.empty}>Nenhum evento encontrado.</Text>
       )}
 
       <View style={{ height: 100 }} />
@@ -221,118 +376,205 @@ export default function TelaInicio() {
   );
 }
 
-/* 🎨 STYLES */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: Colors.background,
   },
-
   header: {
     padding: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   saudacao: {
-    color: colors.textSecondary,
+    color: Colors.textSecondary,
     fontSize: 14,
   },
-
   nome: {
-    color: colors.textPrimary,
-    fontSize: 22,
+    color: Colors.textPrimary,
+    fontSize: 26,
     fontWeight: "bold",
   },
-
   iconBtn: {
     padding: 10,
-    backgroundColor: colors.surface,
-    borderRadius: 10,
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
   },
-
   searchBox: {
     marginHorizontal: 16,
-    marginBottom: 10,
+    marginBottom: 16,
     padding: 14,
-    borderRadius: 14,
-    backgroundColor: colors.surface,
+    borderRadius: 16,
+    backgroundColor: Colors.surface,
     flexDirection: "row",
     alignItems: "center",
   },
-
   searchText: {
-    color: colors.textSecondary,
+    color: Colors.textSecondary,
     marginLeft: 10,
   },
-
+  sectionHeader: {
+    paddingHorizontal: 16,
+    marginBottom: 6,
+  },
+  section: {
+    color: Colors.textPrimary,
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  sectionHint: {
+    color: Colors.textSecondary,
+    fontSize: 13,
+    marginTop: 4,
+  },
+  categoryWrapper: {
+    paddingBottom: 10,
+  },
   categorias: {
     paddingHorizontal: 16,
     paddingBottom: 10,
   },
-
   categoria: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
     marginRight: 10,
   },
-
-  section: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: "bold",
-    marginTop: 20,
-    marginBottom: 10,
-    marginLeft: 16,
+  heroCard: {
+    width: windowWidth * 0.78,
+    height: 220,
+    marginRight: 16,
+    borderRadius: 24,
+    overflow: "hidden",
+    backgroundColor: Colors.surface,
   },
-
+  heroImage: {
+    width: "100%",
+    height: "100%",
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.25)",
+  },
+  heroInfo: {
+    position: "absolute",
+    bottom: 16,
+    left: 16,
+    right: 16,
+  },
+  heroTag: {
+    color: Colors.background,
+    fontSize: 12,
+    marginBottom: 8,
+    fontWeight: "bold",
+  },
+  heroTitle: {
+    color: Colors.background,
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 12,
+  },
+  heroMetrics: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  heroMetric: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  heroMetricText: {
+    color: Colors.background,
+    fontSize: 12,
+  },
   cardHorizontal: {
     width: 160,
     marginRight: 12,
   },
-
   imgHorizontal: {
     width: "100%",
-    height: 100,
-    borderRadius: 12,
+    height: 110,
+    borderRadius: 16,
   },
-
   cardVertical: {
-    marginBottom: 15,
-    borderRadius: 12,
-    backgroundColor: colors.card,
+    marginBottom: 18,
+    borderRadius: 18,
+    backgroundColor: Colors.surface,
     overflow: "hidden",
   },
-
   imgVertical: {
     width: "100%",
-    height: 150,
+    height: 170,
   },
-
+  cardVerticalContent: {
+    padding: 14,
+  },
   titleCard: {
-    color: colors.textPrimary,
+    color: Colors.textPrimary,
     fontWeight: "bold",
-    marginTop: 5,
+    marginTop: 10,
+    fontSize: 16,
   },
-
   localCard: {
-    color: colors.textSecondary,
+    color: Colors.textSecondary,
     fontSize: 12,
-    marginTop: 3,
+    marginTop: 6,
   },
-
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  footerLabel: {
+    color: Colors.textSecondary,
+    fontSize: 11,
+  },
+  cardFooterRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 12,
+  },
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Colors.background,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+  },
+  badgeText: {
+    color: Colors.textPrimary,
+    fontSize: 12,
+  },
+  smallText: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+  },
+  emptyStateBox: {
+    marginHorizontal: 16,
+    padding: 20,
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  emptyStateText: {
+    color: Colors.textSecondary,
+    textAlign: "center",
+  },
   empty: {
-    color: colors.textSecondary,
+    color: Colors.textSecondary,
     textAlign: "center",
     marginTop: 20,
   },
-
   loading: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.background,
+    backgroundColor: Colors.background,
   },
 });

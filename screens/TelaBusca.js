@@ -12,6 +12,7 @@ import {
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -24,9 +25,9 @@ export default function TelaBusca({ navigation }) {
   const [query, setQuery] = useState("");
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
+  const [categoriaSelecionada, setCategoriaSelecionada] =
+    useState(null);
 
-  /* 🔥 CARREGAR EVENTOS */
   useEffect(() => {
     carregarEventos();
   }, []);
@@ -37,20 +38,24 @@ export default function TelaBusca({ navigation }) {
 
       const response = await getEventos();
 
-      const lista =
-        Array.isArray(response)
-          ? response
-          : response?.data || response?.results || [];
+      const lista = Array.isArray(response)
+        ? response
+        : response?.data || response?.results || [];
 
       const tratados = lista.map((item, index) => ({
         id: item.id || index,
         titulo: item.name || "Evento",
         imagem:
-          item?.files?.avatar?.url ||
           item?.files?.header?.url ||
-          "https://placehold.co/400x200",
-        local: item?.location?.name || "Local não informado",
-        categoria: item?.type?.toLowerCase() || "outros",
+          item?.files?.avatar?.url ||
+          "https://placehold.co/600x400",
+        local:
+          item?.location?.name || "Local não informado",
+        categoria:
+          item?.type?.toLowerCase() || "outros",
+        descricao:
+          item?.shortDescription ||
+          "Descubra uma experiência incrível",
         original: item,
       }));
 
@@ -62,7 +67,7 @@ export default function TelaBusca({ navigation }) {
     }
   };
 
-  /* 🔎 FILTRO */
+  /* 🔍 FILTRO */
   const eventosFiltrados = useMemo(() => {
     return eventos.filter((item) => {
       const matchQuery = item.titulo
@@ -79,12 +84,21 @@ export default function TelaBusca({ navigation }) {
 
   /* 🎭 CATEGORIAS */
   const categorias = [
-    { nome: "comédia", icon: "emoticon-happy-outline" },
+    {
+      nome: "comédia",
+      icon: "emoticon-happy-outline",
+    },
     { nome: "drama", icon: "drama-masks" },
     { nome: "shows", icon: "music" },
     { nome: "cinema", icon: "movie" },
-    { nome: "gastronomia", icon: "silverware-fork-knife" },
-    { nome: "infantil", icon: "baby-face-outline" },
+    {
+      nome: "gastronomia",
+      icon: "silverware-fork-knife",
+    },
+    {
+      nome: "infantil",
+      icon: "baby-face-outline",
+    },
   ];
 
   const renderCategoria = (item) => {
@@ -93,24 +107,31 @@ export default function TelaBusca({ navigation }) {
     return (
       <TouchableOpacity
         key={item.nome}
+        activeOpacity={0.8}
         style={[
           styles.chip,
-          ativo && { backgroundColor: Colors.primary },
+          ativo && styles.chipActive,
         ]}
         onPress={() =>
-          setCategoriaSelecionada(ativo ? null : item.nome)
+          setCategoriaSelecionada(
+            ativo ? null : item.nome
+          )
         }
       >
         <MaterialCommunityIcons
           name={item.icon}
-          size={20}
-          color={ativo ? Colors.background : Colors.primary}
+          size={18}
+          color={
+            ativo
+              ? Colors.background
+              : Colors.primary
+          }
         />
 
         <Text
           style={[
             styles.chipText,
-            ativo && { color: Colors.background },
+            ativo && styles.chipTextActive,
           ]}
         >
           {item.nome}
@@ -121,26 +142,83 @@ export default function TelaBusca({ navigation }) {
 
   const renderEvento = ({ item }) => (
     <TouchableOpacity
+      activeOpacity={0.9}
       style={styles.card}
       onPress={() =>
-        navigation.navigate("Detalhes", { evento: item.original })
+        navigation.navigate("Detalhes", {
+          evento: item.original,
+        })
       }
     >
-      <Image source={{ uri: item.imagem }} style={styles.img} />
+      <Image
+        source={{ uri: item.imagem }}
+        style={styles.img}
+      />
 
+      {/* Overlay */}
+      <LinearGradient
+        colors={[
+          "transparent",
+          "rgba(0,0,0,0.8)",
+        ]}
+        style={styles.overlay}
+      />
+
+      {/* Badge */}
+      <View style={styles.badge}>
+        <MaterialCommunityIcons
+          name="sparkles"
+          size={12}
+          color="#fff"
+        />
+        <Text style={styles.badgeText}>
+          Em destaque
+        </Text>
+      </View>
+
+      {/* Info */}
       <View style={styles.cardInfo}>
-        <Text style={styles.titulo}>{item.titulo}</Text>
-        <Text style={styles.local}>{item.local}</Text>
+        <Text numberOfLines={1} style={styles.titulo}>
+          {item.titulo}
+        </Text>
+
+        <Text
+          numberOfLines={2}
+          style={styles.descricao}
+        >
+          {item.descricao}
+        </Text>
+
+        <View style={styles.locationRow}>
+          <MaterialCommunityIcons
+            name="map-marker"
+            size={15}
+            color="#fff"
+          />
+
+          <Text
+            numberOfLines={1}
+            style={styles.local}
+          >
+            {item.local}
+          </Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
-      {/* 🔥 HEADER */}
+      {/* HEADER */}
       <LinearGradient
-        colors={[Colors.surface, Colors.background]}
-        style={[styles.header, { paddingTop: insets.top + 10 }]}
+        colors={[
+          "#1A1333",
+          Colors.background,
+        ]}
+        style={[
+          styles.header,
+          { paddingTop: insets.top + 10 },
+        ]}
       >
         <View style={styles.headerTop}>
           <TouchableOpacity
@@ -150,74 +228,144 @@ export default function TelaBusca({ navigation }) {
             <MaterialCommunityIcons
               name="arrow-left"
               size={22}
-              color={Colors.primary}
+              color="#fff"
             />
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>Buscar Eventos</Text>
+          <View>
+            <Text style={styles.headerTitle}>
+              Explorar Eventos
+            </Text>
+
+            <Text style={styles.headerSub}>
+              Descubra experiências incríveis ✨
+            </Text>
+          </View>
         </View>
 
-        {/* 🔎 BUSCA */}
-        <View style={styles.searchBox}>
+        {/* BUSCA */}
+        <BlurView
+          intensity={40}
+          tint="dark"
+          style={styles.searchBox}
+        >
           <MaterialCommunityIcons
             name="magnify"
-            size={20}
+            size={22}
             color={Colors.textMuted}
           />
 
           <TextInput
-            placeholder="Quais experiências iremos viver?"
-            placeholderTextColor={Colors.textMuted}
+            placeholder="Buscar eventos..."
+            placeholderTextColor={
+              Colors.textMuted
+            }
             value={query}
             onChangeText={setQuery}
             style={styles.input}
           />
 
           {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery("")}>
+            <TouchableOpacity
+              onPress={() => setQuery("")}
+            >
               <MaterialCommunityIcons
-                name="close"
-                size={18}
+                name="close-circle"
+                size={20}
                 color={Colors.textMuted}
               />
             </TouchableOpacity>
           )}
-        </View>
+        </BlurView>
       </LinearGradient>
 
-      {/* 🔄 LOADING */}
+      {/* LOADING */}
       {loading ? (
         <View style={styles.loading}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator
+            size="large"
+            color={Colors.primary}
+          />
+
+          <Text style={styles.loadingText}>
+            Buscando experiências...
+          </Text>
         </View>
       ) : (
-        <ScrollView>
-          {/* 🎭 CATEGORIAS */}
-          <Text style={styles.section}>Gêneros</Text>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+        >
+          {/* CATEGORIAS */}
+          <View style={styles.sectionRow}>
+            <Text style={styles.section}>
+              Categorias
+            </Text>
 
-          <View style={styles.chipsContainer}>
-            {categorias.map(renderCategoria)}
+            <TouchableOpacity
+              onPress={() =>
+                setCategoriaSelecionada(null)
+              }
+            >
+              <Text style={styles.clearText}>
+                Limpar
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          {/* 🔥 EVENTOS */}
-          <Text style={styles.section}>Eventos próximos</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingBottom: 5,
+            }}
+          >
+            {categorias.map(renderCategoria)}
+          </ScrollView>
+
+          {/* EVENTOS */}
+          <View style={styles.sectionRow}>
+            <Text style={styles.section}>
+              Eventos próximos
+            </Text>
+
+            <Text style={styles.count}>
+              {eventosFiltrados.length} encontrados
+            </Text>
+          </View>
 
           {eventosFiltrados.length === 0 ? (
-            <Text style={styles.empty}>
-              Nenhum evento encontrado 😕
-            </Text>
+            <View style={styles.emptyContainer}>
+              <MaterialCommunityIcons
+                name="emoticon-sad-outline"
+                size={60}
+                color={Colors.textMuted}
+              />
+
+              <Text style={styles.empty}>
+                Nenhum evento encontrado
+              </Text>
+            </View>
           ) : (
             <FlatList
               data={eventosFiltrados}
-              keyExtractor={(item) => item.id.toString()}
+              keyExtractor={(item) =>
+                item.id.toString()
+              }
               renderItem={renderEvento}
               horizontal
+              pagingEnabled
+              snapToAlignment="center"
+              decelerationRate="fast"
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingLeft: 16 }}
+              contentContainerStyle={{
+                paddingLeft: 16,
+                paddingBottom: 30,
+              }}
             />
           )}
 
-          <View style={{ height: 100 }} />
+          <View style={{ height: 80 }} />
         </ScrollView>
       )}
     </View>
@@ -232,106 +380,178 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
 
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 20,
   },
 
   backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginRight: 10,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    marginRight: 12,
   },
 
   headerTitle: {
-    color: Colors.textPrimary,
-    fontSize: 18,
-    fontWeight: "bold",
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "800",
+  },
+
+  headerSub: {
+    color: Colors.textMuted,
+    marginTop: 4,
+    fontSize: 13,
   },
 
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.surface,
-    borderRadius: 20,
+    borderRadius: 18,
+    overflow: "hidden",
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
   },
 
   input: {
     flex: 1,
-    color: Colors.textPrimary,
+    color: "#fff",
     marginLeft: 10,
+    fontSize: 15,
+  },
+
+  sectionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginTop: 24,
+    marginBottom: 14,
   },
 
   section: {
-    color: Colors.textPrimary,
-    fontSize: 16,
-    marginTop: 20,
-    marginLeft: 16,
-    marginBottom: 10,
-    fontWeight: "bold",
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
   },
 
-  chipsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: 16,
+  clearText: {
+    color: Colors.primary,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  count: {
+    color: Colors.textMuted,
+    fontSize: 12,
   },
 
   chip: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.surface,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 18,
     marginRight: 10,
-    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+  },
+
+  chipActive: {
+    backgroundColor: Colors.primary,
   },
 
   chipText: {
-    color: Colors.textPrimary,
-    marginLeft: 6,
+    color: "#fff",
+    marginLeft: 8,
+    fontWeight: "600",
     textTransform: "capitalize",
   },
 
+  chipTextActive: {
+    color: Colors.background,
+  },
+
   card: {
-    width: 220,
-    backgroundColor: Colors.card,
-    borderRadius: 16,
-    marginRight: 12,
+    width: 290,
+    height: 360,
+    marginRight: 16,
+    borderRadius: 28,
     overflow: "hidden",
+    backgroundColor: Colors.card,
   },
 
   img: {
     width: "100%",
-    height: 120,
+    height: "100%",
+    position: "absolute",
+  },
+
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  badge: {
+    position: "absolute",
+    top: 16,
+    left: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.45)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 30,
+  },
+
+  badgeText: {
+    color: "#fff",
+    fontSize: 11,
+    marginLeft: 5,
+    fontWeight: "600",
   },
 
   cardInfo: {
-    padding: 10,
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    padding: 18,
   },
 
   titulo: {
-    color: Colors.textPrimary,
-    fontWeight: "bold",
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "800",
+  },
+
+  descricao: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 13,
+    marginTop: 8,
+    lineHeight: 18,
+  },
+
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
   },
 
   local: {
-    color: Colors.textSecondary,
-    fontSize: 12,
-    marginTop: 4,
+    color: "#fff",
+    marginLeft: 6,
+    fontSize: 13,
+    flex: 1,
   },
 
   loading: {
@@ -340,9 +560,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  loadingText: {
+    color: Colors.textMuted,
+    marginTop: 12,
+  },
+
+  emptyContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 40,
+  },
+
   empty: {
     color: Colors.textSecondary,
-    textAlign: "center",
-    marginTop: 20,
+    marginTop: 12,
+    fontSize: 15,
   },
 });

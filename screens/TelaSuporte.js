@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -8,61 +8,142 @@ import {
   ScrollView,
   Modal,
   StyleSheet,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
 
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+
+import * as Haptics from "expo-haptics";
+
 import { db } from "../firebaseConfig";
 import { useAuth } from "../context/AuthContext";
-
 import { Colors } from "../styles/Colors";
 
 export default function TelaSuporte({ navigation }) {
   const { user } = useAuth();
 
-  const [categoria, setCategoria] = useState("");
+  const [categoria, setCategoria] = useState(null);
   const [mensagem, setMensagem] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
 
+  const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState(false);
+
   const categorias = [
-    "Problema com Login",
-    "Problema com Evento",
-    "Pagamento",
-    "Bug no App",
-    "Outro",
+    {
+      id: "login",
+      label: "Problema com Login",
+      icon: "account-alert-outline",
+    },
+    {
+      id: "evento",
+      label: "Problema com Evento",
+      icon: "calendar-alert",
+    },
+    {
+      id: "pagamento",
+      label: "Pagamento",
+      icon: "credit-card-outline",
+    },
+    {
+      id: "bug",
+      label: "Bug no App",
+      icon: "bug-outline",
+    },
+    {
+      id: "outro",
+      label: "Outro",
+      icon: "help-circle-outline",
+    },
   ];
 
+  const categoriaSelecionada = useMemo(() => {
+    return categorias.find((item) => item.id === categoria);
+  }, [categoria]);
+
+  const prioridade = useMemo(() => {
+    if (categoria === "pagamento") return "alta";
+    if (categoria === "bug") return "media";
+
+    return "normal";
+  }, [categoria]);
+
   const handleSubmit = async () => {
-    if (!categoria || !mensagem) {
-      Alert.alert("Preencha todos os campos");
+    if (!categoria || !mensagem.trim()) {
+      Alert.alert(
+        "Campos obrigatórios",
+        "Preencha categoria e mensagem."
+      );
+
       return;
     }
 
     try {
-      await addDoc(collection(db, "suporte"), {
-        uid: user?.uid,
-        email: user?.email,
+      setLoading(true);
+
+      await Haptics.selectionAsync();
+
+      await addDoc(collection(db, "supportTickets"), {
+        uid: user?.uid || null,
+        email: user?.email || null,
+
         categoria,
-        mensagem,
+        categoriaLabel: categoriaSelecionada?.label,
+
+        mensagem: mensagem.trim(),
+
         status: "aberto",
+        prioridade,
+
+        respostaAdmin: "",
+
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       });
 
-      Alert.alert("Suporte enviado com sucesso!");
-      setCategoria("");
+      await Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Success
+      );
+
+      Alert.alert(
+        "Solicitação enviada 🎉",
+        "Nossa equipe irá analisar seu chamado."
+      );
+
+      setCategoria(null);
       setMensagem("");
     } catch (error) {
       console.log(error);
-      Alert.alert("Erro ao enviar suporte");
+
+      await Haptics.notificationAsync(
+        Haptics.NotificationFeedbackType.Error
+      );
+
+      Alert.alert(
+        "Erro",
+        "Não foi possível enviar sua solicitação."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      
-      {/* 🔥 HEADER */}
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      {/* HEADER */}
       <LinearGradient
         colors={[Colors.background, Colors.surface]}
         style={styles.header}
@@ -76,38 +157,103 @@ export default function TelaSuporte({ navigation }) {
                 navigation.navigate("Inicio");
               }
             }}
+            style={styles.backButton}
           >
             <MaterialCommunityIcons
               name="arrow-left"
-              size={26}
+              size={24}
               color={Colors.primary}
             />
           </TouchableOpacity>
 
-          <Text style={styles.title}>
-            Suporte 💬
-          </Text>
+          <View>
+            <Text style={styles.title}>
+              Central de Suporte
+            </Text>
+
+            <Text style={styles.subtitle}>
+              Nossa equipe está pronta para ajudar
+            </Text>
+          </View>
         </View>
 
-        <Text style={styles.subtitle}>
-          Precisa de ajuda? Fale com a gente
-        </Text>
+        {/* CARD INFO */}
+        <View style={styles.infoCard}>
+          <MaterialCommunityIcons
+            name="clock-outline"
+            size={24}
+            color={Colors.primary}
+          />
+
+          <View style={{ marginLeft: 12 }}>
+            <Text style={styles.infoTitle}>
+              Tempo médio de resposta
+            </Text>
+
+            <Text style={styles.infoText}>
+              Aproximadamente 2 horas
+            </Text>
+          </View>
+        </View>
       </LinearGradient>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        
-        {/* 📂 SELECT */}
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* FAQ */}
+        <Text style={styles.sectionTitle}>
+          Perguntas Frequentes
+        </Text>
+
+        <View style={styles.faqContainer}>
+          <FaqItem
+            icon="account-lock-outline"
+            text="Não consigo acessar minha conta"
+          />
+
+          <FaqItem
+            icon="ticket-confirmation-outline"
+            text="Como cancelar minha inscrição?"
+          />
+
+          <FaqItem
+            icon="cash-refund"
+            text="Como solicitar reembolso?"
+          />
+        </View>
+
+        {/* CATEGORIA */}
         <Text style={styles.label}>
           Tipo de problema
         </Text>
 
         <TouchableOpacity
-          onPress={() => setModalVisible(true)}
           style={styles.select}
+          onPress={() => setModalVisible(true)}
         >
-          <Text style={{ color: categoria ? Colors.textPrimary : Colors.textMuted }}>
-            {categoria || "Selecione uma opção..."}
-          </Text>
+          <View style={styles.selectContent}>
+            <MaterialCommunityIcons
+              name={
+                categoriaSelecionada?.icon ||
+                "shape-outline"
+              }
+              size={20}
+              color={Colors.primary}
+            />
+
+            <Text
+              style={{
+                color: categoria
+                  ? Colors.textPrimary
+                  : Colors.textMuted,
+                marginLeft: 10,
+              }}
+            >
+              {categoriaSelecionada?.label ||
+                "Selecione uma categoria"}
+            </Text>
+          </View>
 
           <MaterialCommunityIcons
             name="chevron-down"
@@ -116,45 +262,110 @@ export default function TelaSuporte({ navigation }) {
           />
         </TouchableOpacity>
 
-        {/* 📝 MENSAGEM */}
+        {/* PRIORIDADE */}
+        {categoria && (
+          <View style={styles.priorityCard}>
+            <MaterialCommunityIcons
+              name="alert-circle-outline"
+              size={18}
+              color={
+                prioridade === "alta"
+                  ? Colors.error
+                  : prioridade === "media"
+                  ? "#f1c40f"
+                  : Colors.success
+              }
+            />
+
+            <Text style={styles.priorityText}>
+              Prioridade: {prioridade}
+            </Text>
+          </View>
+        )}
+
+        {/* MENSAGEM */}
         <Text style={styles.label}>
           Descreva o problema
         </Text>
 
-        <TextInput
-          placeholder="Digite aqui..."
-          placeholderTextColor={Colors.textMuted}
-          multiline
-          value={mensagem}
-          onChangeText={setMensagem}
-          style={styles.textarea}
-        />
+        <View
+          style={[
+            styles.textareaContainer,
+            focused && {
+              borderColor: Colors.primary,
+            },
+          ]}
+        >
+          <TextInput
+            placeholder="Digite aqui todos os detalhes..."
+            placeholderTextColor={Colors.textMuted}
+            multiline
+            maxLength={500}
+            value={mensagem}
+            onChangeText={setMensagem}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            style={styles.textarea}
+          />
 
-        {/* 🚀 BOTÃO */}
+          <Text style={styles.counter}>
+            {mensagem.length}/500
+          </Text>
+        </View>
+
+        {/* BOTÃO */}
         <TouchableOpacity
           onPress={handleSubmit}
-          style={styles.button}
+          disabled={loading}
+          style={[
+            styles.button,
+            loading && { opacity: 0.7 },
+          ]}
         >
-          <Text style={styles.buttonText}>
-            Enviar solicitação
-          </Text>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <MaterialCommunityIcons
+                name="send"
+                size={18}
+                color="#fff"
+              />
+
+              <Text style={styles.buttonText}>
+                Enviar solicitação
+              </Text>
+            </>
+          )}
         </TouchableOpacity>
 
+        <View style={{ height: 50 }} />
       </ScrollView>
 
-      {/* 🪟 MODAL */}
-      <Modal visible={modalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
+      {/* MODAL */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+      >
+        <BlurView
+          intensity={40}
+          tint="dark"
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalBox}>
+            <Text style={styles.modalTitle}>
+              Escolha uma categoria
+            </Text>
 
             {categorias.map((item) => {
-              const ativo = categoria === item;
+              const ativo = categoria === item.id;
 
               return (
                 <TouchableOpacity
-                  key={item}
+                  key={item.id}
                   onPress={() => {
-                    setCategoria(item);
+                    setCategoria(item.id);
                     setModalVisible(false);
                   }}
                   style={[
@@ -162,35 +373,78 @@ export default function TelaSuporte({ navigation }) {
                     ativo && styles.optionActive,
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      ativo && styles.optionTextActive,
-                    ]}
-                  >
-                    {item}
-                  </Text>
+                  <View style={styles.optionContent}>
+                    <MaterialCommunityIcons
+                      name={item.icon}
+                      size={20}
+                      color={
+                        ativo
+                          ? "#fff"
+                          : Colors.primary
+                      }
+                    />
+
+                    <Text
+                      style={[
+                        styles.optionText,
+                        ativo &&
+                          styles.optionTextActive,
+                      ]}
+                    >
+                      {item.label}
+                    </Text>
+                  </View>
+
+                  {ativo && (
+                    <MaterialCommunityIcons
+                      name="check-circle"
+                      size={20}
+                      color="#fff"
+                    />
+                  )}
                 </TouchableOpacity>
               );
             })}
 
             <TouchableOpacity
-              onPress={() => setModalVisible(false)}
               style={styles.cancel}
+              onPress={() => setModalVisible(false)}
             >
-              <Text style={{ color: Colors.textSecondary }}>
+              <Text style={styles.cancelText}>
                 Cancelar
               </Text>
             </TouchableOpacity>
-
           </View>
-        </View>
+        </BlurView>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
-/* 🎨 PADRÃO GLOBAL */
+/* FAQ */
+function FaqItem({ icon, text }) {
+  return (
+    <TouchableOpacity style={styles.faqItem}>
+      <MaterialCommunityIcons
+        name={icon}
+        size={20}
+        color={Colors.primary}
+      />
+
+      <Text style={styles.faqText}>
+        {text}
+      </Text>
+
+      <MaterialCommunityIcons
+        name="chevron-right"
+        size={20}
+        color={Colors.textMuted}
+      />
+    </TouchableOpacity>
+  );
+}
+
+/* STYLES */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -198,10 +452,11 @@ const styles = StyleSheet.create({
   },
 
   header: {
-    padding: 20,
-    paddingTop: 50,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    paddingTop: 55,
+    paddingHorizontal: 20,
+    paddingBottom: 25,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
 
   headerRow: {
@@ -209,89 +464,200 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  backButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: Colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+
   title: {
     fontSize: 22,
-    color: Colors.textPrimary,
     fontWeight: "bold",
-    marginLeft: 10,
+    color: Colors.textPrimary,
   },
 
   subtitle: {
     color: Colors.textSecondary,
-    marginTop: 5,
+    marginTop: 4,
+  },
+
+  infoCard: {
+    marginTop: 20,
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+
+  infoTitle: {
+    color: Colors.textPrimary,
+    fontWeight: "bold",
+  },
+
+  infoText: {
+    color: Colors.textSecondary,
+    marginTop: 2,
+    fontSize: 13,
   },
 
   content: {
     padding: 20,
   },
 
+  sectionTitle: {
+    color: Colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+
+  faqContainer: {
+    marginBottom: 25,
+  },
+
+  faqItem: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  faqText: {
+    flex: 1,
+    color: Colors.textPrimary,
+    marginLeft: 12,
+  },
+
   label: {
     color: Colors.textPrimary,
     marginBottom: 10,
-    marginTop: 10,
+    fontWeight: "600",
   },
 
   select: {
     backgroundColor: Colors.surface,
-    padding: 16,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: Colors.border,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
 
-  textarea: {
+  selectContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  priorityCard: {
+    marginTop: 12,
+    marginBottom: 20,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  priorityText: {
+    color: Colors.textSecondary,
+    marginLeft: 8,
+    textTransform: "capitalize",
+  },
+
+  textareaContainer: {
     backgroundColor: Colors.surface,
-    color: Colors.textPrimary,
-    padding: 15,
-    borderRadius: 16,
-    minHeight: 120,
-    textAlignVertical: "top",
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: Colors.border,
+    padding: 14,
+    minHeight: 170,
+  },
+
+  textarea: {
+    color: Colors.textPrimary,
+    minHeight: 120,
+    textAlignVertical: "top",
+    fontSize: 15,
+  },
+
+  counter: {
+    color: Colors.textMuted,
+    alignSelf: "flex-end",
+    marginTop: 10,
+    fontSize: 12,
   },
 
   button: {
+    marginTop: 25,
     backgroundColor: Colors.primary,
-    padding: 16,
-    borderRadius: 16,
-    marginTop: 20,
+    borderRadius: 18,
+    paddingVertical: 16,
+    justifyContent: "center",
     alignItems: "center",
+    flexDirection: "row",
   },
 
   buttonText: {
     color: "#fff",
-    fontSize: 16,
     fontWeight: "bold",
+    fontSize: 15,
+    marginLeft: 10,
   },
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     padding: 20,
   },
 
   modalBox: {
     backgroundColor: Colors.surface,
-    borderRadius: 20,
-    padding: 15,
+    borderRadius: 24,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+
+  modalTitle: {
+    color: Colors.textPrimary,
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
   },
 
   option: {
     padding: 15,
-    borderRadius: 12,
-    marginBottom: 8,
+    borderRadius: 16,
+    marginBottom: 10,
+    backgroundColor: Colors.background,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 
   optionActive: {
     backgroundColor: Colors.primary,
   },
 
+  optionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
   optionText: {
     color: Colors.textPrimary,
+    marginLeft: 10,
   },
 
   optionTextActive: {
@@ -301,7 +667,11 @@ const styles = StyleSheet.create({
 
   cancel: {
     marginTop: 10,
-    padding: 12,
     alignItems: "center",
+    padding: 12,
+  },
+
+  cancelText: {
+    color: Colors.textSecondary,
   },
 });

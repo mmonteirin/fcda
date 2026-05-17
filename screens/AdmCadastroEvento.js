@@ -26,6 +26,7 @@ import {
 
 // ✅ Usa ImgBB em vez de Firebase Storage
 import { uploadImagem } from "../services/uploadService";
+import { geocodeAddress } from "../services/geocodingService";
 
 import { Colors } from "../styles/Colors";
 
@@ -180,24 +181,44 @@ export default function AdmCadastroEvento({ navigation }) {
 				);
 			}
 
-			// 1️⃣ Salva em /eventos
-			const eventoRef = await addDoc(collection(db, "eventos"), {
-				tituloEvento: form.tituloEvento,
-				dataEvento: form.dataEvento || "",
-				imagemEvento: imageUrl, // URL pública do ImgBB
-				localEvento: form.localEvento || form.rua || "",
-				userId: user?.uid || "", // campo para as Firestore rules
-				uidEvento: user?.uid || "",
-				nomeLocal: form.nomeLocal || "",
-				horaInicio: form.horaInicio || "",
-				horaFim: form.horaFim || "",
-				categoria: form.categoria || "",
-				tipoEvento: form.tipoEvento || "",
-				descricao: form.descricao || "",
-				cep: form.cep || "",
-				bairro: form.bairro || "",
-				cidade: form.cidade || "",
-				uf: form.uf || "",
+const latitude = form.latitude ? Number(form.latitude) : null;
+      const longitude = form.longitude ? Number(form.longitude) : null;
+      let finalLatitude = latitude;
+      let finalLongitude = longitude;
+      const enderecoParaGeocode =
+        form.localEvento ||
+        [form.rua, form.bairro, form.cidade, form.uf]
+          .filter(Boolean)
+          .join(", ");
+
+      if ((finalLatitude == null || finalLongitude == null) && enderecoParaGeocode) {
+        const coords = await geocodeAddress(enderecoParaGeocode);
+      }
+
+      // 1️⃣ Salva em /eventos
+      const eventoRef = await addDoc(collection(db, "eventos"), {
+        tituloEvento: form.tituloEvento,
+        dataEvento: form.dataEvento || "",
+        imagemEvento: imageUrl, // URL pública do ImgBB
+        localEvento: form.localEvento || form.rua || "",
+        userId: user?.uid || "", // campo para as Firestore rules
+        uidEvento: user?.uid || "",
+        nomeLocal: form.nomeLocal || "",
+        horaInicio: form.horaInicio || "",
+        horaFim: form.horaFim || "",
+        categoria: form.categoria || "",
+        tipoEvento: form.tipoEvento || "",
+        descricao: form.descricao || "",
+        cep: form.cep || "",
+        bairro: form.bairro || "",
+        cidade: form.cidade || "",
+        uf: form.uf || "",
+        latitude: finalLatitude,
+        longitude: finalLongitude,
+				likes: 0,
+				views: 0,
+				comentarios: 0,
+				ativo: true,
 				adminNome: user?.displayName || "Organizador",
 				createdAt: serverTimestamp(),
 			});
@@ -375,6 +396,25 @@ export default function AdmCadastroEvento({ navigation }) {
 					onChangeText={(v) => setField("nomeLocal", v)}
 					style={input}
 				/>
+
+				<View style={{ flexDirection: "row", gap: 10 }}>
+					<TextInput
+						value={form.latitude || ""}
+						placeholder="Latitude"
+						placeholderTextColor={Colors.textMuted}
+						keyboardType="numeric"
+						onChangeText={(v) => setField("latitude", v)}
+						style={[input, { flex: 1 }]}
+					/>
+					<TextInput
+						value={form.longitude || ""}
+						placeholder="Longitude"
+						placeholderTextColor={Colors.textMuted}
+						keyboardType="numeric"
+						onChangeText={(v) => setField("longitude", v)}
+						style={[input, { flex: 1 }]}
+					/>
+				</View>
 
 				{/* Progresso de upload */}
 				{loading && uploadProgress > 0 && uploadProgress < 1 && (

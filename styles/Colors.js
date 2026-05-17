@@ -1,25 +1,52 @@
 // styles/Colors.js
 
-export const Colors = {
-  /* 🌑 BASE */
-  background: "#121212",   // fundo principal
-  surface: "#1E1E1E",      // containers
-  card: "#232323",         // cards destacados
 
-  /* 🧱 ESTRUTURA */
-  border: "#2C2C2C",
-  divider: "#2A2A2A",
+export const Colors = {
+  /* 🌑 BACKGROUNDS */
+  background: "#0F0F14",
+  backgroundSecondary: "#15161C",
+
+  /* 🧊 SURFACES */
+  surface: "#1B1D26",
+  surfaceLight: "#232634",
+
+  /* 🪟 GLASS */
+  glass: "rgba(255,255,255,0.06)",
+  glassBorder: "rgba(255,255,255,0.08)",
+
+  /* 🃏 CARDS */
+  card: "#1F2230",
+  cardHover: "#262A3B",
+
+  /* 🧱 BORDAS */
+  border: "#2D3142",
+  divider: "#262938",
 
   /* 🎨 BRAND */
-  primary: "#6C5CE7",      // cor principal (roxo moderno)
+  primary: "#6C5CE7",
+  primaryLight: "#8B7CFF",
+  primaryDark: "#5746D6",
 
-  /* 📝 TEXTOS */
+  /* ✨ GLOW */
+  purpleGlow: "rgba(108,92,231,0.35)",
+
+  /* 📝 TEXT */
   textPrimary: "#FFFFFF",
-  textSecondary: "#B0B0B0",
-  textMuted: "#7A7A7A",
+  textSecondary: "#B2B5C3",
+  textMuted: "#7E8299",
 
-  /* ⚡ ESTADOS */
-  success: "#4CAF50",
-  error: "#F44336",
-  warning: "#FF9800",
+  /* ⚡ STATUS */
+  success: "#22C55E",
+  error: "#EF4444",
+  warning: "#F59E0B",
+
+  /* 🌈 OVERLAYS */
+  overlayDark: "rgba(0,0,0,0.55)",
+  overlayLight: "rgba(255,255,255,0.06)",
+
+  /* 🌌 SHADOWS */
+  shadow: "#000000",
+
+  /* 📍 MAP */
+  mapOverlay: "rgba(15,15,20,0.85)",
 };

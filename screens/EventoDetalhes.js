@@ -30,6 +30,11 @@ import {
 
 import { auth, db } from "../firebaseConfig";
 import { Colors } from "../styles/Colors";
+import {
+	getUserLikes,
+	toggleEventoLike,
+	incrementEventoViews,
+} from "../services/eventosAppService";
 
 const PALAVROES = [
 	"porra",
@@ -92,6 +97,9 @@ export default function EventoDetalhes({ route, navigation }) {
 	const [loadingAval, setLoadingAval] = useState(true);
 	const [enviando, setEnviando] = useState(false);
 	const [jaAvaliou, setJaAvaliou] = useState(false);
+	const [liked, setLiked] = useState(false);
+	const [likesCount, setLikesCount] = useState(evento?.likes || 0);
+	const [viewsCount, setViewsCount] = useState(evento?.views || 0);
 
 	// O eventoId pode vir como evento.id (quando vem do feed) ou evento.eventoId
 	const eventoId = evento?.id || evento?.eventoId;
@@ -129,6 +137,53 @@ export default function EventoDetalhes({ route, navigation }) {
 
 		check();
 	}, [eventoId]);
+
+	useEffect(() => {
+		if (!eventoId) return;
+
+		const carregarDadosMetricas = async () => {
+			if (!auth.currentUser) return;
+
+			try {
+				const ids = await getUserLikes(auth.currentUser.uid);
+				setLiked(ids.includes(eventoId));
+			} catch (error) {
+				console.log("Erro ao verificar like:", error);
+			}
+		};
+
+		carregarDadosMetricas();
+	}, [eventoId]);
+
+	useEffect(() => {
+		if (!eventoId) return;
+
+		incrementEventoViews(eventoId).then(() => {
+			setViewsCount((prev) => prev + 1);
+		});
+	}, [eventoId]);
+
+	useEffect(() => {
+		setLikesCount(evento?.likes || 0);
+		setViewsCount(evento?.views || 0);
+	}, [evento?.likes, evento?.views]);
+
+	const handleToggleLike = async () => {
+		if (!auth.currentUser) {
+			Alert.alert("Login necessário", "Faça login para curtir este evento.");
+			return;
+		}
+
+		try {
+			const novoStatus = !liked;
+			await toggleEventoLike(eventoId, auth.currentUser.uid, novoStatus);
+			setLiked(novoStatus);
+			setLikesCount((prev) => prev + (novoStatus ? 1 : -1));
+		} catch (error) {
+			console.log("Erro no like:", error);
+			Alert.alert("Erro", "Não foi possível atualizar seu like.");
+		}
+	};
 
 	/* 🚀 ENVIA AVALIAÇÃO */
 	const enviarAvaliacao = async () => {
@@ -267,6 +322,24 @@ export default function EventoDetalhes({ route, navigation }) {
 						<Text style={styles.local}>
 							📍 {evento.localEvento || evento.nomeLocal || "—"}
 						</Text>
+								<View style={styles.metricRow}>
+									<TouchableOpacity style={styles.likeButton} onPress={handleToggleLike}>
+										<MaterialCommunityIcons
+											name={liked ? "heart" : "heart-outline"}
+											size={18}
+											color={liked ? Colors.error : "#fff"}
+										/>
+										<Text style={styles.metricText}>{likesCount}</Text>
+									</TouchableOpacity>
+									<View style={styles.viewRow}>
+										<MaterialCommunityIcons
+											name="eye-outline"
+											size={18}
+											color="#fff"
+										/>
+										<Text style={styles.metricText}>{viewsCount}</Text>
+									</View>
+								</View>
 					</View>
 				</View>
 
@@ -405,52 +478,50 @@ export default function EventoDetalhes({ route, navigation }) {
 								Nenhuma avaliação ainda. Seja o primeiro!
 							</Text>
 						) : (
-							avaliacoes.map((item) => (
-								<View key={item.id} style={styles.avalCard}>
-									<Image
-										source={{ uri: item.foto || "https://i.pravatar.cc/100" }}
-										style={styles.avalAvatar}
-									/>
-									<View style={{ flex: 1 }}>
-										<View
-											style={{
-												flexDirection: "row",
-												justifyContent: "space-between",
-												alignItems: "center",
-											}}
-										>
-											{/* campos reais: nome, nota, comentario */}
-											<Text style={styles.avalNome}>{item.nome}</Text>
-											{item.userId === auth.currentUser?.uid && (
-												<TouchableOpacity
-													onPress={() => deletarAvaliacao(item.id)}
-												>
-													<MaterialCommunityIcons
-														name="delete"
-														size={18}
-														color={Colors.error}
-													/>
-												</TouchableOpacity>
-											)}
+							<View style={styles.avalList}>
+								{avaliacoes.map((item) => (
+									<View key={item.id} style={styles.avalCard}>
+										<Image
+											source={{ uri: item.foto || "https://i.pravatar.cc/100" }}
+											style={styles.avalAvatar}
+										/>
+										<View style={{ flex: 1 }}>
+											<View style={styles.avalHeader2}>
+												<View>
+													<Text style={styles.avalNome}>{item.nome}</Text>
+													<View style={styles.starsRowSmall}>
+														{[1, 2, 3, 4, 5].map((n) => (
+															<Text
+																key={n}
+																style={{
+																	color:
+																		n <= item.nota ? Colors.warning : Colors.border,
+																	fontSize: 12,
+																}}
+															>
+																★
+															</Text>
+														))}
+													</View>
+												</View>
+												{item.userId === auth.currentUser?.uid && (
+													<TouchableOpacity
+														onPress={() => deletarAvaliacao(item.id)}
+														style={styles.deleteBtn}
+													>
+														<MaterialCommunityIcons
+															name="trash-can-outline"
+															size={16}
+															color={Colors.error}
+														/>
+													</TouchableOpacity>
+												)}
+											</View>
+											<Text style={styles.avalTexto}>{item.comentario}</Text>
 										</View>
-										<View style={styles.starsRowSmall}>
-											{[1, 2, 3, 4, 5].map((n) => (
-												<Text
-													key={n}
-													style={{
-														color:
-															n <= item.nota ? Colors.warning : Colors.border,
-														fontSize: 12,
-													}}
-												>
-													★
-												</Text>
-											))}
-										</View>
-										<Text style={styles.avalTexto}>{item.comentario}</Text>
 									</View>
-								</View>
-							))
+								))}
+							</View>
 						)}
 					</View>
 				</View>
@@ -553,19 +624,62 @@ const styles = StyleSheet.create({
 	},
 	jaAvaliadoText: { color: Colors.success, fontWeight: "bold" },
 	emptyAval: { color: Colors.textMuted, textAlign: "center", marginTop: 12 },
+	avalList: {
+		marginTop: 12,
+	},
 	avalCard: {
 		flexDirection: "row",
 		gap: 10,
 		backgroundColor: Colors.surface,
-		borderRadius: 14,
+		borderRadius: 12,
 		padding: 12,
 		marginBottom: 10,
 		borderWidth: 1,
 		borderColor: Colors.border,
 	},
-	avalAvatar: { width: 38, height: 38, borderRadius: 19 },
-	avalNome: { color: Colors.textPrimary, fontWeight: "bold", fontSize: 13 },
-	starsRowSmall: { flexDirection: "row", marginVertical: 2 },
-	avalTexto: { color: Colors.textSecondary, fontSize: 13, marginTop: 2 },
+	avalAvatar: { width: 40, height: 40, borderRadius: 20 },
+	avalHeader2: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "flex-start",
+	},
+	avalNome: { color: Colors.textPrimary, fontWeight: "600", fontSize: 13 },
+	deleteBtn: {
+		padding: 4,
+	},
+	starsRowSmall: {
+		flexDirection: "row",
+		marginVertical: 2,
+		gap: 2,
+	},
+	avalTexto: { color: Colors.textSecondary, fontSize: 12, marginTop: 4, lineHeight: 16 },
+	metricRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 12,
+		marginTop: 8,
+	},
+	likeButton: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		backgroundColor: "rgba(255,255,255,0.18)",
+		paddingVertical: 6,
+		paddingHorizontal: 10,
+		borderRadius: 14,
+	},
+	viewRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 6,
+		backgroundColor: "rgba(255,255,255,0.12)",
+		paddingVertical: 6,
+		paddingHorizontal: 10,
+		borderRadius: 14,
+	},
+	metricText: {
+		color: "#fff",
+		fontSize: 12,
+	},
 	center: { flex: 1, justifyContent: "center", alignItems: "center" },
 });

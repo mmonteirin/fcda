@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+
 import {
   View,
   FlatList,
@@ -7,6 +8,7 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  ImageBackground,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
@@ -32,21 +34,37 @@ export default function EventoPublico({ navigation }) {
     try {
       const response = await getEventos();
 
-      const lista =
-        Array.isArray(response)
-          ? response
-          : response?.data || response?.results || [];
+      const lista = Array.isArray(response)
+        ? response
+        : response?.data || response?.results || [];
 
-      const tratados = lista.map((item, index) => ({
-        id: item.id || index,
-        titulo: item.name || "Evento",
-        imagem:
+      const tratados = lista.map((item, index) => {
+        const imagem =
           item?.image?.url ||
           item?.files?.header?.url ||
-          "https://placehold.co/400x200",
-        local: item?.location?.name || "Local",
-        original: item,
-      }));
+          null;
+
+        return {
+          id: item.id || index,
+
+          titulo: item.name || "Evento",
+
+          imagem,
+
+          possuiImagem: !!imagem,
+
+          local:
+            item?.location?.name ||
+            "Local não informado",
+
+          descricao:
+            item?.shortDescription ||
+            item?.description ||
+            "Descubra mais detalhes sobre este evento.",
+
+          original: item,
+        };
+      });
 
       setEventos(tratados);
     } catch (e) {
@@ -58,6 +76,7 @@ export default function EventoPublico({ navigation }) {
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
+      activeOpacity={0.9}
       style={styles.card}
       onPress={() =>
         navigation.navigate("EventoPublico", {
@@ -65,51 +84,168 @@ export default function EventoPublico({ navigation }) {
         })
       }
     >
-      <Image source={{ uri: item.imagem }} style={styles.img} />
 
+      {/* 🔥 IMAGEM OU FALLBACK */}
+      {item.possuiImagem ? (
+        <Image
+          source={{ uri: item.imagem }}
+          style={styles.img}
+        />
+      ) : (
+        <ImageBackground
+          source={require("../assets/fundoTelaLogin.png")}
+          style={styles.img}
+          resizeMode="cover"
+        >
+          <LinearGradient
+            colors={[
+              "rgba(0,0,0,0.55)",
+              "rgba(0,0,0,0.75)",
+            ]}
+            style={styles.noImageOverlay}
+          >
+
+            <MaterialCommunityIcons
+              name="image-off-outline"
+              size={42}
+              color="#FFF"
+            />
+
+            <Text style={styles.noImageText}>
+              Imagem não disponível
+            </Text>
+
+          </LinearGradient>
+        </ImageBackground>
+      )}
+
+      {/* OVERLAY */}
       <LinearGradient
-        colors={["transparent", "rgba(0,0,0,0.9)"]}
+        colors={[
+          "transparent",
+          "rgba(0,0,0,0.35)",
+          "rgba(0,0,0,0.92)",
+        ]}
         style={styles.overlay}
       />
 
-      <View style={styles.info}>
-        <Text style={styles.titulo}>{item.titulo}</Text>
-        <Text style={styles.local}>📍 {item.local}</Text>
+      {/* BADGE */}
+      <View style={styles.badge}>
+        <MaterialCommunityIcons
+          name="calendar-star"
+          size={14}
+          color="#FFF"
+        />
+
+        <Text style={styles.badgeText}>
+          Evento Público
+        </Text>
       </View>
+
+      {/* INFO */}
+      <View style={styles.info}>
+
+        <Text
+          style={styles.titulo}
+          numberOfLines={2}
+        >
+          {item.titulo}
+        </Text>
+
+        <View style={styles.locationRow}>
+          <MaterialCommunityIcons
+            name="map-marker"
+            size={15}
+            color="#DDD"
+          />
+
+          <Text
+            style={styles.local}
+            numberOfLines={1}
+          >
+            {item.local}
+          </Text>
+        </View>
+
+        <Text
+          style={styles.descricao}
+          numberOfLines={2}
+        >
+          {item.descricao}
+        </Text>
+
+      </View>
+
     </TouchableOpacity>
   );
 
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator
+          size="large"
+          color={colors.primary}
+        />
+
+        <Text style={styles.loadingText}>
+          Carregando eventos...
+        </Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+
+      {/* HEADER */}
       <LinearGradient
-        colors={[colors.primaryDark, colors.secondary]}
-        style={[styles.header, { paddingTop: insets.top + 10 }]}
+        colors={[
+          "#111827",
+          "#1E293B",
+          "#0F172A",
+        ]}
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + 10,
+          },
+        ]}
       >
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <MaterialCommunityIcons
             name="arrow-left"
             size={24}
-            color={colors.primary}
+            color="#FFF"
           />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Eventos Públicos</Text>
+        <View>
+          <Text style={styles.headerTitle}>
+            Eventos Públicos
+          </Text>
+
+          <Text style={styles.headerSubtitle}>
+            Explore eventos culturais e experiências
+          </Text>
+        </View>
+
       </LinearGradient>
 
+      {/* LISTA */}
       <FlatList
         data={eventos}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) =>
+          item.id.toString()
+        }
         renderItem={renderItem}
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
       />
+
     </View>
   );
 }
@@ -117,27 +253,78 @@ export default function EventoPublico({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.primaryDark,
+    backgroundColor: "#0B1120",
   },
 
+  /* HEADER */
   header: {
-    padding: 16,
+    paddingHorizontal: 18,
+    paddingBottom: 18,
+
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+
+    gap: 14,
+
+    borderBottomWidth: 1,
+    borderBottomColor:
+      "rgba(255,255,255,0.05)",
+  },
+
+  backButton: {
+    width: 42,
+    height: 42,
+
+    borderRadius: 14,
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    backgroundColor:
+      "rgba(255,255,255,0.08)",
   },
 
   headerTitle: {
-    color: colors.text,
-    fontSize: 18,
+    color: "#FFF",
+    fontSize: 22,
     fontWeight: "bold",
   },
 
+  headerSubtitle: {
+    color: "rgba(255,255,255,0.65)",
+    marginTop: 2,
+    fontSize: 13,
+  },
+
+  /* LIST */
+  list: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+
+  /* CARD */
   card: {
-    height: 180,
-    borderRadius: 16,
-    marginBottom: 16,
+    height: 240,
+
+    borderRadius: 26,
+
+    marginBottom: 22,
+
     overflow: "hidden",
+
+    backgroundColor: "#111827",
+
+    shadowColor: "#000",
+
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+
+    elevation: 10,
   },
 
   img: {
@@ -146,33 +333,114 @@ const styles = StyleSheet.create({
     position: "absolute",
   },
 
+  noImageOverlay: {
+    flex: 1,
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    gap: 10,
+  },
+
+  noImageText: {
+    color: "#FFF",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+
   overlay: {
     position: "absolute",
+
     bottom: 0,
+
     height: "100%",
     width: "100%",
   },
 
+  /* BADGE */
+  badge: {
+    position: "absolute",
+    top: 16,
+    left: 16,
+
+    flexDirection: "row",
+    alignItems: "center",
+
+    gap: 6,
+
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+
+    borderRadius: 30,
+
+    backgroundColor:
+      "rgba(0,0,0,0.45)",
+
+    borderWidth: 1,
+    borderColor:
+      "rgba(255,255,255,0.08)",
+  },
+
+  badgeText: {
+    color: "#FFF",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+
+  /* INFO */
   info: {
     position: "absolute",
     bottom: 0,
-    padding: 16,
+
+    padding: 18,
+
+    width: "100%",
   },
 
   titulo: {
-    color: "#fff",
+    color: "#FFF",
+
     fontWeight: "bold",
-    fontSize: 16,
+
+    fontSize: 22,
+
+    marginBottom: 10,
+  },
+
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+
+    gap: 4,
+
+    marginBottom: 8,
   },
 
   local: {
-    color: "#ccc",
-    fontSize: 12,
+    color: "#DDD",
+    fontSize: 13,
+    flex: 1,
   },
 
+  descricao: {
+    color: "rgba(255,255,255,0.75)",
+    fontSize: 13,
+    lineHeight: 20,
+  },
+
+  /* LOADING */
   loading: {
     flex: 1,
+
     justifyContent: "center",
     alignItems: "center",
+
+    backgroundColor: "#0B1120",
+  },
+
+  loadingText: {
+    marginTop: 16,
+    color: "#AAA",
+    fontSize: 14,
   },
 });
