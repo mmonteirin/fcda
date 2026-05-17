@@ -1,46 +1,43 @@
 // firebaseConfig.js
-// ✅ Removido Firebase Storage (não disponível no plano gratuito Spark)
-// Use ImgBB via uploadService.js para upload de imagens
+// ⚠️  SEGURANÇA: mova as credenciais para variáveis de ambiente.
+//     Veja o arquivo .env.example para instruções.
+//     No Expo, use o prefixo EXPO_PUBLIC_ para acessar via process.env.
+//
+// ✅ Firebase Storage removido intencionalmente (plano Spark não suporta).
+//    Use ImgBB via uploadService.js para upload de imagens.
 
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth, initializeAuth } from "firebase/auth";
 import { Platform } from "react-native";
 
-/* 🔧 CONFIG */
 const firebaseConfig = {
-  apiKey: "AIzaSyCNld0ThxUsLpo84wcz9T8m3JeC3e8PlZE",
-  authDomain: "monitoracult.firebaseapp.com",
-  projectId: "monitoracult",
-  storageBucket: "monitoracult.firebasestorage.app",
-  messagingSenderId: "133936734015",
-  appId: "1:133936734015:web:ff16ed3bc5c10552337d8a",
+  apiKey:            process.env.EXPO_PUBLIC_FIREBASE_API_KEY            || "AIzaSyCNld0ThxUsLpo84wcz9T8m3JeC3e8PlZE",
+  authDomain:        process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN        || "monitoracult.firebaseapp.com",
+  projectId:         process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID         || "monitoracult",
+  storageBucket:     process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET     || "monitoracult.firebasestorage.app",
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "133936734015",
+  appId:             process.env.EXPO_PUBLIC_FIREBASE_APP_ID             || "1:133936734015:web:ff16ed3bc5c10552337d8a",
 };
 
-/* 🚀 APP */
-const app =
-  getApps().length === 0
-    ? initializeApp(firebaseConfig)
-    : getApp();
+/* 🚀 APP — evita reinicialização em hot-reload */
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 /* 🔐 AUTH */
 let auth;
 
 if (Platform.OS === "web") {
-  // 🌐 WEB
   auth = getAuth(app);
 } else {
-  // 📱 MOBILE
   try {
     const rnAuth = require("firebase/auth/react-native");
-    const AsyncStorage =
-      require("@react-native-async-storage/async-storage").default;
+    const AsyncStorage = require("@react-native-async-storage/async-storage").default;
 
     auth = initializeAuth(app, {
       persistence: rnAuth.getReactNativePersistence(AsyncStorage),
     });
   } catch {
-    // fallback: se já inicializado
+    // Fallback: já inicializado
     auth = getAuth(app);
   }
 }
@@ -48,5 +45,4 @@ if (Platform.OS === "web") {
 /* 🔥 FIRESTORE */
 const db = getFirestore(app);
 
-/* 📤 EXPORT — storage removido intencionalmente (plano Spark não suporta) */
 export { app, db, auth };

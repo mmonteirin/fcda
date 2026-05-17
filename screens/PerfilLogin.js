@@ -61,12 +61,17 @@ export default function PerfilLogin({ navigation }) {
         password
       );
     } catch (error) {
-      if (error.code === "auth/user-not-found") {
-        alert("Usuário não encontrado");
-      } else if (error.code === "auth/wrong-password") {
-        alert("Senha incorreta");
+      // Firebase v9+ unifica "user-not-found" e "wrong-password" em "invalid-credential"
+      if (
+        error.code === "auth/invalid-credential" ||
+        error.code === "auth/user-not-found" ||
+        error.code === "auth/wrong-password"
+      ) {
+        alert("Email ou senha incorretos");
+      } else if (error.code === "auth/too-many-requests") {
+        alert("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
       } else {
-        alert("Erro ao fazer login");
+        alert("Erro ao fazer login. Tente novamente.");
       }
     } finally {
       setLoading(false);
@@ -135,7 +140,7 @@ export default function PerfilLogin({ navigation }) {
               </LinearGradient>
 
               <AppText style={styles.appName}>
-                ServizApp
+                MonitoraCult
               </AppText>
 
               <AppText style={styles.subtitle}>

@@ -7,6 +7,8 @@ import {
   getDocs,
   query,
   where,
+  runTransaction,
+  increment,
 } from "firebase/firestore";
 import { db, auth } from "../firebaseConfig";
 
@@ -30,55 +32,44 @@ export const criarPost = async ({ text, image }) => {
 };
 
 /**
- * Fazer like/unlike em um evento do feed
+ * Fazer like/unlike em um evento do feed.
+ * Usa transaction para garantir consistência (igual ao eventosAppService).
+ * Campo padronizado: usuarioId (mesmo padrão de eventosAppService).
  */
-export const toggleEventoLike = async (eventoId, userId) => {
-  if (!userId) throw new Error("Usuário não autenticado");
+export const toggleEventoLike = async (eventoId, usuarioId) => {
+  if (!usuarioId) throw new Error("Usuário não autenticado");
+
+  const eventoRef = doc(db, "eventos", eventoId);
+  const likeRef = doc(db, "likes", `${eventoId}_${usuarioId}`);
 
   try {
-    const eventoRef = doc(db, "eventos", eventoId);
+    let isNowLiked = false;
 
-    // Buscar evento atual
-    const { getDoc } = await import("firebase/firestore");
-    const eventoSnap = await getDoc(eventoRef);
+    await runTransaction(db, async (transaction) => {
+      const eventoSnap = await transaction.get(eventoRef);
+      if (!eventoSnap.exists()) {
+        throw new Error("Evento não encontrado");
+      }
 
-    if (!eventoSnap.exists()) {
-      throw new Error("Evento não encontrado");
-    }
+      const likeSnap = await transaction.get(likeRef);
+      const jaLikado = likeSnap.exists();
 
-    const eventData = eventoSnap.data();
-    const currentLikes = eventData.likes || 0;
+      if (jaLikado) {
+        transaction.delete(likeRef);
+        transaction.update(eventoRef, { likes: increment(-1) });
+        isNowLiked = false;
+      } else {
+        transaction.set(likeRef, {
+          eventoId,
+          usuarioId,
+          createdAt: serverTimestamp(),
+        });
+        transaction.update(eventoRef, { likes: increment(1) });
+        isNowLiked = true;
+      }
+    });
 
-    // Buscar likes do usuário
-    const likesQuery = query(
-      collection(db, "likes"),
-      where("eventoId", "==", eventoId),
-      where("userId", "==", userId)
-    );
-
-    const likesSnapshot = await getDocs(likesQuery);
-    const isLiked = !likesSnapshot.empty;
-
-    if (isLiked) {
-      // Remover like
-      await updateDoc(eventoRef, {
-        likes: Math.max(0, currentLikes - 1),
-      });
-    } else {
-      // Adicionar like
-      await updateDoc(eventoRef, {
-        likes: currentLikes + 1,
-      });
-
-      // Registrar no documento de likes
-      await addDoc(collection(db, "likes"), {
-        eventoId,
-        userId,
-        createdAt: serverTimestamp(),
-      });
-    }
-
-    return !isLiked;
+    return isNowLiked;
   } catch (error) {
     console.log("Erro ao fazer like:", error);
     throw error;
@@ -86,15 +77,16 @@ export const toggleEventoLike = async (eventoId, userId) => {
 };
 
 /**
- * Obter IDs dos eventos que o usuário curtiu
+ * Obter IDs dos eventos que o usuário curtiu.
+ * Campo padronizado: usuarioId (mesmo padrão de eventosAppService).
  */
-export const getUserFeedLikes = async (userId) => {
-  if (!userId) return [];
+export const getUserFeedLikes = async (usuarioId) => {
+  if (!usuarioId) return [];
 
   try {
     const likesQuery = query(
       collection(db, "likes"),
-      where("userId", "==", userId)
+      where("usuarioId", "==", usuarioId)
     );
 
     const likesSnapshot = await getDocs(likesQuery);
@@ -106,7 +98,8 @@ export const getUserFeedLikes = async (userId) => {
 };
 
 /**
- * Adicionar comentário em um evento
+ * Adicionar comentário em um evento.
+ * Usa increment atômico em vez de read-then-write.
  */
 export const adicionarComentario = async (eventoId, texto) => {
   const user = auth.currentUser;
@@ -127,17 +120,10 @@ export const adicionarComentario = async (eventoId, texto) => {
       }
     );
 
-    // Incrementar contador de comentários no evento
-    const eventoRef = doc(db, "eventos", eventoId);
-    const { getDoc } = await import("firebase/firestore");
-    const eventoSnap = await getDoc(eventoRef);
-
-    if (eventoSnap.exists()) {
-      const currentComentarios = eventoSnap.data().comentarios || 0;
-      await updateDoc(eventoRef, {
-        comentarios: currentComentarios + 1,
-      });
-    }
+    // Incrementar contador de forma atômica — sem read-then-write
+    await updateDoc(doc(db, "eventos", eventoId), {
+      comentarios: increment(1),
+    });
 
     return comentarioRef.id;
   } catch (error) {

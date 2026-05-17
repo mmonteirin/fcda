@@ -141,9 +141,10 @@ export const isFollowing = async (targetUserId) => {
 /**
  * Obter lista de seguidores de um usuário
  */
-export const getFollowers = async (userId, limit = 50) => {
+export const getFollowers = async (userId, limitCount = 50) => {
   try {
-    const q = query(collection(db, "followers", userId, "followers"));
+    const { limit: firestoreLimit } = await import("firebase/firestore");
+    const q = query(collection(db, "followers", userId, "followers"), firestoreLimit(limitCount));
     const snapshot = await getDocs(q);
     return snapshot.docs.map((d) => ({
       id: d.id,
@@ -158,9 +159,10 @@ export const getFollowers = async (userId, limit = 50) => {
 /**
  * Obter lista de usuários que alguém está seguindo
  */
-export const getFollowing = async (userId, limit = 50) => {
+export const getFollowing = async (userId, limitCount = 50) => {
   try {
-    const q = query(collection(db, "followers", userId, "following"));
+    const { limit: firestoreLimit } = await import("firebase/firestore");
+    const q = query(collection(db, "followers", userId, "following"), firestoreLimit(limitCount));
     const snapshot = await getDocs(q);
     return snapshot.docs.map((d) => ({
       id: d.id,

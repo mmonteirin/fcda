@@ -21,15 +21,12 @@ import {
 	deleteDoc,
 	doc,
 	orderBy,
-	updateDoc,
-	arrayUnion,
-	arrayRemove,
 } from "firebase/firestore";
 
 import { db } from "../firebaseConfig";
 import { useAuth } from "../context/AuthContext";
 import { Colors } from "../styles/Colors";
-import { getUserFeedLikes } from "../services/feedService";
+import { getUserFeedLikes, toggleEventoLike } from "../services/feedService";
 
 export default function TelaFeed({ navigation }) {
 	const { user, nome, foto, isAdmin } = useAuth();
@@ -94,19 +91,11 @@ export default function TelaFeed({ navigation }) {
 		if (!user?.uid) return;
 
 		try {
-			const eventoRef = doc(db, "eventos", eventoId);
-			const isLiked = likedIds.includes(eventoId);
-
-			if (isLiked) {
-				await updateDoc(eventoRef, {
-					likes: Math.max(0, (eventos.find(e => e.id === eventoId)?.likes || 1) - 1),
-				});
-				setLikedIds(likedIds.filter(id => id !== eventoId));
+			const isNowLiked = await toggleEventoLike(eventoId, user.uid);
+			if (isNowLiked) {
+				setLikedIds((prev) => [...prev, eventoId]);
 			} else {
-				await updateDoc(eventoRef, {
-					likes: (eventos.find(e => e.id === eventoId)?.likes || 0) + 1,
-				});
-				setLikedIds([...likedIds, eventoId]);
+				setLikedIds((prev) => prev.filter((id) => id !== eventoId));
 			}
 		} catch (error) {
 			console.log("Erro ao fazer like:", error);
