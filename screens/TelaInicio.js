@@ -1,4 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import {
   View,
@@ -6,12 +10,24 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
   Dimensions,
   Linking,
   Modal,
 } from "react-native";
+
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  FadeInRight,
+  Layout,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  interpolate,
+  useAnimatedScrollHandler,
+} from "react-native-reanimated";
+
+import SkeletonContent from "react-native-skeleton-content";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -30,7 +46,8 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { Colors } from "../styles/Colors";
 
-const windowWidth = Dimensions.get("window").width;
+const windowWidth =
+  Dimensions.get("window").width;
 
 const DEFAULT_IMAGE =
   "https://placehold.co/600x400?text=Evento";
@@ -41,20 +58,25 @@ export default function TelaInicio() {
   const { user, nome } = useAuth();
 
   const [eventos, setEventos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
   const [categoriaAtiva, setCategoriaAtiva] =
     useState("Todos");
 
-  const [location, setLocation] = useState(null);
+  const [location, setLocation] =
+    useState(null);
 
-  const [likedIds, setLikedIds] = useState([]);
+  const [likedIds, setLikedIds] =
+    useState([]);
 
   const [showMapErrorModal, setShowMapErrorModal] =
     useState(false);
 
   const [mapErrorMessage, setMapErrorMessage] =
     useState("");
+
+  const scrollX = useSharedValue(0);
 
   const nomeUsuario =
     nome ||
@@ -75,6 +97,7 @@ export default function TelaInicio() {
   const carregarLikes = async () => {
     try {
       const ids = await getUserLikes(user.uid);
+
       setLikedIds(ids);
     } catch (error) {
       console.log(error);
@@ -122,7 +145,8 @@ export default function TelaInicio() {
         original: item,
       }));
 
-      const usuario = await getUserLocation();
+      const usuario =
+        await getUserLocation();
 
       if (usuario) {
         setLocation(usuario);
@@ -167,12 +191,18 @@ export default function TelaInicio() {
       return eventosComDistancia;
     }
 
-    return eventosComDistancia.filter((evento) =>
-      evento.categoria
-        .toLowerCase()
-        .includes(categoriaAtiva.toLowerCase())
+    return eventosComDistancia.filter(
+      (evento) =>
+        evento.categoria
+          .toLowerCase()
+          .includes(
+            categoriaAtiva.toLowerCase()
+          )
     );
-  }, [categoriaAtiva, eventosComDistancia]);
+  }, [
+    categoriaAtiva,
+    eventosComDistancia,
+  ]);
 
   const destaques = useMemo(() => {
     return eventosFiltrados
@@ -185,9 +215,13 @@ export default function TelaInicio() {
     return eventosFiltrados
       .filter(
         (item) =>
-          typeof item.distancia === "number"
+          typeof item.distancia ===
+          "number"
       )
-      .sort((a, b) => a.distancia - b.distancia)
+      .sort(
+        (a, b) =>
+          a.distancia - b.distancia
+      )
       .slice(0, 6);
   }, [eventosFiltrados]);
 
@@ -221,14 +255,16 @@ export default function TelaInicio() {
       await Linking.openURL(url);
     } catch (error) {
       setMapErrorMessage(
-        "Verifique sua conexão, permissões de localização ou tente novamente em alguns instantes."
+        "Verifique sua conexão ou permissões."
       );
 
       setShowMapErrorModal(true);
     }
   };
 
-  const formatarDistancia = (distancia) => {
+  const formatarDistancia = (
+    distancia
+  ) => {
     if (distancia == null)
       return "Localização indisponível";
 
@@ -241,174 +277,344 @@ export default function TelaInicio() {
     return `${distancia.toFixed(1)} km`;
   };
 
-  const HeroCard = ({ item }) => (
-    <TouchableOpacity
-      activeOpacity={0.92}
-      style={styles.heroCard}
-      onPress={() =>
-        navigation.navigate("Detalhes", {
-          evento: item.original,
-        })
-      }
-    >
-      <Image
-        source={{ uri: item.imagem }}
-        style={styles.heroImage}
-      />
+  const HeroCard = ({
+    item,
+    index,
+  }) => {
+    const scale = useSharedValue(1);
 
-      <LinearGradient
-        colors={[
-          "transparent",
-          "rgba(0,0,0,0.95)",
-        ]}
-        style={styles.heroGradient}
-      />
+    const animatedStyle =
+      useAnimatedStyle(() => ({
+        transform: [
+          { scale: scale.value },
+        ],
+      }));
 
-      <View style={styles.heroContent}>
-        <View style={styles.heroBadge}>
-          <Text style={styles.heroBadgeText}>
-            {item.categoria}
-          </Text>
-        </View>
+    const imageStyle =
+      useAnimatedStyle(() => {
+        const imageScale = interpolate(
+          scrollX.value,
+          [
+            (index - 1) *
+              (windowWidth * 0.78 + 16),
+            index *
+              (windowWidth * 0.78 + 16),
+            (index + 1) *
+              (windowWidth * 0.78 + 16),
+          ],
+          [1, 1.08, 1]
+        );
 
-        <Text
-          style={styles.heroTitle}
-          numberOfLines={2}
-        >
-          {item.titulo}
-        </Text>
+        return {
+          transform: [
+            { scale: imageScale },
+          ],
+        };
+      });
 
-        <Text
-          style={styles.heroLocation}
-          numberOfLines={1}
-        >
-          📍 {item.local}
-        </Text>
-
-        <View style={styles.heroFooter}>
-          <View style={styles.metric}>
-            <MaterialCommunityIcons
-              name="heart"
-              size={14}
-              color="#FF4D6D"
-            />
-
-            <Text style={styles.metricText}>
-              {item.likes}
-            </Text>
-          </View>
-
-          <View style={styles.metric}>
-            <MaterialCommunityIcons
-              name="eye-outline"
-              size={15}
-              color="#FFF"
-            />
-
-            <Text style={styles.metricText}>
-              {item.views}
-            </Text>
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const CardEvento = ({ item }) => (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      style={styles.card}
-      onPress={() =>
-        navigation.navigate("Detalhes", {
-          evento: item.original,
-        })
-      }
-    >
-      <Image
-        source={{ uri: item.imagem }}
-        style={styles.cardImage}
-      />
-
-      <LinearGradient
-        colors={[
-          "transparent",
-          "rgba(0,0,0,0.85)",
-        ]}
-        style={styles.cardGradient}
-      />
-
-      <View style={styles.cardContent}>
-        <View style={styles.cardTop}>
-          <View style={styles.categoryMini}>
-            <Text style={styles.categoryMiniText}>
-              {item.categoria}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.likeButton}
-          >
-            <MaterialCommunityIcons
-              name={
-                likedIds.includes(item.id)
-                  ? "heart"
-                  : "heart-outline"
+    return (
+      <Animated.View
+        entering={FadeInRight.delay(
+          index * 120
+        ).springify()}
+        layout={Layout.springify()}
+        style={animatedStyle}
+      >
+        <TouchableOpacity
+          activeOpacity={0.95}
+          style={styles.heroCard}
+          onPressIn={() => {
+            scale.value =
+              withSpring(0.97);
+          }}
+          onPressOut={() => {
+            scale.value =
+              withSpring(1);
+          }}
+          onPress={() =>
+            navigation.navigate(
+              "Detalhes",
+              {
+                evento: item.original,
               }
-              size={18}
-              color={
-                likedIds.includes(item.id)
-                  ? "#FF4D6D"
-                  : "#FFF"
-              }
-            />
-          </TouchableOpacity>
-        </View>
+            )
+          }
+        >
+          <Animated.Image
+            source={{ uri: item.imagem }}
+            style={[
+              styles.heroImage,
+              imageStyle,
+            ]}
+          />
 
-        <View style={styles.cardBottom}>
-          <Text
-            style={styles.cardTitle}
-            numberOfLines={2}
+          <LinearGradient
+            colors={[
+              "transparent",
+              "rgba(0,0,0,0.95)",
+            ]}
+            style={styles.heroGradient}
+          />
+
+          <View
+            style={styles.heroContent}
           >
-            {item.titulo}
-          </Text>
-
-          <Text
-            style={styles.cardLocation}
-            numberOfLines={1}
-          >
-            📍 {item.local}
-          </Text>
-
-          <View style={styles.cardFooter}>
-            <Text style={styles.distance}>
-              {formatarDistancia(
-                item.distancia
-              )}
-            </Text>
-
-            <View style={styles.rating}>
-              <MaterialCommunityIcons
-                name="star"
-                size={14}
-                color="#FFD166"
-              />
-
-              <Text style={styles.ratingText}>
-                {Math.round(item.score)}
+            <View
+              style={styles.heroBadge}
+            >
+              <Text
+                style={
+                  styles.heroBadgeText
+                }
+              >
+                {item.categoria}
               </Text>
             </View>
+
+            <Text
+              style={styles.heroTitle}
+              numberOfLines={2}
+            >
+              {item.titulo}
+            </Text>
+
+            <Text
+              style={
+                styles.heroLocation
+              }
+            >
+              📍 {item.local}
+            </Text>
+
+            <View
+              style={styles.heroFooter}
+            >
+              <View
+                style={styles.metric}
+              >
+                <MaterialCommunityIcons
+                  name="heart"
+                  size={14}
+                  color="#FF4D6D"
+                />
+
+                <Text
+                  style={
+                    styles.metricText
+                  }
+                >
+                  {item.likes}
+                </Text>
+              </View>
+
+              <View
+                style={styles.metric}
+              >
+                <MaterialCommunityIcons
+                  name="eye-outline"
+                  size={15}
+                  color="#FFF"
+                />
+
+                <Text
+                  style={
+                    styles.metricText
+                  }
+                >
+                  {item.views}
+                </Text>
+              </View>
+            </View>
           </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  const CardEvento = ({
+    item,
+    index,
+  }) => {
+    const scale = useSharedValue(1);
+
+    const animatedStyle =
+      useAnimatedStyle(() => ({
+        transform: [
+          { scale: scale.value },
+        ],
+      }));
+
+    return (
+      <Animated.View
+        entering={FadeInDown.delay(
+          index * 100
+        ).springify()}
+        layout={Layout.springify()}
+        style={animatedStyle}
+      >
+        <TouchableOpacity
+          activeOpacity={0.95}
+          style={styles.card}
+          onPressIn={() => {
+            scale.value =
+              withSpring(0.98);
+          }}
+          onPressOut={() => {
+            scale.value =
+              withSpring(1);
+          }}
+          onPress={() =>
+            navigation.navigate(
+              "Detalhes",
+              {
+                evento: item.original,
+              }
+            )
+          }
+        >
+          <Animated.Image
+            source={{ uri: item.imagem }}
+            style={styles.cardImage}
+          />
+
+          <LinearGradient
+            colors={[
+              "transparent",
+              "rgba(0,0,0,0.88)",
+            ]}
+            style={styles.cardGradient}
+          />
+
+          <View
+            style={styles.cardContent}
+          >
+            <View style={styles.cardTop}>
+              <BlurView
+                intensity={30}
+                tint="dark"
+                style={
+                  styles.categoryMini
+                }
+              >
+                <Text
+                  style={
+                    styles.categoryMiniText
+                  }
+                >
+                  {item.categoria}
+                </Text>
+              </BlurView>
+
+              <BlurView
+                intensity={30}
+                tint="dark"
+                style={styles.likeButton}
+              >
+                <MaterialCommunityIcons
+                  name={
+                    likedIds.includes(
+                      item.id
+                    )
+                      ? "heart"
+                      : "heart-outline"
+                  }
+                  size={18}
+                  color={
+                    likedIds.includes(
+                      item.id
+                    )
+                      ? "#FF4D6D"
+                      : "#FFF"
+                  }
+                />
+              </BlurView>
+            </View>
+
+            <View>
+              <Text
+                style={styles.cardTitle}
+              >
+                {item.titulo}
+              </Text>
+
+              <Text
+                style={
+                  styles.cardLocation
+                }
+              >
+                📍 {item.local}
+              </Text>
+
+              <View
+                style={
+                  styles.cardFooter
+                }
+              >
+                <Text
+                  style={
+                    styles.distance
+                  }
+                >
+                  {formatarDistancia(
+                    item.distancia
+                  )}
+                </Text>
+
+                <BlurView
+                  intensity={20}
+                  tint="dark"
+                  style={
+                    styles.rating
+                  }
+                >
+                  <MaterialCommunityIcons
+                    name="star"
+                    size={14}
+                    color="#FFD166"
+                  />
+
+                  <Text
+                    style={
+                      styles.ratingText
+                    }
+                  >
+                    {Math.round(
+                      item.score
+                    )}
+                  </Text>
+                </BlurView>
+              </View>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   if (loading) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator
-          size="large"
-          color={Colors.primary}
+      <View style={styles.container}>
+        <SkeletonContent
+          containerStyle={{
+            flex: 1,
+            padding: 16,
+            paddingTop: 80,
+          }}
+          isLoading={loading}
+          layout={[
+            {
+              width: "100%",
+              height: 260,
+              borderRadius: 28,
+              marginBottom: 24,
+            },
+            {
+              width: "100%",
+              height: 260,
+              borderRadius: 28,
+              marginBottom: 24,
+            },
+          ]}
         />
       </View>
     );
@@ -416,13 +622,15 @@ export default function TelaInicio() {
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
+      <Animated.ScrollView
+        entering={FadeIn.duration(600)}
+        showsVerticalScrollIndicator={
+          false
+        }
         contentContainerStyle={{
           paddingBottom: 140,
         }}
       >
-        {/* HEADER */}
         <LinearGradient
           colors={[
             "#10131F",
@@ -430,7 +638,9 @@ export default function TelaInicio() {
           ]}
           style={styles.header}
         >
-          <View>
+          <Animated.View
+            entering={FadeInDown.springify()}
+          >
             <Text style={styles.saudacao}>
               Olá 👋
             </Text>
@@ -438,9 +648,11 @@ export default function TelaInicio() {
             <Text style={styles.nome}>
               {nomeUsuario}
             </Text>
-          </View>
+          </Animated.View>
 
-          <TouchableOpacity
+          <BlurView
+            intensity={25}
+            tint="dark"
             style={styles.notificationBtn}
           >
             <MaterialCommunityIcons
@@ -448,29 +660,37 @@ export default function TelaInicio() {
               size={22}
               color="#FFF"
             />
-          </TouchableOpacity>
+          </BlurView>
         </LinearGradient>
 
-        {/* BUSCA */}
-        <TouchableOpacity
-          style={styles.searchBox}
-          activeOpacity={0.9}
-          onPress={() =>
-            navigation.navigate("Busca")
-          }
+        <Animated.View
+          entering={FadeInDown.delay(
+            100
+          ).springify()}
         >
-          <MaterialCommunityIcons
-            name="magnify"
-            size={22}
-            color={Colors.textSecondary}
-          />
+          <TouchableOpacity
+            style={styles.searchBox}
+            activeOpacity={0.9}
+            onPress={() =>
+              navigation.navigate("Busca")
+            }
+          >
+            <MaterialCommunityIcons
+              name="magnify"
+              size={22}
+              color={
+                Colors.textSecondary
+              }
+            />
 
-          <Text style={styles.searchText}>
-            Buscar eventos, shows...
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={styles.searchText}
+            >
+              Buscar eventos, shows...
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
 
-        {/* DESTAQUES */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>
             Destaques
@@ -481,29 +701,51 @@ export default function TelaInicio() {
           </Text>
         </View>
 
-        <FlashList
+        <AnimatedFlashList
+          horizontal
           data={destaques}
-          renderItem={({ item }) => (
-            <HeroCard item={item} />
+          renderItem={({
+            item,
+            index,
+          }) => (
+            <HeroCard
+              item={item}
+              index={index}
+            />
           )}
           keyExtractor={(item) =>
             item.id.toString()
           }
-          horizontal
           estimatedItemSize={300}
-          showsHorizontalScrollIndicator={false}
+          showsHorizontalScrollIndicator={
+            false
+          }
+          snapToInterval={
+            windowWidth * 0.78 + 16
+          }
+          decelerationRate="fast"
           contentContainerStyle={{
             paddingHorizontal: 16,
           }}
+          onScroll={useAnimatedScrollHandler(
+            {
+              onScroll: (event) => {
+                scrollX.value =
+                  event.contentOffset.x;
+              },
+            }
+          )}
+          scrollEventThrottle={16}
         />
 
-        {/* CATEGORIAS */}
         <FlashList
           data={categorias}
           horizontal
           estimatedItemSize={100}
           keyExtractor={(item) => item}
-          showsHorizontalScrollIndicator={false}
+          showsHorizontalScrollIndicator={
+            false
+          }
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingTop: 24,
@@ -514,32 +756,37 @@ export default function TelaInicio() {
               item === categoriaAtiva;
 
             return (
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={() =>
-                  setCategoriaAtiva(item)
-                }
-                style={[
-                  styles.categoryBtn,
-                  ativo &&
-                    styles.categoryBtnActive,
-                ]}
+              <Animated.View
+                layout={Layout.springify()}
               >
-                <Text
+                <TouchableOpacity
+                  activeOpacity={0.9}
+                  onPress={() =>
+                    setCategoriaAtiva(
+                      item
+                    )
+                  }
                   style={[
-                    styles.categoryText,
+                    styles.categoryBtn,
                     ativo &&
-                      styles.categoryTextActive,
+                      styles.categoryBtnActive,
                   ]}
                 >
-                  {item}
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      ativo &&
+                        styles.categoryTextActive,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
             );
           }}
         />
 
-        {/* PROXIMOS */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>
             Próximos de você
@@ -552,8 +799,14 @@ export default function TelaInicio() {
 
         <FlashList
           data={proximos}
-          renderItem={({ item }) => (
-            <CardEvento item={item} />
+          renderItem={({
+            item,
+            index,
+          }) => (
+            <CardEvento
+              item={item}
+              index={index}
+            />
           )}
           keyExtractor={(item) =>
             item.id.toString()
@@ -565,133 +818,166 @@ export default function TelaInicio() {
           }}
         />
 
-        {/* MAPA */}
-        <TouchableOpacity
-          activeOpacity={0.92}
-          onPress={abrirMapa}
-          style={styles.mapCard}
+        <Animated.View
+          entering={FadeInDown.delay(
+            400
+          ).springify()}
         >
-          <Image
-            source={{
-              uri: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1200&auto=format&fit=crop",
-            }}
-            style={styles.mapImage}
-          />
+          <TouchableOpacity
+            activeOpacity={0.95}
+            onPress={abrirMapa}
+            style={styles.mapCard}
+          >
+            <Animated.Image
+              source={{
+                uri: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1200&auto=format&fit=crop",
+              }}
+              style={styles.mapImage}
+            />
 
-          <LinearGradient
-            colors={[
-              "transparent",
-              "rgba(0,0,0,0.92)",
-            ]}
-            style={styles.mapGradient}
-          />
+            <LinearGradient
+              colors={[
+                "transparent",
+                "rgba(0,0,0,0.92)",
+              ]}
+              style={styles.mapGradient}
+            />
 
-          <View style={styles.mapContent}>
-            <View style={styles.mapIcon}>
+            <View
+              style={styles.mapContent}
+            >
+              <BlurView
+                intensity={30}
+                tint="dark"
+                style={styles.mapIcon}
+              >
+                <MaterialCommunityIcons
+                  name="map-marker-radius"
+                  size={22}
+                  color="#FFF"
+                />
+              </BlurView>
+
+              <View
+                style={{ flex: 1 }}
+              >
+                <Text
+                  style={
+                    styles.mapTitle
+                  }
+                >
+                  Explorar no mapa
+                </Text>
+
+                <Text
+                  style={styles.mapText}
+                >
+                  Veja eventos próximos
+                  em tempo real
+                </Text>
+              </View>
+
               <MaterialCommunityIcons
-                name="map-marker-radius"
-                size={22}
+                name="chevron-right"
+                size={26}
                 color="#FFF"
               />
             </View>
+          </TouchableOpacity>
+        </Animated.View>
+      </Animated.ScrollView>
 
-            <View style={{ flex: 1 }}>
-              <Text style={styles.mapTitle}>
-                Explorar no mapa
-              </Text>
-
-              <Text style={styles.mapText}>
-                Veja eventos próximos à sua
-                localização em tempo real
-              </Text>
-            </View>
-
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={26}
-              color="#FFF"
-            />
-          </View>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* MODAL */}
       <Modal
         visible={showMapErrorModal}
         transparent
-        animationType="fade"
-        onRequestClose={() =>
-          setShowMapErrorModal(false)
-        }
+        animationType="none"
       >
-        <View style={styles.modalOverlay}>
-          <BlurView
-            intensity={70}
-            tint="dark"
-            style={styles.modalCard}
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          style={styles.modalOverlay}
+        >
+          <Animated.View
+            entering={FadeInDown.springify()}
           >
-            <LinearGradient
-              colors={[
-                Colors.primary,
-                "#7B5CFF",
-              ]}
-              style={styles.modalIcon}
-            >
-              <MaterialCommunityIcons
-                name="map-marker-off"
-                size={34}
-                color="#FFF"
-              />
-            </LinearGradient>
-
-            <Text style={styles.modalTitle}>
-              Não foi possível abrir o mapa
-            </Text>
-
-            <Text style={styles.modalMessage}>
-              {mapErrorMessage}
-            </Text>
-
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() =>
-                setShowMapErrorModal(false)
-              }
-              style={{ width: "100%" }}
+            <BlurView
+              intensity={70}
+              tint="dark"
+              style={styles.modalCard}
             >
               <LinearGradient
                 colors={[
                   Colors.primary,
                   "#7B5CFF",
                 ]}
-                style={styles.modalButton}
+                style={styles.modalIcon}
               >
-                <Text
+                <MaterialCommunityIcons
+                  name="map-marker-off"
+                  size={34}
+                  color="#FFF"
+                />
+              </LinearGradient>
+
+              <Text
+                style={styles.modalTitle}
+              >
+                Não foi possível abrir o
+                mapa
+              </Text>
+
+              <Text
+                style={
+                  styles.modalMessage
+                }
+              >
+                {mapErrorMessage}
+              </Text>
+
+              <TouchableOpacity
+                activeOpacity={0.9}
+                onPress={() =>
+                  setShowMapErrorModal(
+                    false
+                  )
+                }
+                style={{
+                  width: "100%",
+                }}
+              >
+                <LinearGradient
+                  colors={[
+                    Colors.primary,
+                    "#7B5CFF",
+                  ]}
                   style={
-                    styles.modalButtonText
+                    styles.modalButton
                   }
                 >
-                  Entendi
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </BlurView>
-        </View>
+                  <Text
+                    style={
+                      styles.modalButtonText
+                    }
+                  >
+                    Entendi
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </BlurView>
+          </Animated.View>
+        </Animated.View>
       </Modal>
     </View>
   );
 }
 
+const AnimatedFlashList =
+  Animated.createAnimatedComponent(
+    FlashList
+  );
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
-  },
-
-  loading: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
     backgroundColor: Colors.background,
   },
 
@@ -711,24 +997,24 @@ const styles = StyleSheet.create({
 
   nome: {
     color: "#FFF",
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "bold",
     marginTop: 4,
   },
 
   notificationBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    width: 48,
+    height: 48,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
   },
 
   searchBox: {
     marginHorizontal: 16,
     backgroundColor: Colors.surface,
-    borderRadius: 18,
+    borderRadius: 22,
     paddingHorizontal: 18,
     paddingVertical: 16,
     flexDirection: "row",
@@ -750,7 +1036,7 @@ const styles = StyleSheet.create({
 
   sectionTitle: {
     color: "#FFF",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
   },
 
@@ -762,9 +1048,9 @@ const styles = StyleSheet.create({
 
   heroCard: {
     width: windowWidth * 0.78,
-    height: 260,
+    height: 270,
     marginRight: 16,
-    borderRadius: 28,
+    borderRadius: 30,
     overflow: "hidden",
   },
 
@@ -801,7 +1087,7 @@ const styles = StyleSheet.create({
 
   heroTitle: {
     color: "#FFF",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
     marginBottom: 8,
   },
@@ -850,10 +1136,10 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    height: 260,
-    borderRadius: 26,
+    height: 270,
+    borderRadius: 30,
     overflow: "hidden",
-    marginBottom: 18,
+    marginBottom: 20,
     backgroundColor: Colors.surface,
   },
 
@@ -879,11 +1165,10 @@ const styles = StyleSheet.create({
   },
 
   categoryMini: {
-    backgroundColor: "rgba(255,255,255,0.15)",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    backdropFilter: "blur(10px)",
+    overflow: "hidden",
   },
 
   categoryMiniText: {
@@ -893,19 +1178,17 @@ const styles = StyleSheet.create({
   },
 
   likeButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
   },
-
-  cardBottom: {},
 
   cardTitle: {
     color: "#FFF",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
     marginBottom: 8,
   },
@@ -931,10 +1214,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(0,0,0,0.35)",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 14,
+    overflow: "hidden",
   },
 
   ratingText: {
@@ -947,7 +1230,7 @@ const styles = StyleSheet.create({
     height: 220,
     marginHorizontal: 16,
     marginTop: 10,
-    borderRadius: 28,
+    borderRadius: 30,
     overflow: "hidden",
   },
 
@@ -973,9 +1256,9 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.12)",
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
     marginRight: 16,
   },
 
@@ -994,7 +1277,8 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor:
+      "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
@@ -1002,11 +1286,12 @@ const styles = StyleSheet.create({
 
   modalCard: {
     width: "100%",
-    borderRadius: 28,
+    borderRadius: 30,
     padding: 24,
     alignItems: "center",
     overflow: "hidden",
-    backgroundColor: "rgba(20,20,30,0.85)",
+    backgroundColor:
+      "rgba(20,20,30,0.85)",
   },
 
   modalIcon: {

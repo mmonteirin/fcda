@@ -1,11 +1,21 @@
 const BASE_URL = "https://mapacultural.secult.ce.gov.br/api";
 
-// 🔥 Buscar eventos
-export const getEventos = async () => {
-  try {
-    const url = `${BASE_URL}/event/find?@select=id,name,shortDescription,location`;
+// ✅ Limites para evitar sobrecarga de RAM
+const EVENTOS_LIMIT = 50;
+const ESPACOS_LIMIT = 50;
 
-    const response = await fetch(url);
+// 🔥 Buscar eventos com limite
+export const getEventos = async (offset = 0) => {
+  try {
+    // ✅ Usando @limit para paginar e reduzir carga
+    const url = `${BASE_URL}/event/find?@select=id,name,shortDescription,location&@limit=${EVENTOS_LIMIT}&@offset=${offset}`;
+
+    const response = await fetch(url, {
+      timeout: 10000, // 10s timeout
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
     const json = await response.json();
 
     // 🛠️ garante array
@@ -22,11 +32,18 @@ export const getEventos = async () => {
   }
 };
 
-export const getEspacos = async () => {
+// 🔥 Buscar espaços com limite
+export const getEspacos = async (offset = 0) => {
   try {
-    const url = `${BASE_URL}/space/find?@select=id,name,location`;
+    // ✅ Usando @limit para paginar e reduzir carga
+    const url = `${BASE_URL}/space/find?@select=id,name,location&@limit=${ESPACOS_LIMIT}&@offset=${offset}`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      timeout: 10000, // 10s timeout
+    });
+    
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
     const json = await response.json();
 
     if (Array.isArray(json)) return json;

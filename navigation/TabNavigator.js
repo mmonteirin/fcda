@@ -22,6 +22,7 @@ import BuscaStack from "./BuscaStack";
 import FeedStack from "./FeedStack";
 import EventoStack from "./EventoStack";
 import PerfilStack from "./PerfilStack";
+import ComunidadeStack from "./ComunidadeStack";
 
 import { Colors } from "../styles/Colors";
 
@@ -183,6 +184,13 @@ export default function TabNavigator() {
 							label = "Tickets";
 							break;
 
+						case "Comunidade":
+							iconName = focused
+								? "people"
+								: "people-outline";
+							label = "Comunidade";
+							break;
+
 						case "Conta":
 							iconName = focused
 								? "account"
@@ -219,6 +227,11 @@ export default function TabNavigator() {
 			<Tab.Screen
 				name="Ingressos"
 				component={EventoStack}
+			/>
+
+			<Tab.Screen
+				name="Comunidade"
+				component={ComunidadeStack}
 			/>
 
 			<Tab.Screen
