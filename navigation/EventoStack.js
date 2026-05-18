@@ -8,29 +8,39 @@ import EventosPublicos from "../screens/EventoPublico";
 import TelaCulturaViva from "../screens/TelaCulturaViva";
 import TelaExploreCidade from "../screens/TelaExploreCidade";
 import EventoIngresso from "../screens/EventoIngresso";
+import TelaIngressos from "../screens/TelaIngressos";
+import PerfilDeclararOcorrencia from "../screens/PerfilDeclararOcorrencia";
+import TelaMapaVivo from "../screens/TelaMapaVivo";
+import MapaVivoEventoDetalhes from "../screens/MapaVivoEventoDetalhes";
+import MapaVivoCheckIn from "../screens/MapaVivoCheckIn";
 
 const Stack = createStackNavigator();
 
 export default function EventoStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      
-      {/* 🔥 HUB */}
+      {/* HUB */}
       <Stack.Screen name="EventoHome" component={EventoHome} />
 
-      {/* 🔵 SEUS EVENTOS */}
+      {/* LISTAGENS */}
       <Stack.Screen name="EventosApp" component={EventoProximo} />
-
-      {/* 🟡 EVENTOS DO GOVERNO */}
       <Stack.Screen name="EventosPublicos" component={EventosPublicos} />
 
-      {/* 🔁 COMPARTILHADO */}
+      {/* DETALHES E AÇÕES */}
       <Stack.Screen name="Detalhes" component={EventoDetalhes} />
       <Stack.Screen name="Avaliacao" component={EventoAvaliacao} />
       <Stack.Screen name="TelaCulturaViva" component={TelaCulturaViva} />
       <Stack.Screen name="TelaExploreCidade" component={TelaExploreCidade} />
-      <Stack.Screen name="EventoIngresso" component={EventoIngresso} />
+      <Stack.Screen name="TelaMapaVivo" component={TelaMapaVivo} />
+      <Stack.Screen name="MapaVivoEventoDetalhes" component={MapaVivoEventoDetalhes} />
+      <Stack.Screen name="MapaVivoCheckIn" component={MapaVivoCheckIn} />
 
+      {/* INGRESSOS — dois modos acessíveis */}
+      <Stack.Screen name="EventoIngresso" component={EventoIngresso} />
+      <Stack.Screen name="TelaIngressos" component={TelaIngressos} />
+
+      {/* OCORRÊNCIAS */}
+      <Stack.Screen name="NovaOcorrencia" component={PerfilDeclararOcorrencia} />
     </Stack.Navigator>
   );
 }

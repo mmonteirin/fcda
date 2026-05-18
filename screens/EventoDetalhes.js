@@ -1,6 +1,8 @@
 import React, {
 	useState,
 	useEffect,
+	useRef,
+	useCallback,
 } from "react";
 
 import {
@@ -13,6 +15,9 @@ import {
 	StyleSheet,
 	ActivityIndicator,
 	Modal,
+	Animated,
+	StatusBar,
+	Dimensions,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,6 +25,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { BlurView } from "expo-blur";
+
+import { MotiView } from "moti";
 
 import {
 	collection,
@@ -43,6 +52,12 @@ import {
 	toggleEventoLike,
 	incrementEventoViews,
 } from "../services/eventosAppService";
+
+const { width } = Dimensions.get("window");
+
+/* ───────────────────────────── */
+/* PALAVRÕES */
+/* ───────────────────────────── */
 
 const PALAVROES = [
 	"porra",
@@ -74,41 +89,109 @@ const PALAVROES = [
 ];
 
 const censurarTexto = (texto) => {
-	let textoLimpo = texto;
+	let t = texto;
 
-	PALAVROES.forEach((palavra) => {
-		const palavraEscapada = palavra.replace(
+	PALAVROES.forEach((p) => {
+		const escaped = p.replace(
 			/[.*+?^${}()|[\]\\]/g,
 			"\\$&"
 		);
 
-		const regex = new RegExp(
-			`\\b${palavraEscapada}\\b`,
-			"gi"
-		);
-
-		textoLimpo = textoLimpo.replace(
-			regex,
-			"*".repeat(palavra.length)
+		t = t.replace(
+			new RegExp(
+				`\\b${escaped}\\b`,
+				"gi"
+			),
+			"*".repeat(p.length)
 		);
 	});
 
-	return textoLimpo;
+	return t;
 };
+
+/* ───────────────────────────── */
+/* LIKE BUTTON */
+/* ───────────────────────────── */
+
+function LikeButton({
+	liked,
+	onPress,
+}) {
+	const scale = useRef(
+		new Animated.Value(1)
+	).current;
+
+	const handlePress = () => {
+		Animated.sequence([
+			Animated.spring(scale, {
+				toValue: 1.3,
+				useNativeDriver: true,
+				speed: 50,
+			}),
+			Animated.spring(scale, {
+				toValue: 1,
+				useNativeDriver: true,
+				speed: 50,
+			}),
+		]).start();
+
+		onPress();
+	};
+
+	return (
+		<TouchableOpacity
+			activeOpacity={0.8}
+			onPress={handlePress}
+			style={styles.metricBtn}
+		>
+			<Animated.View
+				style={{
+					transform: [{ scale }],
+				}}
+			>
+				<MaterialCommunityIcons
+					name={
+						liked
+							? "heart"
+							: "heart-outline"
+					}
+					size={18}
+					color={
+						liked
+							? "#FF4D6D"
+							: "#FFF"
+					}
+				/>
+			</Animated.View>
+		</TouchableOpacity>
+	);
+}
 
 export default function EventoDetalhes({
 	route,
 	navigation,
 }) {
-	const { evento } = route.params;
+	const { evento } =
+		route.params;
 
-	const insets = useSafeAreaInsets();
+	const insets =
+		useSafeAreaInsets();
+
+	const eventoId =
+		evento?.id ||
+		evento?.eventoId;
+
+	/* ───────────────────────────── */
+	/* STATES */
+	/* ───────────────────────────── */
 
 	const [comentario, setComentario] =
 		useState("");
 
-	const [notaSelecionada, setNotaSelecionada] =
-		useState(0);
+	const [
+		notaSelecionada,
+		setNotaSelecionada,
+	] = useState(0);
 
 	const [avaliacoes, setAvaliacoes] =
 		useState([]);
@@ -126,12 +209,19 @@ export default function EventoDetalhes({
 		useState(false);
 
 	const [likesCount, setLikesCount] =
-		useState(evento?.likes || 0);
+		useState(
+			evento?.likes || 0
+		);
 
 	const [viewsCount, setViewsCount] =
-		useState(evento?.views || 0);
+		useState(
+			evento?.views || 0
+		);
 
+	/* ───────────────────────────── */
 	/* MODAL */
+	/* ───────────────────────────── */
+
 	const [modalVisible, setModalVisible] =
 		useState(false);
 
@@ -140,9 +230,6 @@ export default function EventoDetalhes({
 
 	const [modalMessage, setModalMessage] =
 		useState("");
-
-	const eventoId =
-		evento?.id || evento?.eventoId;
 
 	const showModal = (
 		title,
@@ -153,7 +240,22 @@ export default function EventoDetalhes({
 		setModalVisible(true);
 	};
 
-	/* ⭐ CARREGA AVALIAÇÕES */
+	/* ───────────────────────────── */
+	/* DADOS */
+	/* ───────────────────────────── */
+
+	const precoBase =
+		evento?.precoInteira ?? 50;
+
+	const capacidadeRestante =
+		(evento?.capacidade || 0) -
+		(evento?.ingressosVendidos ||
+			0);
+
+	/* ───────────────────────────── */
+	/* EFFECTS */
+	/* ───────────────────────────── */
+
 	useEffect(() => {
 		if (!eventoId) return;
 
@@ -164,28 +266,31 @@ export default function EventoDetalhes({
 				eventoId,
 				"avaliacoes"
 			),
-			orderBy("createdAt", "desc")
+			orderBy(
+				"createdAt",
+				"desc"
+			)
 		);
 
 		const unsub = onSnapshot(
 			q,
-			(snapshot) => {
-				const lista = snapshot.docs.map(
-					(docu) => ({
-						id: docu.id,
-						...docu.data(),
-					})
+			(snap) => {
+				setAvaliacoes(
+					snap.docs.map((d) => ({
+						id: d.id,
+						...d.data(),
+					}))
 				);
 
-				setAvaliacoes(lista);
-				setLoadingAval(false);
+				setLoadingAval(
+					false
+				);
 			}
 		);
 
 		return () => unsub();
 	}, [eventoId]);
 
-	/* 🔍 VERIFICA */
 	useEffect(() => {
 		if (
 			!eventoId ||
@@ -211,29 +316,34 @@ export default function EventoDetalhes({
 			const snap =
 				await getDocs(q);
 
-			setJaAvaliou(!snap.empty);
+			setJaAvaliou(
+				!snap.empty
+			);
 		};
 
 		check();
 	}, [eventoId]);
 
-	/* ❤️ LIKES */
 	useEffect(() => {
-		if (!eventoId) return;
+		if (
+			!eventoId ||
+			!auth.currentUser
+		)
+			return;
 
 		const carregarLikes =
 			async () => {
-				if (!auth.currentUser)
-					return;
-
 				try {
 					const ids =
 						await getUserLikes(
-							auth.currentUser.uid
+							auth.currentUser
+								.uid
 						);
 
 					setLiked(
-						ids.includes(eventoId)
+						ids.includes(
+							eventoId
+						)
 					);
 				} catch (e) {
 					console.log(e);
@@ -243,22 +353,27 @@ export default function EventoDetalhes({
 		carregarLikes();
 	}, [eventoId]);
 
-	/* 👁️ VIEWS */
 	useEffect(() => {
 		if (!eventoId) return;
 
 		incrementEventoViews(
 			eventoId
-		).then(() => {
+		).then(() =>
 			setViewsCount(
-				(prev) => prev + 1
-			);
-		});
+				(p) => p + 1
+			)
+		);
 	}, [eventoId]);
+
+	/* ───────────────────────────── */
+	/* LIKE */
+	/* ───────────────────────────── */
 
 	const handleToggleLike =
 		async () => {
-			if (!auth.currentUser) {
+			if (
+				!auth.currentUser
+			) {
 				showModal(
 					"Login necessário",
 					"Faça login para curtir este evento."
@@ -273,20 +388,23 @@ export default function EventoDetalhes({
 
 				await toggleEventoLike(
 					eventoId,
-					auth.currentUser.uid,
+					auth.currentUser
+						.uid,
 					novoStatus
 				);
 
-				setLiked(novoStatus);
+				setLiked(
+					novoStatus
+				);
 
 				setLikesCount(
-					(prev) =>
-						prev +
-						(novoStatus ? 1 : -1)
+					(p) =>
+						p +
+						(novoStatus
+							? 1
+							: -1)
 				);
 			} catch (e) {
-				console.log(e);
-
 				showModal(
 					"Erro",
 					"Não foi possível atualizar o like."
@@ -294,10 +412,15 @@ export default function EventoDetalhes({
 			}
 		};
 
-	/* 🚀 ENVIAR */
+	/* ───────────────────────────── */
+	/* AVALIAR */
+	/* ───────────────────────────── */
+
 	const enviarAvaliacao =
 		async () => {
-			if (!comentario.trim()) {
+			if (
+				!comentario.trim()
+			) {
 				showModal(
 					"Atenção",
 					"Digite uma avaliação."
@@ -306,7 +429,9 @@ export default function EventoDetalhes({
 				return;
 			}
 
-			if (!notaSelecionada) {
+			if (
+				!notaSelecionada
+			) {
 				showModal(
 					"Atenção",
 					"Selecione uma nota."
@@ -325,34 +450,39 @@ export default function EventoDetalhes({
 			}
 
 			try {
-				setEnviando(true);
+				setEnviando(
+					true
+				);
 
 				const user =
 					auth.currentUser;
 
-				const avaliacaoData = {
-					userId: user.uid,
+				const avaliacaoData =
+					{
+						userId:
+							user.uid,
 
-					nome:
-						user.displayName ||
-						"Anônimo",
+						nome:
+							user.displayName ||
+							"Anônimo",
 
-					foto:
-						user.photoURL ||
-						"https://i.pravatar.cc/100",
+						foto:
+							user.photoURL ||
+							"https://i.pravatar.cc/100",
 
-					nota: notaSelecionada,
+						nota:
+							notaSelecionada,
 
-					comentario:
-						censurarTexto(
-							comentario.trim()
-						),
+						comentario:
+							censurarTexto(
+								comentario.trim()
+							),
 
-					createdAt:
-						serverTimestamp(),
-				};
+						createdAt:
+							serverTimestamp(),
+					};
 
-				const avaliacaoRef =
+				const ref =
 					await addDoc(
 						collection(
 							db,
@@ -372,7 +502,7 @@ export default function EventoDetalhes({
 					),
 					{
 						avaliacaoId:
-							avaliacaoRef.id,
+							ref.id,
 
 						...avaliacaoData,
 
@@ -384,29 +514,42 @@ export default function EventoDetalhes({
 					}
 				);
 
-				setComentario("");
-				setNotaSelecionada(0);
-				setJaAvaliou(true);
+				setComentario(
+					""
+				);
+
+				setNotaSelecionada(
+					0
+				);
+
+				setJaAvaliou(
+					true
+				);
 
 				showModal(
-					"Sucesso",
+					"Sucesso 🎉",
 					"Avaliação enviada!"
 				);
 			} catch (e) {
-				console.log(e);
-
 				showModal(
 					"Erro",
 					"Não foi possível enviar."
 				);
 			} finally {
-				setEnviando(false);
+				setEnviando(
+					false
+				);
 			}
 		};
 
-	/* 🗑️ DELETAR */
+	/* ───────────────────────────── */
+	/* DELETE */
+	/* ───────────────────────────── */
+
 	const deletarAvaliacao =
-		async (avaliacaoId) => {
+		async (
+			avaliacaoId
+		) => {
 			try {
 				const user =
 					auth.currentUser;
@@ -438,19 +581,21 @@ export default function EventoDetalhes({
 				const snap =
 					await getDocs(q);
 
-				for (const documento of snap.docs) {
+				for (const d of snap.docs) {
 					await deleteDoc(
 						doc(
 							db,
 							"users",
 							user.uid,
 							"avaliacoes",
-							documento.id
+							d.id
 						)
 					);
 				}
 
-				setJaAvaliou(false);
+				setJaAvaliou(
+					false
+				);
 
 				showModal(
 					"Sucesso",
@@ -461,9 +606,34 @@ export default function EventoDetalhes({
 			}
 		};
 
+	/* ───────────────────────────── */
+	/* MEDIA */
+	/* ───────────────────────────── */
+
+	const media =
+		avaliacoes.length >
+		0
+			? (
+					avaliacoes.reduce(
+						(
+							acc,
+							a
+						) =>
+							acc +
+							a.nota,
+						0
+					) /
+					avaliacoes.length
+			  ).toFixed(1)
+			: null;
+
 	if (!evento) {
 		return (
-			<View style={styles.center}>
+			<View
+				style={
+					styles.center
+				}
+			>
 				<Text
 					style={{
 						color:
@@ -476,28 +646,27 @@ export default function EventoDetalhes({
 		);
 	}
 
-	const media =
-		avaliacoes.length > 0
-			? (
-					avaliacoes.reduce(
-						(acc, a) =>
-							acc + a.nota,
-						0
-					) / avaliacoes.length
-			  ).toFixed(1)
-			: null;
-
 	return (
-		<View style={styles.container}>
+		<View
+			style={
+				styles.container
+			}
+		>
+			<StatusBar
+				barStyle="light-content"
+			/>
+
 			<ScrollView
 				showsVerticalScrollIndicator={
 					false
 				}
 				contentContainerStyle={{
-					paddingBottom: 140,
+					paddingBottom:
+						120,
 				}}
 			>
 				{/* HERO */}
+
 				<View>
 					<Image
 						source={{
@@ -505,18 +674,25 @@ export default function EventoDetalhes({
 								evento.imagemEvento ||
 								"https://placehold.co/600x300/121212/ffffff?text=Evento",
 						}}
-						style={styles.image}
+						style={
+							styles.image
+						}
 					/>
 
 					<LinearGradient
 						colors={[
 							"transparent",
-							"rgba(0,0,0,0.95)",
+							"rgba(0,0,0,0.96)",
 						]}
-						style={styles.overlay}
+						style={
+							styles.overlay
+						}
 					/>
 
 					<TouchableOpacity
+						activeOpacity={
+							0.8
+						}
 						style={[
 							styles.back,
 							{
@@ -529,18 +705,46 @@ export default function EventoDetalhes({
 							navigation.goBack()
 						}
 					>
-						<MaterialCommunityIcons
-							name="arrow-left"
-							size={24}
-							color="#fff"
-						/>
+						<BlurView
+							intensity={
+								40
+							}
+							tint="dark"
+							style={
+								styles.blurBtn
+							}
+						>
+							<MaterialCommunityIcons
+								name="arrow-left"
+								size={
+									22
+								}
+								color="#FFF"
+							/>
+						</BlurView>
 					</TouchableOpacity>
 
-					<View
-						style={styles.headerText}
+					<MotiView
+						from={{
+							opacity: 0,
+							translateY: 30,
+						}}
+						animate={{
+							opacity: 1,
+							translateY: 0,
+						}}
+						transition={{
+							type: "timing",
+							duration: 700,
+						}}
+						style={
+							styles.headerText
+						}
 					>
 						<Text
-							style={styles.title}
+							style={
+								styles.title
+							}
 						>
 							{
 								evento.tituloEvento
@@ -548,7 +752,9 @@ export default function EventoDetalhes({
 						</Text>
 
 						<Text
-							style={styles.local}
+							style={
+								styles.local
+							}
 						>
 							📍{" "}
 							{evento.localEvento ||
@@ -560,25 +766,17 @@ export default function EventoDetalhes({
 								styles.metricRow
 							}
 						>
-							<TouchableOpacity
+							<View
 								style={
-									styles.likeButton
-								}
-								onPress={
-									handleToggleLike
+									styles.metricBox
 								}
 							>
-								<MaterialCommunityIcons
-									name={
+								<LikeButton
+									liked={
 										liked
-											? "heart"
-											: "heart-outline"
 									}
-									size={18}
-									color={
-										liked
-											? Colors.error
-											: "#fff"
+									onPress={
+										handleToggleLike
 									}
 								/>
 
@@ -591,17 +789,19 @@ export default function EventoDetalhes({
 										likesCount
 									}
 								</Text>
-							</TouchableOpacity>
+							</View>
 
 							<View
 								style={
-									styles.viewRow
+									styles.metricBox
 								}
 							>
 								<MaterialCommunityIcons
 									name="eye-outline"
-									size={18}
-									color="#fff"
+									size={
+										18
+									}
+									color="#FFF"
 								/>
 
 								<Text
@@ -615,13 +815,32 @@ export default function EventoDetalhes({
 								</Text>
 							</View>
 						</View>
-					</View>
+					</MotiView>
 				</View>
 
-				{/* CONTEÚDO */}
-				<View style={styles.content}>
+				{/* CONTENT */}
+
+				<MotiView
+					from={{
+						opacity: 0,
+						translateY: 40,
+					}}
+					animate={{
+						opacity: 1,
+						translateY: 0,
+					}}
+					transition={{
+						type: "timing",
+						duration: 700,
+						delay: 200,
+					}}
+					style={
+						styles.content
+					}
+				>
 					{/* DATA */}
-					{evento.dataEvento ? (
+
+					{evento.dataEvento && (
 						<View
 							style={
 								styles.infoPill
@@ -629,7 +848,9 @@ export default function EventoDetalhes({
 						>
 							<MaterialCommunityIcons
 								name="calendar"
-								size={16}
+								size={
+									16
+								}
 								color={
 									Colors.primary
 								}
@@ -644,11 +865,40 @@ export default function EventoDetalhes({
 									evento.dataEvento
 								}
 							</Text>
+
+							{evento.horaInicio && (
+								<>
+									<MaterialCommunityIcons
+										name="clock-outline"
+										size={
+											16
+										}
+										color={
+											Colors.primary
+										}
+									/>
+
+									<Text
+										style={
+											styles.infoText
+										}
+									>
+										{
+											evento.horaInicio
+										}
+									</Text>
+								</>
+							)}
 						</View>
-					) : null}
+					)}
 
 					{/* DESCRIÇÃO */}
-					<Text style={styles.section}>
+
+					<Text
+						style={
+							styles.section
+						}
+					>
 						Descrição
 					</Text>
 
@@ -661,93 +911,170 @@ export default function EventoDetalhes({
 							"Sem descrição"}
 					</Text>
 
-					{/* 🎟️ BOTÃO EVENTOINGRESSO */}
-					<TouchableOpacity
-						style={
-							styles.experienciaBtn
-						}
-						activeOpacity={0.9}
-						onPress={() =>
-							navigation.navigate(
-								"EventoIngresso",
-								{
-									evento,
-								}
-							)
-						}
-					>
-						<LinearGradient
-							colors={[
-								"#7C3AED",
-								"#A855F7",
-							]}
-							start={{
-								x: 0,
-								y: 0,
-							}}
-							end={{
-								x: 1,
-								y: 1,
-							}}
+					{/* INGRESSOS */}
+
+					{evento?.precoInteira !==
+						undefined && (
+						<View
 							style={
-								styles.experienciaGradient
+								styles.ingressoSection
 							}
 						>
 							<View
 								style={
-									styles.experienciaIcon
+									styles.ingressoHeader
 								}
 							>
-								<MaterialCommunityIcons
-									name="ticket-confirmation"
-									size={22}
-									color="#fff"
-								/>
+								<View
+									style={
+										styles.ingressoHeaderLeft
+									}
+								>
+									<MaterialCommunityIcons
+										name="ticket-confirmation"
+										size={
+											20
+										}
+										color={
+											Colors.primary
+										}
+									/>
+
+									<Text
+										style={
+											styles.ingressoTitle
+										}
+									>
+										Ingressos
+									</Text>
+								</View>
+
+								<View
+									style={
+										styles.dispBadge
+									}
+								>
+									<Text
+										style={
+											styles.dispText
+										}
+									>
+										{
+											capacidadeRestante
+										}{" "}
+										vagas
+									</Text>
+								</View>
 							</View>
 
-							<View
-								style={{
-									flex: 1,
+							<Text
+								style={
+									styles.precoLabel
+								}
+							>
+								A partir de
+							</Text>
+
+							<Text
+								style={
+									styles.precoValor
+								}
+							>
+								{precoBase ===
+								0
+									? "Gratuito"
+									: `R$ ${Number(
+											precoBase
+									  ).toFixed(
+											2
+									  )}`}
+							</Text>
+
+							<TouchableOpacity
+								activeOpacity={
+									0.9
+								}
+								style={
+									styles.btnComprar
+								}
+								onPress={() => {
+									if (
+										!auth.currentUser
+									) {
+										showModal(
+											"Login necessário",
+											"Faça login para comprar ingressos."
+										);
+
+										return;
+									}
+
+									navigation.navigate(
+										"TelaIngressos",
+										{
+											evento,
+										}
+									);
 								}}
 							>
-								<Text
+								<LinearGradient
+									colors={[
+										"#7C3AED",
+										"#A855F7",
+									]}
+									start={{
+										x: 0,
+										y: 0,
+									}}
+									end={{
+										x: 1,
+										y: 0,
+									}}
 									style={
-										styles.experienciaTitle
+										styles.btnComprarGradient
 									}
 								>
-									Viver experiência cultural
-								</Text>
+									<MaterialCommunityIcons
+										name="ticket-outline"
+										size={
+											20
+										}
+										color="#fff"
+									/>
 
-								<Text
-									style={
-										styles.experienciaSubtitle
-									}
-								>
-									Reserve sua participação neste evento
-								</Text>
-							</View>
+									<Text
+										style={
+											styles.btnComprarText
+										}
+									>
+										Comprar Ingressos
+									</Text>
 
-							<MaterialCommunityIcons
-								name="chevron-right"
-								size={24}
-								color="#fff"
-							/>
-						</LinearGradient>
-					</TouchableOpacity>
+									<MaterialCommunityIcons
+										name="chevron-right"
+										size={
+											20
+										}
+										color="#fff"
+									/>
+								</LinearGradient>
+							</TouchableOpacity>
+						</View>
+					)}
 
-					{/* 🚨 OCORRÊNCIA */}
+					{/* OCORRÊNCIA */}
+
 					<TouchableOpacity
-						style={
-							styles.ocorrenciaBtn
-						}
+						style={styles.ocorrenciaBtn}
 						onPress={() =>
-							navigation.navigate(
-								"NovaOcorrencia",
-								{
-									eventoId,
-								}
-							)
+							navigation.navigate("NovaOcorrencia", {
+								eventoId,
+								nomeEvento:
+									evento?.tituloEvento,
+									evento,
+							})
 						}
+						activeOpacity={0.85}
 					>
 						<MaterialCommunityIcons
 							name="alert-circle-outline"
@@ -764,7 +1091,8 @@ export default function EventoDetalhes({
 						</Text>
 					</TouchableOpacity>
 
-					{/* ⭐ AVALIAÇÕES */}
+					{/* AVALIAÇÕES */}
+
 					<View
 						style={
 							styles.avalSection
@@ -783,18 +1111,20 @@ export default function EventoDetalhes({
 								Avaliações
 							</Text>
 
-							{media ? (
+							{media && (
 								<Text
 									style={
 										styles.media
 									}
 								>
-									⭐ {media}
+									⭐{" "}
+									{
+										media
+									}
 								</Text>
-							) : null}
+							)}
 						</View>
 
-						{/* INPUT */}
 						{!jaAvaliou ? (
 							<View
 								style={
@@ -883,7 +1213,9 @@ export default function EventoDetalhes({
 										) : (
 											<MaterialCommunityIcons
 												name="send"
-												size={20}
+												size={
+													20
+												}
 												color="#fff"
 											/>
 										)}
@@ -906,13 +1238,15 @@ export default function EventoDetalhes({
 							</View>
 						)}
 
-						{/* LISTA */}
 						{loadingAval ? (
 							<ActivityIndicator
 								size="small"
 								color={
 									Colors.primary
 								}
+								style={{
+									marginTop: 16,
+								}}
 							/>
 						) : (
 							<View
@@ -947,15 +1281,31 @@ export default function EventoDetalhes({
 													flex: 1,
 												}}
 											>
-												<Text
+												<View
 													style={
-														styles.avalNome
+														styles.avalTop
 													}
 												>
-													{
-														item.nome
-													}
-												</Text>
+													<Text
+														style={
+															styles.avalNome
+														}
+													>
+														{
+															item.nome
+														}
+													</Text>
+
+													<Text
+														style={
+															styles.starMini
+														}
+													>
+														{"★".repeat(
+															item.nota
+														)}
+													</Text>
+												</View>
 
 												<Text
 													style={
@@ -996,26 +1346,53 @@ export default function EventoDetalhes({
 							</View>
 						)}
 					</View>
-				</View>
+				</MotiView>
 			</ScrollView>
 
 			{/* MODAL */}
+
 			<Modal
 				transparent
 				animationType="fade"
-				visible={modalVisible}
+				visible={
+					modalVisible
+				}
 				onRequestClose={() =>
-					setModalVisible(false)
+					setModalVisible(
+						false
+					)
 				}
 			>
-				<View style={styles.modalOverlay}>
-					<View style={styles.modalBox}>
+				<View
+					style={
+						styles.modalOverlay
+					}
+				>
+					<View
+						style={
+							styles.modalBox
+						}
+					>
+						<View
+							style={
+								styles.modalIcon
+							}
+						>
+							<MaterialCommunityIcons
+								name="information"
+								size={42}
+								color="#A855F7"
+							/>
+						</View>
+
 						<Text
 							style={
 								styles.modalTitle
 							}
 						>
-							{modalTitle}
+							{
+								modalTitle
+							}
 						</Text>
 
 						<Text
@@ -1023,26 +1400,35 @@ export default function EventoDetalhes({
 								styles.modalMessage
 							}
 						>
-							{modalMessage}
+							{
+								modalMessage
+							}
 						</Text>
 
 						<TouchableOpacity
-							style={
-								styles.modalButton
-							}
 							onPress={() =>
 								setModalVisible(
 									false
 								)
 							}
 						>
-							<Text
+							<LinearGradient
+								colors={[
+									"#7C3AED",
+									"#A855F7",
+								]}
 								style={
-									styles.modalButtonText
+									styles.modalButton
 								}
 							>
-								OK
-							</Text>
+								<Text
+									style={
+										styles.modalButtonText
+									}
+								>
+									OK
+								</Text>
+							</LinearGradient>
 						</TouchableOpacity>
 					</View>
 				</View>
@@ -1051,333 +1437,488 @@ export default function EventoDetalhes({
 	);
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor:
-			Colors.background,
-	},
+const styles =
+	StyleSheet.create({
+		container: {
+			flex: 1,
+			backgroundColor:
+				"#070B14",
+		},
 
-	image: {
-		width: "100%",
-		height: 320,
-	},
+		center: {
+			flex: 1,
+			justifyContent:
+				"center",
+			alignItems:
+				"center",
+			backgroundColor:
+				"#070B14",
+		},
 
-	overlay: {
-		position: "absolute",
-		bottom: 0,
-		width: "100%",
-		height: 180,
-	},
+		/* HERO */
 
-	back: {
-		position: "absolute",
-		left: 16,
-		backgroundColor:
-			"rgba(0,0,0,0.45)",
-		padding: 10,
-		borderRadius: 14,
-	},
+		image: {
+			width: "100%",
+			height: 380,
+		},
 
-	headerText: {
-		position: "absolute",
-		bottom: 24,
-		left: 16,
-		right: 16,
-	},
+		overlay: {
+			position: "absolute",
+			bottom: 0,
+			width: "100%",
+			height: 220,
+		},
 
-	title: {
-		color: "#fff",
-		fontSize: 28,
-		fontWeight: "800",
-	},
+		back: {
+			position: "absolute",
+			left: 18,
+			borderRadius: 18,
+			overflow: "hidden",
+		},
 
-	local: {
-		color: "#ddd",
-		fontSize: 14,
-		marginTop: 4,
-	},
+		blurBtn: {
+			width: 50,
+			height: 50,
+			justifyContent:
+				"center",
+			alignItems:
+				"center",
+			borderRadius: 18,
+			borderWidth: 1,
+			borderColor:
+				"rgba(255,255,255,0.08)",
+		},
 
-	content: {
-		padding: 18,
-	},
+		headerText: {
+			position: "absolute",
+			left: 20,
+			right: 20,
+			bottom: 30,
+		},
 
-	infoPill: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
-		marginBottom: 10,
-	},
+		title: {
+			color: "#FFF",
+			fontSize: 32,
+			fontWeight: "900",
+		},
 
-	infoText: {
-		color: Colors.textSecondary,
-		fontSize: 13,
-	},
+		local: {
+			color:
+				"rgba(255,255,255,0.75)",
+			fontSize: 14,
+			marginTop: 6,
+		},
 
-	section: {
-		color: Colors.textPrimary,
-		fontSize: 18,
-		fontWeight: "700",
-		marginBottom: 8,
-		marginTop: 12,
-	},
+		metricRow: {
+			flexDirection:
+				"row",
+			alignItems:
+				"center",
+			marginTop: 18,
+			gap: 12,
+		},
 
-	description: {
-		color: Colors.textSecondary,
-		lineHeight: 22,
-		fontSize: 14,
-	},
+		metricBox: {
+			flexDirection:
+				"row",
+			alignItems:
+				"center",
+			backgroundColor:
+				"rgba(255,255,255,0.12)",
+			paddingHorizontal: 14,
+			paddingVertical: 10,
+			borderRadius: 18,
+			gap: 8,
+		},
 
-	metricRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 12,
-		marginTop: 12,
-	},
+		metricBtn: {
+			alignItems:
+				"center",
+			justifyContent:
+				"center",
+		},
 
-	likeButton: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
-		backgroundColor:
-			"rgba(255,255,255,0.18)",
-		paddingVertical: 7,
-		paddingHorizontal: 12,
-		borderRadius: 16,
-	},
+		metricText: {
+			color: "#FFF",
+			fontWeight: "700",
+			fontSize: 13,
+		},
 
-	viewRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 6,
-		backgroundColor:
-			"rgba(255,255,255,0.12)",
-		paddingVertical: 7,
-		paddingHorizontal: 12,
-		borderRadius: 16,
-	},
+		/* CONTENT */
 
-	metricText: {
-		color: "#fff",
-		fontSize: 12,
-		fontWeight: "600",
-	},
+		content: {
+			paddingHorizontal: 20,
+			paddingTop: 24,
+		},
 
-	/* EXPERIÊNCIA */
-	experienciaBtn: {
-		marginTop: 24,
-		borderRadius: 24,
-		overflow: "hidden",
-		elevation: 10,
-	},
+		infoPill: {
+			flexDirection:
+				"row",
+			alignItems:
+				"center",
+			backgroundColor:
+				"#111827",
+			paddingHorizontal: 14,
+			paddingVertical: 12,
+			borderRadius: 18,
+			borderWidth: 1,
+			borderColor:
+				"rgba(255,255,255,0.06)",
+			gap: 8,
+		},
 
-	experienciaGradient: {
-		flexDirection: "row",
-		alignItems: "center",
-		paddingVertical: 18,
-		paddingHorizontal: 18,
-	},
+		infoText: {
+			color:
+				Colors.textSecondary,
+			fontSize: 13,
+			fontWeight: "600",
+		},
 
-	experienciaIcon: {
-		width: 52,
-		height: 52,
-		borderRadius: 18,
-		backgroundColor:
-			"rgba(255,255,255,0.18)",
-		justifyContent: "center",
-		alignItems: "center",
-		marginRight: 14,
-	},
+		section: {
+			color:
+				Colors.textPrimary,
+			fontSize: 20,
+			fontWeight: "800",
+			marginTop: 24,
+			marginBottom: 12,
+		},
 
-	experienciaTitle: {
-		color: "#fff",
-		fontSize: 16,
-		fontWeight: "800",
-	},
+		description: {
+			color:
+				Colors.textSecondary,
+			fontSize: 15,
+			lineHeight: 26,
+		},
 
-	experienciaSubtitle: {
-		color:
-			"rgba(255,255,255,0.75)",
-		fontSize: 12,
-		marginTop: 4,
-	},
+		/* INGRESSOS */
 
-	/* OCORRÊNCIA */
-	ocorrenciaBtn: {
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor:
-			Colors.error,
-		padding: 15,
-		borderRadius: 16,
-		marginTop: 18,
-		gap: 8,
-	},
+		ingressoSection: {
+			marginTop: 28,
+			backgroundColor:
+				"#111827",
+			borderRadius: 28,
+			padding: 22,
+			borderWidth: 1,
+			borderColor:
+				"rgba(255,255,255,0.06)",
+		},
 
-	ocorrenciaText: {
-		color: "#fff",
-		fontWeight: "700",
-	},
+		ingressoHeader: {
+			flexDirection:
+				"row",
+			alignItems:
+				"center",
+			justifyContent:
+				"space-between",
+		},
 
-	/* AVALIAÇÕES */
-	avalSection: {
-		marginTop: 26,
-	},
+		ingressoHeaderLeft: {
+			flexDirection:
+				"row",
+			alignItems:
+				"center",
+			gap: 10,
+		},
 
-	avalHeader: {
-		flexDirection: "row",
-		justifyContent:
-			"space-between",
-		alignItems: "center",
-	},
+		ingressoTitle: {
+			color:
+				Colors.textPrimary,
+			fontSize: 17,
+			fontWeight: "800",
+		},
 
-	media: {
-		color: Colors.warning,
-		fontWeight: "bold",
-	},
+		dispBadge: {
+			backgroundColor:
+				"rgba(34,197,94,0.12)",
+			paddingHorizontal: 12,
+			paddingVertical: 6,
+			borderRadius: 999,
+		},
 
-	avalInputBox: {
-		backgroundColor:
-			Colors.surface,
-		borderRadius: 18,
-		padding: 14,
-		marginTop: 12,
-		borderWidth: 1,
-		borderColor: Colors.border,
-	},
+		dispText: {
+			color:
+				Colors.success,
+			fontWeight: "700",
+			fontSize: 12,
+		},
 
-	starsRow: {
-		flexDirection: "row",
-		justifyContent: "center",
-		gap: 4,
-		marginBottom: 12,
-	},
+		precoLabel: {
+			color:
+				Colors.textMuted,
+			marginTop: 20,
+			fontSize: 13,
+		},
 
-	star: {
-		fontSize: 30,
-	},
+		precoValor: {
+			color:
+				Colors.primary,
+			fontSize: 34,
+			fontWeight: "900",
+			marginTop: 4,
+		},
 
-	inputRow: {
-		flexDirection: "row",
-		alignItems: "flex-end",
-		gap: 8,
-	},
+		btnComprar: {
+			marginTop: 22,
+			borderRadius: 22,
+			overflow: "hidden",
+		},
 
-	input: {
-		flex: 1,
-		backgroundColor:
-			Colors.background,
-		color: Colors.textPrimary,
-		borderRadius: 14,
-		padding: 12,
-		minHeight: 60,
-		borderWidth: 1,
-		borderColor: Colors.border,
-	},
+		btnComprarGradient: {
+			flexDirection:
+				"row",
+			alignItems:
+				"center",
+			justifyContent:
+				"center",
+			paddingVertical: 18,
+			gap: 10,
+		},
 
-	sendBtn: {
-		backgroundColor:
-			Colors.primary,
-		padding: 14,
-		borderRadius: 14,
-	},
+		btnComprarText: {
+			color: "#FFF",
+			fontWeight: "800",
+			fontSize: 15,
+		},
 
-	jaAvaliadoBox: {
-		backgroundColor:
-			Colors.surface,
-		padding: 14,
-		borderRadius: 14,
-		marginTop: 12,
-		alignItems: "center",
-	},
+		/* OCORRENCIA */
 
-	jaAvaliadoText: {
-		color: Colors.success,
-		fontWeight: "700",
-	},
+		ocorrenciaBtn: {
+			marginTop: 20,
+			backgroundColor:
+				"#DC2626",
+			borderRadius: 20,
+			paddingVertical: 16,
+			flexDirection:
+				"row",
+			alignItems:
+				"center",
+			justifyContent:
+				"center",
+			gap: 8,
+		},
 
-	avalList: {
-		marginTop: 16,
-	},
+		ocorrenciaText: {
+			color: "#FFF",
+			fontWeight: "800",
+			fontSize: 14,
+		},
 
-	avalCard: {
-		flexDirection: "row",
-		gap: 10,
-		backgroundColor:
-			Colors.surface,
-		padding: 12,
-		borderRadius: 16,
-		marginBottom: 10,
-	},
+		/* AVALIAÇÕES */
 
-	avalAvatar: {
-		width: 42,
-		height: 42,
-		borderRadius: 21,
-	},
+		avalSection: {
+			marginTop: 30,
+		},
 
-	avalNome: {
-		color: Colors.textPrimary,
-		fontWeight: "700",
-	},
+		avalHeader: {
+			flexDirection:
+				"row",
+			alignItems:
+				"center",
+			justifyContent:
+				"space-between",
+		},
 
-	avalTexto: {
-		color: Colors.textSecondary,
-		fontSize: 13,
-		marginTop: 4,
-		lineHeight: 18,
-	},
+		media: {
+			color:
+				Colors.warning,
+			fontWeight: "800",
+			fontSize: 15,
+		},
 
-	center: {
-		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
-	},
+		avalInputBox: {
+			backgroundColor:
+				"#111827",
+			borderRadius: 24,
+			padding: 18,
+			marginTop: 16,
+			borderWidth: 1,
+			borderColor:
+				"rgba(255,255,255,0.06)",
+		},
 
-	/* MODAL */
-	modalOverlay: {
-		flex: 1,
-		backgroundColor:
-			"rgba(0,0,0,0.7)",
-		justifyContent: "center",
-		alignItems: "center",
-		padding: 24,
-	},
+		starsRow: {
+			flexDirection:
+				"row",
+			justifyContent:
+				"center",
+			gap: 4,
+			marginBottom: 16,
+		},
 
-	modalBox: {
-		width: "100%",
-		backgroundColor:
-			Colors.surface,
-		borderRadius: 24,
-		padding: 24,
-	},
+		star: {
+			fontSize: 34,
+		},
 
-	modalTitle: {
-		color: Colors.textPrimary,
-		fontSize: 20,
-		fontWeight: "800",
-		marginBottom: 10,
-	},
+		inputRow: {
+			flexDirection:
+				"row",
+			alignItems:
+				"flex-end",
+			gap: 10,
+		},
 
-	modalMessage: {
-		color: Colors.textSecondary,
-		fontSize: 14,
-		lineHeight: 22,
-	},
+		input: {
+			flex: 1,
+			backgroundColor:
+				"#070B14",
+			borderRadius: 18,
+			padding: 14,
+			minHeight: 90,
+			color: "#FFF",
+			borderWidth: 1,
+			borderColor:
+				"rgba(255,255,255,0.06)",
+			textAlignVertical:
+				"top",
+		},
 
-	modalButton: {
-		marginTop: 22,
-		backgroundColor:
-			Colors.primary,
-		paddingVertical: 14,
-		borderRadius: 16,
-		alignItems: "center",
-	},
+		sendBtn: {
+			width: 54,
+			height: 54,
+			borderRadius: 18,
+			backgroundColor:
+				Colors.primary,
+			justifyContent:
+				"center",
+			alignItems:
+				"center",
+		},
 
-	modalButtonText: {
-		color: "#fff",
-		fontWeight: "700",
-		fontSize: 15,
-	},
-});
+		jaAvaliadoBox: {
+			backgroundColor:
+				"#111827",
+			padding: 18,
+			borderRadius: 18,
+			marginTop: 14,
+			alignItems:
+				"center",
+			borderWidth: 1,
+			borderColor:
+				"rgba(255,255,255,0.06)",
+		},
+
+		jaAvaliadoText: {
+			color:
+				Colors.success,
+			fontWeight: "700",
+		},
+
+		avalList: {
+			marginTop: 20,
+		},
+
+		avalCard: {
+			flexDirection:
+				"row",
+			backgroundColor:
+				"#111827",
+			padding: 14,
+			borderRadius: 22,
+			marginBottom: 14,
+			gap: 12,
+			borderWidth: 1,
+			borderColor:
+				"rgba(255,255,255,0.06)",
+		},
+
+		avalAvatar: {
+			width: 48,
+			height: 48,
+			borderRadius: 24,
+		},
+
+		avalTop: {
+			flexDirection:
+				"row",
+			alignItems:
+				"center",
+			gap: 8,
+		},
+
+		avalNome: {
+			color: "#FFF",
+			fontWeight: "800",
+			fontSize: 14,
+		},
+
+		starMini: {
+			color:
+				Colors.warning,
+			fontSize: 12,
+		},
+
+		avalTexto: {
+			color:
+				Colors.textSecondary,
+			fontSize: 13,
+			lineHeight: 21,
+			marginTop: 6,
+		},
+
+		/* MODAL */
+
+		modalOverlay: {
+			flex: 1,
+			backgroundColor:
+				"rgba(0,0,0,0.75)",
+			justifyContent:
+				"center",
+			alignItems:
+				"center",
+			padding: 24,
+		},
+
+		modalBox: {
+			width: "100%",
+			backgroundColor:
+				"#111827",
+			borderRadius: 30,
+			padding: 28,
+			alignItems:
+				"center",
+			borderWidth: 1,
+			borderColor:
+				"rgba(255,255,255,0.06)",
+		},
+
+		modalIcon: {
+			width: 84,
+			height: 84,
+			borderRadius: 28,
+			backgroundColor:
+				"rgba(168,85,247,0.14)",
+			alignItems:
+				"center",
+			justifyContent:
+				"center",
+			marginBottom: 20,
+		},
+
+		modalTitle: {
+			color: "#FFF",
+			fontSize: 22,
+			fontWeight: "900",
+			marginBottom: 10,
+		},
+
+		modalMessage: {
+			color:
+				"rgba(255,255,255,0.72)",
+			fontSize: 15,
+			lineHeight: 24,
+			textAlign: "center",
+		},
+
+		modalButton: {
+			paddingHorizontal: 46,
+			paddingVertical: 15,
+			borderRadius: 18,
+			marginTop: 26,
+		},
+
+		modalButtonText: {
+			color: "#FFF",
+			fontWeight: "800",
+			fontSize: 15,
+		},
+	});

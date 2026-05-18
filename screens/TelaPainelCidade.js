@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { Colors } from "../styles/Colors";
+import { getMapaSummary } from "../services/mapaVivoService";
 
 export default function TelaPainelCidade({
   navigation,
@@ -31,11 +32,14 @@ export default function TelaPainelCidade({
   const [endereco, setEndereco] =
     useState("Endereço desconhecido");
 
-  const [stats] = useState({
+  const [stats, setStats] = useState({
     eventos: 12,
     ocorrencias: 4,
     verificadas: 9,
     alertas: 2,
+    proximos: 0,
+    checkIns: 0,
+    hotspots: 0,
   });
 
   async function carregarLocalizacao() {
@@ -54,6 +58,20 @@ export default function TelaPainelCidade({
         await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.High,
         });
+
+      const resumo = await getMapaSummary(
+        location.coords.latitude,
+        location.coords.longitude
+      );
+
+      setStats((current) => ({
+        ...current,
+        eventos: resumo.totalEventos,
+        verificadas: resumo.totalEventos,
+        proximos: resumo.proximos,
+        checkIns: resumo.totalCheckins,
+        hotspots: resumo.hotspots,
+      }));
 
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.coords.latitude}&lon=${location.coords.longitude}`
@@ -231,17 +249,17 @@ export default function TelaPainelCidade({
 
           <View style={styles.statCard}>
             <MaterialCommunityIcons
-              name="alert-circle-outline"
+              name="fire"
               size={26}
               color="#ef4444"
             />
 
             <Text style={styles.statNumber}>
-              {stats.ocorrencias}
+              {stats.hotspots}
             </Text>
 
             <Text style={styles.statLabel}>
-              Ocorrências
+              Hotspots
             </Text>
           </View>
         </View>
@@ -260,11 +278,11 @@ export default function TelaPainelCidade({
 
             <View>
               <Text style={styles.statusTitle}>
-                Eventos verificados
+                Eventos próximos
               </Text>
 
               <Text style={styles.statusValue}>
-                {stats.verificadas} ativos
+                {stats.proximos} em até 5km
               </Text>
             </View>
           </View>
@@ -281,11 +299,11 @@ export default function TelaPainelCidade({
 
             <View>
               <Text style={styles.statusTitle}>
-                Alertas culturais
+                Check-ins culturais
               </Text>
 
               <Text style={styles.statusValue}>
-                {stats.alertas} recentes
+                {stats.checkIns} registros recentes
               </Text>
             </View>
           </View>
@@ -299,10 +317,43 @@ export default function TelaPainelCidade({
 
           <TouchableOpacity
             style={styles.actionButton}
+            onPress={() =>
+              navigation.navigate("MapaVivo")
+            }
           >
             <View style={styles.actionLeft}>
               <MaterialCommunityIcons
-                name="calendar-search"
+                name="map-marker-radius"
+                size={22}
+                color={Colors.primary}
+              />
+
+              <Text style={styles.actionText}>
+                Abrir Mapa Vivo da Cultura
+              </Text>
+            </View>
+
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={22}
+              color={Colors.textMuted}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() =>
+              navigation.navigate("HomeTabs", {
+                screen: "Ingressos",
+                params: {
+                  screen: "EventosApp",
+                },
+              })
+            }
+          >
+            <View style={styles.actionLeft}>
+              <MaterialCommunityIcons
+                name="bookmark-check-outline"
                 size={22}
                 color={Colors.primary}
               />
@@ -321,28 +372,11 @@ export default function TelaPainelCidade({
 
           <TouchableOpacity
             style={styles.actionButton}
-          >
-            <View style={styles.actionLeft}>
-              <MaterialCommunityIcons
-                name="bookmark-check-outline"
-                size={22}
-                color={Colors.primary}
-              />
-
-              <Text style={styles.actionText}>
-                Ver eventos inscritos
-              </Text>
-            </View>
-
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={22}
-              color={Colors.textMuted}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
+            onPress={() =>
+              navigation.navigate("HomeTabs", {
+                screen: "Feed",
+              })
+            }
           >
             <View style={styles.actionLeft}>
               <MaterialCommunityIcons

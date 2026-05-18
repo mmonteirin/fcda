@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import {
   onAuthStateChanged,
   signOut,
@@ -99,19 +99,24 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // ✅ MEMOIZAÇÃO: Evita re-criar objeto de contexto em cada render
+  // Só recria quando profile muda
+  const value = useMemo(
+    () => ({
+      user,
+      profile,
+      nome: profile?.nome || "",
+      foto: profile?.foto || null,
+      role: profile?.role || "user",
+      isAdmin: profile?.role === "admin",
+      loading,
+      logout,
+    }),
+    [user, profile, loading]
+  );
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        profile,
-        nome: profile?.nome || "",
-        foto: profile?.foto || null,
-        role: profile?.role || "user",
-        isAdmin: profile?.role === "admin",
-        loading,
-        logout,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,854 +1,1469 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  memo,
+} from "react";
+
 import {
-	View,
-	Text,
-	Image,
-	TouchableOpacity,
-	FlatList,
-	Alert,
-	ActivityIndicator,
-	Platform,
-	StyleSheet,
-	StatusBar,
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+  StyleSheet,
+  StatusBar,
+  Dimensions,
+  Modal,
 } from "react-native";
 
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+  FadeInRight,
+  useSharedValue,
+  withSpring,
+  useAnimatedStyle,
+} from "react-native-reanimated";
+
 import { LinearGradient } from "expo-linear-gradient";
+
+import { BlurView } from "expo-blur";
+
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
-	collection,
-	query,
-	where,
-	deleteDoc,
-	doc,
-	orderBy,
-	limit,
-	startAfter,
-	getDocs,
+  collection,
+  deleteDoc,
+  doc,
+  orderBy,
+  limit,
+  getDocs,
+  query,
 } from "firebase/firestore";
 
 import { db } from "../firebaseConfig";
+
 import { useAuth } from "../context/AuthContext";
+
 import { Colors } from "../styles/Colors";
-import { getUserFeedLikes, toggleEventoLike } from "../services/feedService";
+
+import {
+  getUserFeedLikes,
+  toggleEventoLike,
+} from "../services/feedService";
+
+const { width } =
+  Dimensions.get("window");
 
 const PAGE_SIZE = 10;
 
-export default function TelaFeed({ navigation }) {
-	const insets = useSafeAreaInsets();
-
-	const { user, isAdmin } = useAuth();
-
-	const [eventos, setEventos] = useState([]);
-	const [loading, setLoading] = useState(true);
-	const [loadingMore, setLoadingMore] = useState(false);
-	const [hasMore, setHasMore] = useState(true);
-	const [likedIds, setLikedIds] = useState([]);
-
-	const lastDocRef = useRef(null);
-
-	/* =========================
-	 * ❤️ Likes
-	 * ========================= */
-	useEffect(() => {
-		const carregarLikes = async () => {
-			if (!user?.uid) return;
-
-			try {
-				const likes = await getUserFeedLikes(user.uid);
-				setLikedIds(likes);
-			} catch (e) {
-				console.log(e);
-			}
-		};
-
-		carregarLikes();
-	}, [user?.uid]);
-
-	/* =========================
-	 * 📦 Feed
-	 * ========================= */
-	useEffect(() => {
-		if (!user?.uid) return;
-
-		setEventos([]);
-		lastDocRef.current = null;
-		setHasMore(true);
-
-		carregarPagina(true);
-	}, [user?.uid, isAdmin]);
-
-	const carregarPagina = async (isFirst = false) => {
-		if (!user?.uid) return;
-
-		isFirst ? setLoading(true) : setLoadingMore(true);
-
-		try {
-			let q;
-
-			if (isAdmin) {
-				q =
-					isFirst || !lastDocRef.current
-						? query(
-								collection(db, "eventos"),
-								where("uidEvento", "==", user.uid),
-								orderBy("createdAt", "desc"),
-								limit(PAGE_SIZE)
-						  )
-						: query(
-								collection(db, "eventos"),
-								where("uidEvento", "==", user.uid),
-								orderBy("createdAt", "desc"),
-								startAfter(lastDocRef.current),
-								limit(PAGE_SIZE)
-						  );
-			} else {
-				q =
-					isFirst || !lastDocRef.current
-						? query(
-								collection(db, "eventos"),
-								orderBy("createdAt", "desc"),
-								limit(PAGE_SIZE)
-						  )
-						: query(
-								collection(db, "eventos"),
-								orderBy("createdAt", "desc"),
-								startAfter(lastDocRef.current),
-								limit(PAGE_SIZE)
-						  );
-			}
-
-			const snapshot = await getDocs(q);
-
-			const novos = snapshot.docs
-				.map((d) => ({
-					id: d.id,
-					...d.data(),
-				}))
-				.filter((item) => item.id !== "_init");
-
-			if (snapshot.docs.length > 0) {
-				lastDocRef.current =
-					snapshot.docs[snapshot.docs.length - 1];
-			}
-
-			if (snapshot.docs.length < PAGE_SIZE) {
-				setHasMore(false);
-			}
-
-			setEventos((prev) =>
-				isFirst ? novos : [...prev, ...novos]
-			);
-		} catch (e) {
-			console.log("Erro ao carregar feed:", e);
-		} finally {
-			setLoading(false);
-			setLoadingMore(false);
-		}
-	};
-
-	const handleEndReached = () => {
-		if (!loadingMore && hasMore) {
-			carregarPagina(false);
-		}
-	};
-
-	/* =========================
-	 * ❤️ Like
-	 * ========================= */
-	const toggleLike = async (eventoId) => {
-		if (!user?.uid) return;
-
-		try {
-			const liked = await toggleEventoLike(
-				eventoId,
-				user.uid
-			);
-
-			if (liked) {
-				setLikedIds((prev) => [...prev, eventoId]);
-			} else {
-				setLikedIds((prev) =>
-					prev.filter((id) => id !== eventoId)
-				);
-			}
-		} catch (e) {
-			console.log(e);
-		}
-	};
-
-	/* =========================
-	 * 🗑️ Excluir
-	 * ========================= */
-	const deletarEvento = async (id) => {
-		try {
-			if (Platform.OS === "web") {
-				const confirmado = window.confirm(
-					"Deseja excluir este evento?"
-				);
-
-				if (!confirmado) return;
-
-				await deleteDoc(doc(db, "eventos", id));
-
-				setEventos((prev) =>
-					prev.filter((e) => e.id !== id)
-				);
-
-				return;
-			}
-
-			Alert.alert(
-				"Excluir evento",
-				"Tem certeza que deseja excluir?",
-				[
-					{
-						text: "Cancelar",
-						style: "cancel",
-					},
-					{
-						text: "Excluir",
-						style: "destructive",
-						onPress: async () => {
-							try {
-								await deleteDoc(
-									doc(db, "eventos", id)
-								);
-
-								setEventos((prev) =>
-									prev.filter(
-										(e) => e.id !== id
-									)
-								);
-							} catch (e) {
-								console.log(e);
-								Alert.alert(
-									"Erro",
-									"Não foi possível excluir."
-								);
-							}
-						},
-					},
-				]
-			);
-		} catch (e) {
-			console.log(e);
-		}
-	};
-
-	/* =========================
-	 * 📅 Helpers
-	 * ========================= */
-	const formatarNumero = (num) => {
-		if (!num) return "0";
-
-		if (num >= 1000000)
-			return (num / 1000000).toFixed(1) + "M";
-
-		if (num >= 1000)
-			return (num / 1000).toFixed(1) + "K";
-
-		return num.toString();
-	};
-
-	const formatarData = (timestamp) => {
-		if (!timestamp) return "Agora";
-
-		const data = timestamp.toDate?.() || new Date(timestamp);
-
-		const agora = new Date();
-
-		const diff = agora - data;
-
-		const minutos = Math.floor(diff / 60000);
-		const horas = Math.floor(diff / 3600000);
-		const dias = Math.floor(diff / 86400000);
-
-		if (minutos < 1) return "Agora";
-		if (minutos < 60) return `${minutos}m`;
-		if (horas < 24) return `${horas}h`;
-		if (dias < 7) return `${dias}d`;
-
-		return data.toLocaleDateString("pt-BR");
-	};
-
-	/* =========================
-	 * 📸 CARD
-	 * ========================= */
-	const renderItem = ({ item }) => {
-		const isLiked = likedIds.includes(item.id);
-
-		return (
-			<View style={styles.card}>
-				{/* HEADER */}
-				<View style={styles.cardHeader}>
-					<View style={styles.userInfo}>
-						<Image
-							source={{
-								uri:
-									item.userPhoto ||
-									"https://i.pravatar.cc/150",
-							}}
-							style={styles.avatar}
-						/>
-
-						<View style={{ flex: 1 }}>
-							<Text
-								numberOfLines={1}
-								style={styles.userName}
-							>
-								{item.adminNome || "Organizador"}
-							</Text>
-
-							<View style={styles.locationRow}>
-								<MaterialCommunityIcons
-									name="map-marker"
-									size={12}
-									color={Colors.textMuted}
-								/>
-
-								<Text
-									numberOfLines={1}
-									style={styles.locationText}
-								>
-									{item.localEvento ||
-										item.nomeLocal ||
-										"Local"}
-								</Text>
-							</View>
-						</View>
-					</View>
-
-					<View style={styles.headerActions}>
-						<Text style={styles.dateText}>
-							{formatarData(item.createdAt)}
-						</Text>
-
-						{isAdmin &&
-							item.uidEvento === user?.uid && (
-								<TouchableOpacity
-									style={styles.deleteBtn}
-									onPress={() =>
-										deletarEvento(item.id)
-									}
-								>
-									<MaterialCommunityIcons
-										name="trash-can-outline"
-										size={20}
-										color={Colors.error}
-									/>
-								</TouchableOpacity>
-							)}
-					</View>
-				</View>
-
-				{/* IMAGE */}
-				<TouchableOpacity
-					activeOpacity={0.9}
-					onPress={() =>
-						navigation.navigate("Detalhes", {
-							evento: item,
-						})
-					}
-					style={styles.imageWrapper}
-				>
-					<Image
-						source={{
-							uri:
-								item.imagemEvento ||
-								"https://placehold.co/600x600",
-						}}
-						style={styles.mainImage}
-					/>
-
-					<LinearGradient
-						colors={[
-							"transparent",
-							"rgba(0,0,0,0.88)",
-						]}
-						style={styles.overlay}
-					>
-						<View style={styles.badge}>
-							<MaterialCommunityIcons
-								name="calendar"
-								size={13}
-								color="#fff"
-							/>
-
-							<Text style={styles.badgeText}>
-								{item.dataEvento || "Evento"}
-							</Text>
-						</View>
-
-						<Text
-							numberOfLines={2}
-							style={styles.eventTitle}
-						>
-							{item.tituloEvento ||
-								"Evento sem título"}
-						</Text>
-
-						{item.horaInicio && (
-							<Text style={styles.eventTime}>
-								🕐 {item.horaInicio}
-								{item.horaFim
-									? ` às ${item.horaFim}`
-									: ""}
-							</Text>
-						)}
-					</LinearGradient>
-				</TouchableOpacity>
-
-				{/* ACTIONS */}
-				<View style={styles.actions}>
-					<View style={styles.leftActions}>
-						<TouchableOpacity
-							style={styles.actionBtn}
-							onPress={() =>
-								toggleLike(item.id)
-							}
-						>
-							<MaterialCommunityIcons
-								name={
-									isLiked
-										? "heart"
-										: "heart-outline"
-								}
-								size={25}
-								color={
-									isLiked
-										? Colors.error
-										: Colors.textPrimary
-								}
-							/>
-						</TouchableOpacity>
-
-						<TouchableOpacity
-							style={styles.actionBtn}
-							onPress={() =>
-								navigation.navigate(
-									"Detalhes",
-									{
-										evento: item,
-									}
-								)
-							}
-						>
-							<MaterialCommunityIcons
-								name="comment-outline"
-								size={24}
-								color={
-									Colors.textPrimary
-								}
-							/>
-						</TouchableOpacity>
-
-						<TouchableOpacity
-							style={styles.actionBtn}
-						>
-							<MaterialCommunityIcons
-								name="share-variant-outline"
-								size={23}
-								color={
-									Colors.textPrimary
-								}
-							/>
-						</TouchableOpacity>
-					</View>
-
-					<TouchableOpacity
-						style={styles.actionBtn}
-					>
-						<MaterialCommunityIcons
-							name="bookmark-outline"
-							size={24}
-							color={Colors.textPrimary}
-						/>
-					</TouchableOpacity>
-				</View>
-
-				{/* METRICS */}
-				<View style={styles.metricsContainer}>
-					<Text style={styles.likesText}>
-						{formatarNumero(item.likes || 0)} curtidas
-					</Text>
-
-					<Text style={styles.viewsText}>
-						{formatarNumero(
-							item.views || 0
-						)}{" "}
-						visualizações
-					</Text>
-				</View>
-
-				{/* DESCRIPTION */}
-				{!!item.descricao && (
-					<View style={styles.descriptionContainer}>
-						<Text
-							numberOfLines={3}
-							style={styles.description}
-						>
-							<Text style={styles.descriptionUser}>
-								{item.adminNome || "Organizador"}{" "}
-							</Text>
-
-							{item.descricao}
-						</Text>
-					</View>
-				)}
-			</View>
-		);
-	};
-
-	/* =========================
-	 * ⏳ Loading
-	 * ========================= */
-	if (loading) {
-		return (
-			<View style={styles.loadingContainer}>
-				<ActivityIndicator
-					size="large"
-					color={Colors.primary}
-				/>
-			</View>
-		);
-	}
-
-	return (
-		<View style={styles.container}>
-			<StatusBar
-				barStyle="light-content"
-				backgroundColor={Colors.background}
-			/>
-
-			{/* HEADER */}
-			<LinearGradient
-				colors={[Colors.background, Colors.surface]}
-				style={[
-					styles.header,
-					{
-						paddingTop: insets.top + 8,
-					},
-				]}
-			>
-				<View>
-					<Text style={styles.feedTitle}>Explorar</Text>
-					<Text style={styles.feedSubtitle}>
-						Eventos acontecendo agora
-					</Text>
-				</View>
-
-				<TouchableOpacity
-					style={styles.createButton}
-					onPress={() =>
-						navigation.navigate("CriarPost")
-					}
-				>
-					<MaterialCommunityIcons
-						name="plus"
-						size={24}
-						color="#fff"
-					/>
-				</TouchableOpacity>
-			</LinearGradient>
-
-			{/* FEED */}
-			<FlatList
-				data={eventos}
-				renderItem={renderItem}
-				keyExtractor={(item) => item.id}
-				showsVerticalScrollIndicator={false}
-				contentContainerStyle={{
-					paddingBottom: 40,
-				}}
-				initialNumToRender={4}
-				maxToRenderPerBatch={5}
-				windowSize={7}
-				onEndReached={handleEndReached}
-				onEndReachedThreshold={0.3}
-				ListFooterComponent={
-					loadingMore ? (
-						<View style={styles.footerLoader}>
-							<ActivityIndicator
-								color={Colors.primary}
-							/>
-						</View>
-					) : null
-				}
-				ListEmptyComponent={
-					<View style={styles.emptyState}>
-						<MaterialCommunityIcons
-							name="calendar-blank-outline"
-							size={70}
-							color={Colors.textMuted}
-						/>
-
-						<Text style={styles.emptyTitle}>
-							Nenhum evento encontrado
-						</Text>
-
-						<Text style={styles.emptySubtitle}>
-							Novos eventos aparecerão aqui
-						</Text>
-					</View>
-				}
-			/>
-		</View>
-	);
+const DEFAULT_EVENT_IMAGE =
+  "https://placehold.co/600x600/1B1D26/6C5CE7?text=Evento";
+
+const STORIES = [
+  {
+    id: 1,
+    emoji: "🎭",
+    nome: "Teatro",
+  },
+  {
+    id: 2,
+    emoji: "🎵",
+    nome: "Música",
+  },
+  {
+    id: 3,
+    emoji: "🎨",
+    nome: "Arte",
+  },
+  {
+    id: 4,
+    emoji: "🎪",
+    nome: "Festival",
+  },
+  {
+    id: 5,
+    emoji: "🎬",
+    nome: "Cinema",
+  },
+];
+
+const AVATARS_FIXOS = [
+  "https://i.pravatar.cc/300?img=11",
+  "https://i.pravatar.cc/300?img=12",
+  "https://i.pravatar.cc/300?img=13",
+  "https://i.pravatar.cc/300?img=14",
+  "https://i.pravatar.cc/300?img=15",
+  "https://i.pravatar.cc/300?img=16",
+];
+
+const LikeButton = memo(
+  ({ isLiked, onPress }) => {
+    const scale =
+      useSharedValue(1);
+
+    const animatedStyle =
+      useAnimatedStyle(() => ({
+        transform: [
+          {
+            scale:
+              scale.value,
+          },
+        ],
+      }));
+
+    const handlePress =
+      () => {
+        scale.value =
+          withSpring(1.3);
+
+        setTimeout(() => {
+          scale.value =
+            withSpring(1);
+        }, 120);
+
+        onPress();
+      };
+
+    return (
+      <TouchableOpacity
+        style={styles.actionBtn}
+        onPress={handlePress}
+        activeOpacity={0.7}
+      >
+        <Animated.View
+          style={animatedStyle}
+        >
+          <MaterialCommunityIcons
+            name={
+              isLiked
+                ? "heart"
+                : "heart-outline"
+            }
+            size={27}
+            color={
+              isLiked
+                ? "#A855F7"
+                : Colors.textPrimary
+            }
+          />
+        </Animated.View>
+      </TouchableOpacity>
+    );
+  }
+);
+
+const EventoCard = memo(
+  ({
+    item,
+    index,
+    isLiked,
+    isAdmin,
+    currentUserId,
+    formatarNumero,
+    formatarData,
+    onToggleLike,
+    onDelete,
+    onNavigate,
+    onComprarIngresso,
+  }) => {
+    const scale =
+      useSharedValue(1);
+
+    const animatedStyle =
+      useAnimatedStyle(() => ({
+        transform: [
+          {
+            scale:
+              scale.value,
+          },
+        ],
+      }));
+
+    const avatarUri =
+      AVATARS_FIXOS[
+        index %
+          AVATARS_FIXOS.length
+      ];
+
+    return (
+      <Animated.View
+        entering={FadeInUp.delay(
+          index * 80
+        ).springify()}
+      >
+        <Animated.View
+          style={animatedStyle}
+        >
+          <TouchableOpacity
+            activeOpacity={0.95}
+            onPressIn={() => {
+              scale.value =
+                withSpring(0.98);
+            }}
+            onPressOut={() => {
+              scale.value =
+                withSpring(1);
+            }}
+            style={styles.card}
+          >
+            {/* HEADER */}
+            <View
+              style={
+                styles.cardHeader
+              }
+            >
+              <View
+                style={
+                  styles.userInfo
+                }
+              >
+                <Image
+                  source={{
+                    uri: avatarUri,
+                  }}
+                  style={
+                    styles.avatar
+                  }
+                />
+
+                <View
+                  style={{
+                    flex: 1,
+                  }}
+                >
+                  <Text
+                    numberOfLines={
+                      1
+                    }
+                    style={
+                      styles.userName
+                    }
+                  >
+                    {item.adminNome ||
+                      "Organizador"}
+                  </Text>
+
+                  <View
+                    style={
+                      styles.locationRow
+                    }
+                  >
+                    <MaterialCommunityIcons
+                      name="map-marker"
+                      size={12}
+                      color={
+                        Colors.primary
+                      }
+                    />
+
+                    <Text
+                      numberOfLines={
+                        1
+                      }
+                      style={
+                        styles.locationText
+                      }
+                    >
+                      {item.localEvento ||
+                        item.nomeLocal ||
+                        "Local não informado"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              <View
+                style={
+                  styles.headerActions
+                }
+              >
+                <BlurView
+                  intensity={40}
+                  tint="dark"
+                  style={
+                    styles.dateBadge
+                  }
+                >
+                  <Text
+                    style={
+                      styles.dateText
+                    }
+                  >
+                    {formatarData(
+                      item.createdAt
+                    )}
+                  </Text>
+                </BlurView>
+
+                {isAdmin &&
+                  item.uidEvento ===
+                    currentUserId && (
+                    <TouchableOpacity
+                      style={
+                        styles.deleteBtn
+                      }
+                      onPress={() =>
+                        onDelete(
+                          item.id
+                        )
+                      }
+                    >
+                      <MaterialCommunityIcons
+                        name="trash-can-outline"
+                        size={20}
+                        color={
+                          Colors.error
+                        }
+                      />
+                    </TouchableOpacity>
+                  )}
+              </View>
+            </View>
+
+            {/* IMAGE */}
+            <TouchableOpacity
+              activeOpacity={0.92}
+              onPress={() =>
+                onNavigate(item)
+              }
+              style={
+                styles.imageWrapper
+              }
+            >
+              <Image
+                source={{
+                  uri:
+                    item.imagemEvento ||
+                    DEFAULT_EVENT_IMAGE,
+                }}
+                style={
+                  styles.mainImage
+                }
+                resizeMode="cover"
+              />
+
+              <LinearGradient
+                colors={[
+                  "transparent",
+                  "rgba(0,0,0,0.95)",
+                ]}
+                style={
+                  styles.imageOverlay
+                }
+              >
+                {item.dataEvento && (
+                  <BlurView
+                    intensity={
+                      40
+                    }
+                    tint="dark"
+                    style={
+                      styles.eventDateBadge
+                    }
+                  >
+                    <MaterialCommunityIcons
+                      name="calendar"
+                      size={12}
+                      color="#fff"
+                    />
+
+                    <Text
+                      style={
+                        styles.eventDateText
+                      }
+                    >
+                      {
+                        item.dataEvento
+                      }
+                    </Text>
+                  </BlurView>
+                )}
+
+                <Text
+                  numberOfLines={2}
+                  style={
+                    styles.eventTitle
+                  }
+                >
+                  {item.tituloEvento ||
+                    "Evento"}
+                </Text>
+
+                <Text
+                  numberOfLines={2}
+                  style={
+                    styles.description
+                  }
+                >
+                  {item.descricao}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* ACTIONS */}
+            <View
+              style={
+                styles.actions
+              }
+            >
+              <View
+                style={
+                  styles.leftActions
+                }
+              >
+                <LikeButton
+                  isLiked={
+                    isLiked
+                  }
+                  onPress={() =>
+                    onToggleLike(
+                      item.id
+                    )
+                  }
+                />
+
+                <TouchableOpacity
+                  style={
+                    styles.actionBtn
+                  }
+                  onPress={() =>
+                    onNavigate(
+                      item
+                    )
+                  }
+                >
+                  <MaterialCommunityIcons
+                    name="comment-outline"
+                    size={25}
+                    color={
+                      Colors.textPrimary
+                    }
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={
+                    styles.actionBtn
+                  }
+                >
+                  <MaterialCommunityIcons
+                    name="share-variant-outline"
+                    size={24}
+                    color={
+                      Colors.textPrimary
+                    }
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={
+                  styles.ingressoBtn
+                }
+                onPress={() =>
+                  onComprarIngresso(
+                    item
+                  )
+                }
+              >
+                <MaterialCommunityIcons
+                  name="ticket-confirmation-outline"
+                  size={16}
+                  color="#fff"
+                />
+
+                <Text
+                  style={
+                    styles.ingressoBtnText
+                  }
+                >
+                  Ingressos
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View
+              style={
+                styles.metricsContainer
+              }
+            >
+              <Text
+                style={
+                  styles.likesText
+                }
+              >
+                {formatarNumero(
+                  item.likes || 0
+                )}{" "}
+                curtidas
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
+      </Animated.View>
+    );
+  }
+);
+
+export default function TelaFeed({
+  navigation,
+}) {
+  const insets =
+    useSafeAreaInsets();
+
+  const { user, isAdmin } =
+    useAuth();
+
+  const [eventos, setEventos] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [likedIds, setLikedIds] =
+    useState([]);
+
+  const [
+    modalVisible,
+    setModalVisible,
+  ] = useState(false);
+
+  const [
+    eventoExcluir,
+    setEventoExcluir,
+  ] = useState(null);
+
+  useEffect(() => {
+    carregarFeed();
+    carregarLikes();
+  }, []);
+
+  const carregarLikes =
+    async () => {
+      try {
+        if (!user?.uid) return;
+
+        const likes =
+          await getUserFeedLikes(
+            user.uid
+          );
+
+        setLikedIds(likes);
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
+  const carregarFeed =
+    async () => {
+      try {
+        const q = query(
+          collection(
+            db,
+            "eventos"
+          ),
+          orderBy(
+            "createdAt",
+            "desc"
+          ),
+          limit(PAGE_SIZE)
+        );
+
+        const snapshot =
+          await getDocs(q);
+
+        const lista =
+          snapshot.docs
+            .map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }))
+            .filter(
+              (item) =>
+                item.id !==
+                "_init"
+            );
+
+        setEventos(lista);
+      } catch (e) {
+        console.log(e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  const toggleLike =
+    useCallback(
+      async (eventoId) => {
+        try {
+          const liked =
+            await toggleEventoLike(
+              eventoId,
+              user.uid
+            );
+
+          if (liked) {
+            setLikedIds(
+              (prev) => [
+                ...prev,
+                eventoId,
+              ]
+            );
+          } else {
+            setLikedIds(
+              (prev) =>
+                prev.filter(
+                  (id) =>
+                    id !==
+                    eventoId
+                )
+            );
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      },
+      [user]
+    );
+
+  const abrirModalExcluir =
+    (id) => {
+      setEventoExcluir(id);
+      setModalVisible(true);
+    };
+
+  const confirmarExcluir =
+    async () => {
+      try {
+        await deleteDoc(
+          doc(
+            db,
+            "eventos",
+            eventoExcluir
+          )
+        );
+
+        setEventos((prev) =>
+          prev.filter(
+            (e) =>
+              e.id !==
+              eventoExcluir
+          )
+        );
+
+        setModalVisible(false);
+      } catch (e) {
+        console.log(e);
+      }
+    };
+
+  const formatarNumero =
+    (num) => {
+      if (!num) return "0";
+
+      if (num >= 1000) {
+        return (
+          (num / 1000).toFixed(
+            1
+          ) + "K"
+        );
+      }
+
+      return num.toString();
+    };
+
+  const formatarData =
+    (timestamp) => {
+      if (!timestamp)
+        return "Agora";
+
+      const data =
+        timestamp.toDate?.() ||
+        new Date(timestamp);
+
+      const diff =
+        Date.now() -
+        data.getTime();
+
+      const min = Math.floor(
+        diff / 60000
+      );
+
+      const h = Math.floor(
+        diff / 3600000
+      );
+
+      const d = Math.floor(
+        diff / 86400000
+      );
+
+      if (min < 1)
+        return "Agora";
+
+      if (min < 60)
+        return `${min}m`;
+
+      if (h < 24)
+        return `${h}h`;
+
+      if (d < 7)
+        return `${d}d`;
+
+      return data.toLocaleDateString(
+        "pt-BR"
+      );
+    };
+
+  if (loading) {
+    return (
+      <View
+        style={
+          styles.loadingContainer
+        }
+      >
+        <ActivityIndicator
+          size="large"
+          color={
+            Colors.primary
+          }
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <StatusBar
+        barStyle="light-content"
+      />
+
+      {/* HEADER */}
+      <LinearGradient
+        colors={[
+          "#18122B",
+          "#10131F",
+          Colors.background,
+        ]}
+        style={[
+          styles.header,
+          {
+            paddingTop:
+              insets.top + 10,
+          },
+        ]}
+      >
+        <Animated.View
+          entering={FadeInDown.springify()}
+          style={
+            styles.headerContent
+          }
+        >
+          <View>
+            <Text
+              style={
+                styles.logo
+              }
+            >
+              MonitoraCult
+            </Text>
+
+            <Text
+              style={
+                styles.subtitle
+              }
+            >
+              Descubra eventos
+              incríveis ✨
+            </Text>
+          </View>
+
+          <View
+            style={
+              styles.headerRight
+            }
+          >
+            <TouchableOpacity
+              style={
+                styles.headerIconBtn
+              }
+              onPress={() =>
+                navigation.navigate(
+                  "CriarPost"
+                )
+              }
+            >
+              <MaterialCommunityIcons
+                name="plus-box-outline"
+                size={26}
+                color="#FFF"
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={
+                styles.headerIconBtn
+              }
+            >
+              <MaterialCommunityIcons
+                name="bell-outline"
+                size={25}
+                color="#FFF"
+              />
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+
+        {/* STORIES */}
+        <Animated.View
+          entering={FadeInRight.delay(
+            120
+          ).springify()}
+        >
+          <FlatList
+            horizontal
+            data={STORIES}
+            keyExtractor={(
+              item
+            ) =>
+              item.id.toString()
+            }
+            showsHorizontalScrollIndicator={
+              false
+            }
+            contentContainerStyle={
+              styles.storiesBar
+            }
+            renderItem={({
+              item,
+            }) => (
+              <TouchableOpacity
+                style={
+                  styles.storyItem
+                }
+              >
+                <LinearGradient
+                  colors={[
+                    Colors.primary,
+                    "#A855F7",
+                  ]}
+                  style={
+                    styles.storyRing
+                  }
+                >
+                  <View
+                    style={
+                      styles.storyAvatar
+                    }
+                  >
+                    <Text
+                      style={{
+                        fontSize: 24,
+                      }}
+                    >
+                      {
+                        item.emoji
+                      }
+                    </Text>
+                  </View>
+                </LinearGradient>
+
+                <Text
+                  style={
+                    styles.storyLabel
+                  }
+                >
+                  {item.nome}
+                </Text>
+              </TouchableOpacity>
+            )}
+          />
+        </Animated.View>
+      </LinearGradient>
+
+      {/* FEED */}
+      <FlatList
+        data={eventos}
+        keyExtractor={(item) =>
+          item.id
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
+        contentContainerStyle={{
+          paddingBottom:
+            insets.bottom +
+            120,
+          paddingTop: 16,
+        }}
+        renderItem={({
+          item,
+          index,
+        }) => (
+          <EventoCard
+            item={item}
+            index={index}
+            isLiked={likedIds.includes(
+              item.id
+            )}
+            isAdmin={isAdmin}
+            currentUserId={
+              user?.uid
+            }
+            formatarNumero={
+              formatarNumero
+            }
+            formatarData={
+              formatarData
+            }
+            onToggleLike={
+              toggleLike
+            }
+            onDelete={
+              abrirModalExcluir
+            }
+            onNavigate={(
+              evento
+            ) =>
+              navigation.navigate(
+                "Detalhes",
+                {
+                  evento,
+                }
+              )
+            }
+            onComprarIngresso={(
+              evento
+            ) =>
+              navigation.navigate(
+                "TelaIngressos",
+                {
+                  evento,
+                }
+              )
+            }
+          />
+        )}
+      />
+
+      {/* MODAL */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+      >
+        <View
+          style={
+            styles.modalOverlay
+          }
+        >
+          <BlurView
+            intensity={50}
+            tint="dark"
+            style={
+              styles.modalCard
+            }
+          >
+            <LinearGradient
+              colors={[
+                "rgba(239,68,68,0.15)",
+                "rgba(127,29,29,0.05)",
+              ]}
+              style={
+                styles.modalGradient
+              }
+            >
+              <View
+                style={
+                  styles.modalIcon
+                }
+              >
+                <MaterialCommunityIcons
+                  name="trash-can-outline"
+                  size={34}
+                  color="#EF4444"
+                />
+              </View>
+
+              <Text
+                style={
+                  styles.modalTitle
+                }
+              >
+                Excluir evento?
+              </Text>
+
+              <Text
+                style={
+                  styles.modalText
+                }
+              >
+                Você realmente
+                deseja excluir
+                este evento?
+                Essa ação não
+                poderá ser
+                desfeita.
+              </Text>
+
+              <View
+                style={
+                  styles.modalButtons
+                }
+              >
+                <TouchableOpacity
+                  activeOpacity={
+                    0.85
+                  }
+                  style={
+                    styles.cancelBtn
+                  }
+                  onPress={() =>
+                    setModalVisible(
+                      false
+                    )
+                  }
+                >
+                  <Text
+                    style={
+                      styles.cancelText
+                    }
+                  >
+                    Cancelar
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={
+                    0.85
+                  }
+                  style={
+                    styles.confirmBtn
+                  }
+                  onPress={
+                    confirmarExcluir
+                  }
+                >
+                  <LinearGradient
+                    colors={[
+                      "#EF4444",
+                      "#DC2626",
+                    ]}
+                    style={
+                      styles.confirmGradient
+                    }
+                  >
+                    <MaterialCommunityIcons
+                      name="trash-can-outline"
+                      size={18}
+                      color="#FFF"
+                    />
+
+                    <Text
+                      style={
+                        styles.confirmText
+                      }
+                    >
+                      Excluir
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
+          </BlurView>
+        </View>
+      </Modal>
+    </View>
+  );
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: Colors.background,
-	},
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor:
+        Colors.background,
+    },
 
-	loadingContainer: {
-		flex: 1,
-		justifyContent: "center",
-		alignItems: "center",
-		backgroundColor: Colors.background,
-	},
+    loadingContainer: {
+      flex: 1,
+      justifyContent:
+        "center",
+      alignItems: "center",
+      backgroundColor:
+        Colors.background,
+    },
 
-	/* HEADER */
-	header: {
-		paddingHorizontal: 18,
-		paddingBottom: 16,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-	},
+    header: {
+      paddingBottom: 22,
+    },
 
-	feedTitle: {
-		color: Colors.textPrimary,
-		fontSize: 30,
-		fontWeight: "800",
-	},
+    headerContent: {
+      paddingHorizontal: 18,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+    },
 
-	feedSubtitle: {
-		color: Colors.textMuted,
-		fontSize: 13,
-		marginTop: 2,
-	},
+    logo: {
+      color: "#FFF",
+      fontSize: 32,
+      fontWeight: "bold",
+    },
 
-	createButton: {
-		width: 46,
-		height: 46,
-		borderRadius: 23,
-		backgroundColor: Colors.primary,
-		justifyContent: "center",
-		alignItems: "center",
-		elevation: 4,
-	},
+    subtitle: {
+      color:
+        Colors.textSecondary,
+      marginTop: 6,
+    },
 
-	/* CARD */
-	card: {
-		backgroundColor: Colors.surface,
-		marginHorizontal: 14,
-		marginBottom: 20,
-		borderRadius: 24,
-		overflow: "hidden",
+    headerRight: {
+      flexDirection: "row",
+      gap: 6,
+    },
 
-		borderWidth: 1,
-		borderColor: Colors.border,
+    headerIconBtn: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      justifyContent:
+        "center",
+      alignItems: "center",
+      backgroundColor:
+        "rgba(255,255,255,0.08)",
+    },
 
-		shadowColor: "#000",
-		shadowOffset: {
-			width: 0,
-			height: 4,
-		},
-		shadowOpacity: 0.15,
-		shadowRadius: 10,
+    storiesBar: {
+      paddingHorizontal: 16,
+      paddingTop: 24,
+    },
 
-		elevation: 5,
-	},
+    storyItem: {
+      alignItems: "center",
+      marginRight: 16,
+    },
 
-	/* HEADER CARD */
-	cardHeader: {
-		paddingHorizontal: 14,
-		paddingVertical: 14,
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-	},
+    storyRing: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      justifyContent:
+        "center",
+      alignItems: "center",
+    },
 
-	userInfo: {
-		flexDirection: "row",
-		alignItems: "center",
-		flex: 1,
-	},
+    storyAvatar: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor:
+        Colors.surface,
+      justifyContent:
+        "center",
+      alignItems: "center",
+    },
 
-	avatar: {
-		width: 48,
-		height: 48,
-		borderRadius: 24,
-		marginRight: 12,
-		backgroundColor: Colors.border,
-	},
+    storyLabel: {
+      color:
+        Colors.textSecondary,
+      marginTop: 7,
+      fontSize: 12,
+    },
 
-	userName: {
-		color: Colors.textPrimary,
-		fontSize: 14,
-		fontWeight: "700",
-	},
+    card: {
+      backgroundColor:
+        Colors.surface,
+      marginHorizontal: 16,
+      marginBottom: 22,
+      borderRadius: 28,
+      overflow: "hidden",
+    },
 
-	locationRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		marginTop: 4,
-	},
+    cardHeader: {
+      padding: 14,
+      flexDirection: "row",
+      justifyContent:
+        "space-between",
+      alignItems: "center",
+    },
 
-	locationText: {
-		color: Colors.textMuted,
-		fontSize: 12,
-		marginLeft: 3,
-		flex: 1,
-	},
+    userInfo: {
+      flexDirection: "row",
+      alignItems: "center",
+      flex: 1,
+    },
 
-	headerActions: {
-		alignItems: "flex-end",
-	},
+    avatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      marginRight: 12,
+    },
 
-	dateText: {
-		color: Colors.textMuted,
-		fontSize: 11,
-	},
+    userName: {
+      color:
+        Colors.textPrimary,
+      fontWeight: "700",
+      fontSize: 15,
+    },
 
-	deleteBtn: {
-		marginTop: 6,
-		padding: 4,
-	},
+    locationRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 4,
+    },
 
-	/* IMAGE */
-	imageWrapper: {
-		position: "relative",
-	},
+    locationText: {
+      color:
+        Colors.textMuted,
+      fontSize: 12,
+      marginLeft: 4,
+    },
 
-	mainImage: {
-		width: "100%",
-		height: 420,
-		backgroundColor: Colors.border,
-	},
+    headerActions: {
+      alignItems: "flex-end",
+    },
 
-	overlay: {
-		position: "absolute",
-		left: 0,
-		right: 0,
-		bottom: 0,
-		paddingHorizontal: 16,
-		paddingBottom: 16,
-		paddingTop: 40,
-	},
+    dateBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 14,
+      overflow: "hidden",
+    },
 
-	badge: {
-		alignSelf: "flex-start",
-		flexDirection: "row",
-		alignItems: "center",
-		backgroundColor: "rgba(255,255,255,0.18)",
-		paddingHorizontal: 10,
-		paddingVertical: 6,
-		borderRadius: 50,
-		marginBottom: 10,
-	},
+    dateText: {
+      color: "#FFF",
+      fontSize: 11,
+      fontWeight: "700",
+    },
 
-	badgeText: {
-		color: "#fff",
-		fontSize: 11,
-		fontWeight: "600",
-		marginLeft: 5,
-	},
+    deleteBtn: {
+      paddingTop: 8,
+    },
 
-	eventTitle: {
-		color: "#fff",
-		fontSize: 22,
-		fontWeight: "800",
-		lineHeight: 28,
-	},
+    imageWrapper: {
+      width: "100%",
+      height: 420,
+      backgroundColor:
+        "#000",
+    },
 
-	eventTime: {
-		color: "#fff",
-		fontSize: 13,
-		marginTop: 6,
-	},
+    mainImage: {
+      width: "100%",
+      height: "100%",
+    },
 
-	/* ACTIONS */
-	actions: {
-		paddingHorizontal: 10,
-		paddingTop: 10,
-		flexDirection: "row",
-		alignItems: "center",
-		justifyContent: "space-between",
-	},
+    imageOverlay: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      padding: 18,
+    },
 
-	leftActions: {
-		flexDirection: "row",
-		alignItems: "center",
-	},
+    eventDateBadge: {
+      alignSelf: "flex-start",
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 20,
+      overflow: "hidden",
+      marginBottom: 10,
+    },
 
-	actionBtn: {
-		padding: 8,
-	},
+    eventDateText: {
+      color: "#FFF",
+      marginLeft: 5,
+      fontSize: 11,
+      fontWeight: "700",
+    },
 
-	/* METRICS */
-	metricsContainer: {
-		paddingHorizontal: 16,
-		paddingTop: 4,
-	},
+    eventTitle: {
+      color: "#FFF",
+      fontSize: 26,
+      fontWeight: "bold",
+    },
 
-	likesText: {
-		color: Colors.textPrimary,
-		fontWeight: "700",
-		fontSize: 13,
-	},
+    description: {
+      color:
+        "rgba(255,255,255,0.75)",
+      marginTop: 10,
+      lineHeight: 20,
+      fontSize: 13,
+    },
 
-	viewsText: {
-		color: Colors.textMuted,
-		fontSize: 12,
-		marginTop: 3,
-	},
+    actions: {
+      paddingHorizontal: 8,
+      paddingVertical: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent:
+        "space-between",
+    },
 
-	/* DESCRIPTION */
-	descriptionContainer: {
-		paddingHorizontal: 16,
-		paddingTop: 10,
-		paddingBottom: 18,
-	},
+    leftActions: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
 
-	description: {
-		color: Colors.textSecondary,
-		fontSize: 13,
-		lineHeight: 20,
-	},
+    actionBtn: {
+      padding: 8,
+    },
 
-	descriptionUser: {
-		color: Colors.textPrimary,
-		fontWeight: "700",
-	},
+    ingressoBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor:
+        Colors.primary,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderRadius: 20,
+      marginRight: 6,
+    },
 
-	/* EMPTY */
-	emptyState: {
-		alignItems: "center",
-		paddingTop: 100,
-		paddingHorizontal: 30,
-	},
+    ingressoBtnText: {
+      color: "#fff",
+      fontWeight: "700",
+      fontSize: 13,
+      marginLeft: 5,
+    },
 
-	emptyTitle: {
-		color: Colors.textPrimary,
-		fontSize: 18,
-		fontWeight: "700",
-		marginTop: 18,
-	},
+    metricsContainer: {
+      paddingHorizontal: 16,
+      paddingBottom: 16,
+    },
 
-	emptySubtitle: {
-		color: Colors.textMuted,
-		fontSize: 13,
-		marginTop: 6,
-		textAlign: "center",
-	},
+    likesText: {
+      color:
+        Colors.textPrimary,
+      fontWeight: "700",
+      fontSize: 13,
+    },
 
-	footerLoader: {
-		paddingVertical: 30,
-		alignItems: "center",
-	},
-});
+    /* MODAL */
+    modalOverlay: {
+      flex: 1,
+
+      backgroundColor:
+        "rgba(0,0,0,0.65)",
+
+      justifyContent:
+        "center",
+
+      alignItems: "center",
+
+      paddingHorizontal: 24,
+    },
+
+    modalCard: {
+      width: "100%",
+      borderRadius: 30,
+      overflow: "hidden",
+
+      borderWidth: 1,
+      borderColor:
+        "rgba(255,255,255,0.08)",
+    },
+
+    modalGradient: {
+      padding: 28,
+      alignItems: "center",
+    },
+
+    modalIcon: {
+      width: 78,
+      height: 78,
+
+      borderRadius: 30,
+
+      backgroundColor:
+        "rgba(239,68,68,0.12)",
+
+      justifyContent:
+        "center",
+
+      alignItems: "center",
+
+      marginBottom: 18,
+    },
+
+    modalTitle: {
+      color: "#FFF",
+      fontSize: 22,
+      fontWeight: "bold",
+    },
+
+    modalText: {
+      color:
+        "rgba(255,255,255,0.65)",
+
+      textAlign: "center",
+
+      marginTop: 10,
+
+      fontSize: 14,
+      lineHeight: 22,
+    },
+
+    modalButtons: {
+      flexDirection: "row",
+
+      marginTop: 26,
+
+      width: "100%",
+    },
+
+    cancelBtn: {
+      flex: 1,
+
+      height: 52,
+
+      borderRadius: 18,
+
+      backgroundColor:
+        "rgba(255,255,255,0.06)",
+
+      justifyContent:
+        "center",
+
+      alignItems: "center",
+
+      marginRight: 10,
+    },
+
+    cancelText: {
+      color: "#FFF",
+      fontWeight: "600",
+    },
+
+    confirmBtn: {
+      flex: 1,
+    },
+
+    confirmGradient: {
+      height: 52,
+
+      borderRadius: 18,
+
+      flexDirection: "row",
+
+      justifyContent:
+        "center",
+
+      alignItems: "center",
+
+      gap: 8,
+    },
+
+    confirmText: {
+      color: "#FFF",
+      fontWeight: "bold",
+    },
+  });

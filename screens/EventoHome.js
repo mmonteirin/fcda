@@ -560,7 +560,7 @@ export default function EventoHome({
                 </TouchableOpacity>
               </MotiView>
 
-              {/* EXPLORE A CIDADE */}
+              {/* MAPA VIVO */}
               <MotiView
                 from={{
                   opacity: 0,
@@ -572,6 +572,136 @@ export default function EventoHome({
                 }}
                 transition={{
                   delay: 450,
+                  duration: 700,
+                }}
+              >
+                <TouchableOpacity
+                  activeOpacity={0.92}
+                  style={styles.card}
+                  onPress={() =>
+                    navigation.navigate(
+                      "TelaMapaVivo"
+                    )
+                  }
+                >
+                  <LinearGradient
+                    colors={[
+                      "rgba(34,197,94,0.18)",
+                      "rgba(239,68,68,0.06)",
+                    ]}
+                    style={
+                      styles.cardGlow
+                    }
+                  />
+
+                  <LinearGradient
+                    colors={[
+                      "#22C55E",
+                      "#EF4444",
+                    ]}
+                    style={
+                      styles.iconBox
+                    }
+                  >
+                    <MaterialCommunityIcons
+                      name="map-marker-radius"
+                      size={30}
+                      color="#FFF"
+                    />
+                  </LinearGradient>
+
+                  <View
+                    style={
+                      styles.textContainer
+                    }
+                  >
+                    <View
+                      style={
+                        styles.cardTopRow
+                      }
+                    >
+                      <Text
+                        style={
+                          styles.cardTitle
+                        }
+                      >
+                        Mapa Vivo da Cultura
+                      </Text>
+
+                      <View
+                        style={
+                          styles.heatBadge
+                        }
+                      >
+                        <MaterialCommunityIcons
+                          name="fire"
+                          size={12}
+                          color="#FCA5A5"
+                        />
+
+                        <Text
+                          style={
+                            styles.heatText
+                          }
+                        >
+                          HEATMAP
+                        </Text>
+                      </View>
+                    </View>
+
+                    <Text
+                      style={
+                        styles.cardDesc
+                      }
+                    >
+                      Veja eventos no mapa,
+                      calor cultural, filtros
+                      ao vivo e check-in no local.
+                    </Text>
+
+                    <View
+                      style={
+                        styles.cardFooter
+                      }
+                    >
+                      <MaterialCommunityIcons
+                        name="crosshairs-gps"
+                        size={15}
+                        color="#86EFAC"
+                      />
+
+                      <Text
+                        style={
+                          styles.footerText
+                        }
+                      >
+                        Cultura acontecendo perto de você
+                      </Text>
+                    </View>
+                  </View>
+
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={28}
+                    color={
+                      Colors.primary
+                    }
+                  />
+                </TouchableOpacity>
+              </MotiView>
+
+              {/* EXPLORE A CIDADE */}
+              <MotiView
+                from={{
+                  opacity: 0,
+                  translateY: 30,
+                }}
+                animate={{
+                  opacity: 1,
+                  translateY: 0,
+                }}
+                transition={{
+                  delay: 580,
                   duration: 700,
                 }}
               >
@@ -908,6 +1038,24 @@ const styles = StyleSheet.create({
 
   cityText: {
     color: "#67E8F9",
+    fontSize: 10,
+    fontFamily:
+      "PoppinsSemiBold",
+  },
+
+  heatBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor:
+      "rgba(239,68,68,0.14)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+
+  heatText: {
+    color: "#FCA5A5",
     fontSize: 10,
     fontFamily:
       "PoppinsSemiBold",

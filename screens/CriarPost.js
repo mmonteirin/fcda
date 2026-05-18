@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+
 import {
 	View,
 	TouchableOpacity,
@@ -7,6 +8,10 @@ import {
 	StyleSheet,
 	ActivityIndicator,
 	Modal,
+	ScrollView,
+	KeyboardAvoidingView,
+	Platform,
+	StatusBar,
 } from "react-native";
 
 import * as ImagePicker from "expo-image-picker";
@@ -60,7 +65,6 @@ export default function CriarPost({
 		setUploadProgress,
 	] = useState(0);
 
-	/* MODAL */
 	const [modalVisible, setModalVisible] =
 		useState(false);
 
@@ -85,7 +89,7 @@ export default function CriarPost({
 		setModalVisible(true);
 	};
 
-	/* 📷 ESCOLHER IMAGEM */
+	/* ESCOLHER IMAGEM */
 	const escolherImagem =
 		async () => {
 			try {
@@ -113,8 +117,6 @@ export default function CriarPost({
 							quality: 0.7,
 
 							allowsEditing: true,
-
-							aspect: [4, 3],
 						}
 					);
 
@@ -136,7 +138,7 @@ export default function CriarPost({
 			}
 		};
 
-	/* 🚀 PUBLICAR */
+	/* PUBLICAR */
 	const publicar =
 		async () => {
 			if (!imagem) {
@@ -237,7 +239,10 @@ export default function CriarPost({
 
 	return (
 		<View style={styles.container}>
-			{/* STATUS */}
+			<StatusBar
+				barStyle="light-content"
+			/>
+
 			<View
 				style={{
 					height:
@@ -253,9 +258,7 @@ export default function CriarPost({
 					"#070B14",
 					"#111827",
 				]}
-				style={
-					styles.header
-				}
+				style={styles.header}
 			>
 				<View
 					style={
@@ -268,9 +271,7 @@ export default function CriarPost({
 						}
 					>
 						<BlurView
-							intensity={
-								60
-							}
+							intensity={60}
 							tint="dark"
 							style={
 								styles.backBtn
@@ -278,9 +279,7 @@ export default function CriarPost({
 						>
 							<MaterialCommunityIcons
 								name="arrow-left"
-								size={
-									24
-								}
+								size={24}
 								color="#FFF"
 							/>
 						</BlurView>
@@ -341,8 +340,7 @@ export default function CriarPost({
 				{loading &&
 					uploadProgress >
 						0 &&
-					uploadProgress <
-						1 && (
+					uploadProgress < 1 && (
 						<View
 							style={
 								styles.progressContainer
@@ -383,184 +381,207 @@ export default function CriarPost({
 			</LinearGradient>
 
 			{/* CONTEÚDO */}
-			<MotiView
-				from={{
-					opacity: 0,
-					translateY: 30,
-				}}
-				animate={{
-					opacity: 1,
-					translateY: 0,
-				}}
-				transition={{
-					type: "timing",
-					duration: 600,
-				}}
-				style={{
-					flex: 1,
-				}}
+			<KeyboardAvoidingView
+				style={{ flex: 1 }}
+				behavior={
+					Platform.OS ===
+					"ios"
+						? "padding"
+						: undefined
+				}
 			>
-				{/* IMAGEM */}
-				<TouchableOpacity
-					activeOpacity={
-						0.9
+				<ScrollView
+					showsVerticalScrollIndicator={
+						false
 					}
-					style={
-						styles.imageBox
-					}
-					onPress={
-						escolherImagem
-					}
+					contentContainerStyle={{
+						paddingBottom:
+							insets.bottom +
+							140,
+					}}
 				>
-					{imagem ? (
-						<>
-							<Image
-								source={{
-									uri: imagem,
-								}}
-								style={
-									styles.image
-								}
-							/>
+					<MotiView
+						from={{
+							opacity: 0,
+							translateY: 40,
+							scale: 0.96,
+						}}
+						animate={{
+							opacity: 1,
+							translateY: 0,
+							scale: 1,
+						}}
+						transition={{
+							type: "timing",
+							duration: 650,
+						}}
+					>
+						{/* IMAGEM */}
+						<TouchableOpacity
+							activeOpacity={
+								0.9
+							}
+							style={
+								styles.imageBox
+							}
+							onPress={
+								escolherImagem
+							}
+						>
+							{imagem ? (
+								<>
+									<Image
+										source={{
+											uri: imagem,
+										}}
+										style={
+											styles.image
+										}
+										resizeMode="contain"
+									/>
 
-							<LinearGradient
-								colors={[
-									"transparent",
-									"rgba(0,0,0,0.85)",
-								]}
-								style={
-									styles.imageOverlay
-								}
-							>
+									<LinearGradient
+										colors={[
+											"transparent",
+											"rgba(0,0,0,0.85)",
+										]}
+										style={
+											styles.imageOverlay
+										}
+									>
+										<View
+											style={
+												styles.changePhoto
+											}
+										>
+											<MaterialCommunityIcons
+												name="camera"
+												size={
+													18
+												}
+												color="#FFF"
+											/>
+
+											<AppText
+												style={
+													styles.changePhotoText
+												}
+											>
+												Alterar foto
+											</AppText>
+										</View>
+									</LinearGradient>
+								</>
+							) : (
 								<View
 									style={
-										styles.changePhoto
+										styles.placeholder
 									}
 								>
-									<MaterialCommunityIcons
-										name="camera"
-										size={
-											18
+									<LinearGradient
+										colors={[
+											"#7C3AED",
+											"#5B21B6",
+										]}
+										style={
+											styles.placeholderIcon
 										}
-										color="#FFF"
-									/>
+									>
+										<MaterialCommunityIcons
+											name="image-plus"
+											size={
+												42
+											}
+											color="#FFF"
+										/>
+									</LinearGradient>
 
 									<AppText
 										style={
-											styles.changePhotoText
+											styles.placeholderTitle
 										}
 									>
-										Alterar foto
+										Adicionar imagem
+									</AppText>
+
+									<AppText
+										style={
+											styles.placeholderText
+										}
+									>
+										Escolha uma imagem incrível para o seu post
 									</AppText>
 								</View>
-							</LinearGradient>
-						</>
-					) : (
+							)}
+						</TouchableOpacity>
+
+						{/* INPUT */}
 						<View
 							style={
-								styles.placeholder
+								styles.inputContainer
 							}
 						>
-							<LinearGradient
-								colors={[
-									"#7C3AED",
-									"#5B21B6",
-								]}
+							<View
 								style={
-									styles.placeholderIcon
+									styles.inputHeader
 								}
 							>
 								<MaterialCommunityIcons
-									name="image-plus"
+									name="text-box-outline"
 									size={
-										42
+										20
 									}
-									color="#FFF"
+									color={
+										Colors.primary
+									}
 								/>
-							</LinearGradient>
 
-							<AppText
+								<AppText
+									style={
+										styles.inputLabel
+									}
+								>
+									Descrição
+								</AppText>
+							</View>
+
+							<TextInput
+								placeholder="Escreva algo sobre esse momento..."
+								placeholderTextColor={
+									Colors.textMuted
+								}
+								value={
+									descricao
+								}
+								onChangeText={
+									setDescricao
+								}
+								multiline
 								style={
-									styles.placeholderTitle
+									styles.input
+								}
+							/>
+
+							<View
+								style={
+									styles.counterRow
 								}
 							>
-								Adicionar imagem
-							</AppText>
-
-							<AppText
-								style={
-									styles.placeholderText
-								}
-							>
-								Escolha uma imagem incrível para o seu post
-							</AppText>
+								<AppText
+									style={
+										styles.counter
+									}
+								>
+									{
+										descricao.length
+									}
+									/500
+								</AppText>
+							</View>
 						</View>
-					)}
-				</TouchableOpacity>
-
-				{/* INPUT */}
-				<View
-					style={
-						styles.inputContainer
-					}
-				>
-					<View
-						style={
-							styles.inputHeader
-						}
-					>
-						<MaterialCommunityIcons
-							name="text-box-outline"
-							size={20}
-							color={
-								Colors.primary
-							}
-						/>
-
-						<AppText
-							style={
-								styles.inputLabel
-							}
-						>
-							Descrição
-						</AppText>
-					</View>
-
-					<TextInput
-						placeholder="Escreva algo sobre esse momento..."
-						placeholderTextColor={
-							Colors.textMuted
-						}
-						value={
-							descricao
-						}
-						onChangeText={
-							setDescricao
-						}
-						multiline
-						style={
-							styles.input
-						}
-					/>
-
-					<View
-						style={
-							styles.counterRow
-						}
-					>
-						<AppText
-							style={
-								styles.counter
-							}
-						>
-							{
-								descricao.length
-							}
-							/500
-						</AppText>
-					</View>
-				</View>
-			</MotiView>
+					</MotiView>
+				</ScrollView>
+			</KeyboardAvoidingView>
 
 			{/* MODAL */}
 			<Modal
@@ -568,11 +589,6 @@ export default function CriarPost({
 				animationType="fade"
 				visible={
 					modalVisible
-				}
-				onRequestClose={() =>
-					setModalVisible(
-						false
-					)
 				}
 			>
 				<View
@@ -604,9 +620,7 @@ export default function CriarPost({
 										? "check-circle"
 										: "alert-circle"
 								}
-								size={
-									42
-								}
+								size={42}
 								color={
 									modalData.type ===
 									"success"
@@ -684,10 +698,8 @@ const styles =
 		headerRow: {
 			flexDirection:
 				"row",
-
 			alignItems:
 				"center",
-
 			justifyContent:
 				"space-between",
 		},
@@ -695,49 +707,35 @@ const styles =
 		backBtn: {
 			width: 48,
 			height: 48,
-
 			borderRadius: 18,
-
 			justifyContent:
 				"center",
-
 			alignItems:
 				"center",
-
 			overflow: "hidden",
-
 			borderWidth: 1,
-
 			borderColor:
 				"rgba(255,255,255,0.08)",
 		},
 
 		title: {
 			color: "#FFF",
-
 			fontSize: 20,
-
 			fontWeight: "800",
 		},
 
 		publishBtn: {
 			paddingHorizontal: 18,
-
 			paddingVertical: 12,
-
 			borderRadius: 16,
-
 			minWidth: 110,
-
 			alignItems:
 				"center",
 		},
 
 		publishText: {
 			color: "#FFF",
-
 			fontWeight: "800",
-
 			fontSize: 14,
 		},
 
@@ -747,37 +745,29 @@ const styles =
 
 		progressBarBg: {
 			height: 8,
-
 			backgroundColor:
 				"rgba(255,255,255,0.08)",
-
 			borderRadius: 20,
-
 			overflow: "hidden",
 		},
 
 		progressBar: {
 			height: "100%",
-
 			backgroundColor:
 				"#7C3AED",
-
 			borderRadius: 20,
 		},
 
 		progressText: {
 			color:
 				"rgba(255,255,255,0.72)",
-
 			fontSize: 12,
-
 			marginTop: 8,
-
 			textAlign: "center",
 		},
 
 		imageBox: {
-			height: 320,
+			height: 340,
 
 			marginHorizontal: 18,
 
@@ -794,6 +784,11 @@ const styles =
 
 			borderColor:
 				"rgba(255,255,255,0.08)",
+
+			justifyContent:
+				"center",
+
+			alignItems: "center",
 		},
 
 		image: {
@@ -803,87 +798,63 @@ const styles =
 
 		imageOverlay: {
 			position: "absolute",
-
 			bottom: 0,
-
 			width: "100%",
-
 			padding: 20,
 		},
 
 		changePhoto: {
 			flexDirection:
 				"row",
-
 			alignItems:
 				"center",
-
 			alignSelf:
 				"flex-start",
-
 			backgroundColor:
 				"rgba(255,255,255,0.14)",
-
 			paddingHorizontal: 14,
-
 			paddingVertical: 10,
-
 			borderRadius: 18,
-
 			gap: 8,
 		},
 
 		changePhotoText: {
 			color: "#FFF",
-
 			fontWeight: "700",
 		},
 
 		placeholder: {
 			flex: 1,
-
 			justifyContent:
 				"center",
-
 			alignItems:
 				"center",
-
 			paddingHorizontal: 30,
 		},
 
 		placeholderIcon: {
 			width: 90,
 			height: 90,
-
 			borderRadius: 28,
-
 			justifyContent:
 				"center",
-
 			alignItems:
 				"center",
-
 			marginBottom: 20,
 		},
 
 		placeholderTitle: {
 			color: "#FFF",
-
 			fontSize: 20,
-
 			fontWeight: "800",
 		},
 
 		placeholderText: {
 			color:
 				"rgba(255,255,255,0.65)",
-
 			fontSize: 14,
-
 			textAlign: "center",
-
 			lineHeight: 22,
-
 			marginTop: 10,
 		},
 
@@ -891,6 +862,8 @@ const styles =
 			marginTop: 24,
 
 			marginHorizontal: 18,
+
+			marginBottom: 20,
 
 			backgroundColor:
 				"#111827",
@@ -908,32 +881,23 @@ const styles =
 		inputHeader: {
 			flexDirection:
 				"row",
-
 			alignItems:
 				"center",
-
 			gap: 8,
-
 			marginBottom: 14,
 		},
 
 		inputLabel: {
 			color: "#FFF",
-
 			fontWeight: "700",
-
 			fontSize: 15,
 		},
 
 		input: {
 			color: "#FFF",
-
 			fontSize: 15,
-
 			lineHeight: 24,
-
 			minHeight: 140,
-
 			textAlignVertical:
 				"top",
 		},
@@ -941,47 +905,35 @@ const styles =
 		counterRow: {
 			alignItems:
 				"flex-end",
-
 			marginTop: 10,
 		},
 
 		counter: {
 			color:
 				"rgba(255,255,255,0.45)",
-
 			fontSize: 12,
 		},
 
 		modalOverlay: {
 			flex: 1,
-
 			backgroundColor:
 				"rgba(0,0,0,0.7)",
-
 			justifyContent:
 				"center",
-
 			alignItems:
 				"center",
-
 			padding: 24,
 		},
 
 		modalBox: {
 			width: "100%",
-
 			backgroundColor:
 				"#111827",
-
 			borderRadius: 30,
-
 			padding: 28,
-
 			alignItems:
 				"center",
-
 			borderWidth: 1,
-
 			borderColor:
 				"rgba(255,255,255,0.08)",
 		},
@@ -989,54 +941,39 @@ const styles =
 		modalIcon: {
 			width: 84,
 			height: 84,
-
 			borderRadius: 30,
-
 			justifyContent:
 				"center",
-
 			alignItems:
 				"center",
-
 			marginBottom: 18,
 		},
 
 		modalTitle: {
 			color: "#FFF",
-
 			fontSize: 22,
-
 			fontWeight: "800",
-
 			marginBottom: 10,
 		},
 
 		modalMessage: {
 			color:
 				"rgba(255,255,255,0.72)",
-
 			fontSize: 15,
-
 			lineHeight: 24,
-
 			textAlign: "center",
-
 			marginBottom: 24,
 		},
 
 		modalBtn: {
 			paddingHorizontal: 40,
-
 			paddingVertical: 14,
-
 			borderRadius: 18,
 		},
 
 		modalBtnText: {
 			color: "#FFF",
-
 			fontWeight: "800",
-
 			fontSize: 15,
 		},
 	});

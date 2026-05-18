@@ -1,17 +1,30 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
   Dimensions,
   Linking,
   Modal,
+  Image,
+  ScrollView,
 } from "react-native";
+
+import Animated, {
+  FadeInDown,
+  FadeInRight,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  interpolate,
+  useAnimatedScrollHandler,
+} from "react-native-reanimated";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -30,25 +43,42 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { Colors } from "../styles/Colors";
 
-const windowWidth = Dimensions.get("window").width;
+const windowWidth =
+  Dimensions.get("window").width;
 
 const DEFAULT_IMAGE =
   "https://placehold.co/600x400?text=Evento";
+
+const AnimatedFlashList =
+  Animated.createAnimatedComponent(
+    FlashList
+  );
+
+const categorias = [
+  "Todos",
+  "Shows",
+  "Teatro",
+  "Arte",
+  "Gastronomia",
+  "Festival",
+];
 
 export default function TelaInicio() {
   const navigation = useNavigation();
 
   const { user, nome } = useAuth();
 
-  const [eventos, setEventos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [eventos, setEventos] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
 
   const [categoriaAtiva, setCategoriaAtiva] =
     useState("Todos");
 
-  const [location, setLocation] = useState(null);
-
-  const [likedIds, setLikedIds] = useState([]);
+  const [location, setLocation] =
+    useState(null);
 
   const [showMapErrorModal, setShowMapErrorModal] =
     useState(false);
@@ -56,128 +86,149 @@ export default function TelaInicio() {
   const [mapErrorMessage, setMapErrorMessage] =
     useState("");
 
+  const scrollX = useSharedValue(0);
+
+  const scrollHandler =
+    useAnimatedScrollHandler({
+      onScroll: (event) => {
+        scrollX.value =
+          event.contentOffset.x;
+      },
+    });
+
   const nomeUsuario =
     nome ||
     user?.displayName ||
     user?.email?.split("@")[0] ||
     "Explorador";
 
+  // SAUDAÇÃO DINÂMICA
+  const saudacaoHorario =
+    useMemo(() => {
+      const hora =
+        new Date().getHours();
+
+      if (hora < 12)
+        return "Bom dia ☀️";
+
+      if (hora < 18)
+        return "Boa tarde 🌤️";
+
+      return "Boa noite 🌙";
+    }, []);
+
   useEffect(() => {
     carregarEventos();
   }, []);
 
-  useEffect(() => {
-    if (user?.uid) {
-      carregarLikes();
-    }
-  }, [user?.uid]);
+  const carregarEventos =
+    async () => {
+      try {
+        const data =
+          await getEventosApp();
 
-  const carregarLikes = async () => {
-    try {
-      const ids = await getUserLikes(user.uid);
-      setLikedIds(ids);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+        const tratados = data.map(
+          (item) => ({
+            id: item.id,
 
-  const carregarEventos = async () => {
-    try {
-      const data = await getEventosApp();
+            titulo:
+              item.tituloEvento ||
+              item.name ||
+              "Evento",
 
-      const tratados = data.map((item) => ({
-        id: item.id,
+            imagem:
+              item.imagemEvento ||
+              item.files?.header?.url ||
+              DEFAULT_IMAGE,
 
-        titulo:
-          item.tituloEvento ||
-          item.name ||
-          "Evento",
+            local:
+              item.localEvento ||
+              item.nomeLocal ||
+              item.location?.name ||
+              "Local",
 
-        imagem:
-          item.imagemEvento ||
-          item.files?.header?.url ||
-          DEFAULT_IMAGE,
+            categoria:
+              item.categoria ||
+              item.tipoEvento ||
+              "Outros",
 
-        local:
-          item.localEvento ||
-          item.nomeLocal ||
-          item.location?.name ||
-          "Local",
+            latitude:
+              item.latitude ?? null,
 
-        categoria:
-          item.categoria ||
-          item.tipoEvento ||
-          "Outros",
+            longitude:
+              item.longitude ?? null,
 
-        latitude: item.latitude ?? null,
+            score:
+              item.score || 0,
 
-        longitude: item.longitude ?? null,
+            original: item,
+          })
+        );
 
-        likes: item.likes || 0,
+        const usuario =
+          await getUserLocation();
 
-        views: item.views || 0,
+        if (usuario) {
+          setLocation(usuario);
+        }
 
-        score: item.score || 0,
+        setEventos(tratados);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        original: item,
-      }));
+  const eventosComDistancia =
+    useMemo(() => {
+      return eventos.map(
+        (item) => ({
+          ...item,
 
-      const usuario = await getUserLocation();
+          distancia:
+            location &&
+            item.latitude != null &&
+            item.longitude != null
+              ? calcularDistancia(
+                  location.latitude,
+                  location.longitude,
+                  item.latitude,
+                  item.longitude
+                )
+              : null,
+        })
+      );
+    }, [eventos, location]);
 
-      if (usuario) {
-        setLocation(usuario);
+  const eventosFiltrados =
+    useMemo(() => {
+      if (
+        categoriaAtiva === "Todos"
+      ) {
+        return eventosComDistancia;
       }
 
-      setEventos(tratados);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const eventosComDistancia = useMemo(() => {
-    return eventos.map((item) => ({
-      ...item,
-
-      distancia:
-        location &&
-        item.latitude != null &&
-        item.longitude != null
-          ? calcularDistancia(
-              location.latitude,
-              location.longitude,
-              item.latitude,
-              item.longitude
+      return eventosComDistancia.filter(
+        (evento) =>
+          evento.categoria
+            ?.toLowerCase()
+            .includes(
+              categoriaAtiva.toLowerCase()
             )
-          : null,
-    }));
-  }, [eventos, location]);
-
-  const categorias = useMemo(() => {
-    const valores = eventos
-      .map((item) => item.categoria || "Outros")
-      .filter(Boolean);
-
-    return ["Todos", ...new Set(valores)];
-  }, [eventos]);
-
-  const eventosFiltrados = useMemo(() => {
-    if (categoriaAtiva === "Todos") {
-      return eventosComDistancia;
-    }
-
-    return eventosComDistancia.filter((evento) =>
-      evento.categoria
-        .toLowerCase()
-        .includes(categoriaAtiva.toLowerCase())
-    );
-  }, [categoriaAtiva, eventosComDistancia]);
+      );
+    }, [
+      categoriaAtiva,
+      eventosComDistancia,
+    ]);
 
   const destaques = useMemo(() => {
     return eventosFiltrados
       .slice()
-      .sort((a, b) => b.score - a.score)
+      .sort(
+        (a, b) =>
+          b.score - a.score
+      )
       .slice(0, 8);
   }, [eventosFiltrados]);
 
@@ -185,52 +236,22 @@ export default function TelaInicio() {
     return eventosFiltrados
       .filter(
         (item) =>
-          typeof item.distancia === "number"
+          typeof item.distancia ===
+          "number"
       )
-      .sort((a, b) => a.distancia - b.distancia)
+      .sort(
+        (a, b) =>
+          a.distancia -
+          b.distancia
+      )
       .slice(0, 6);
   }, [eventosFiltrados]);
 
-  const abrirMapa = async () => {
-    try {
-      if (!location) {
-        setMapErrorMessage(
-          "Sua localização ainda não foi carregada."
-        );
-
-        setShowMapErrorModal(true);
-
-        return;
-      }
-
-      const url = `https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`;
-
-      const supported =
-        await Linking.canOpenURL(url);
-
-      if (!supported) {
-        setMapErrorMessage(
-          "Não foi possível abrir o aplicativo de mapas neste dispositivo."
-        );
-
-        setShowMapErrorModal(true);
-
-        return;
-      }
-
-      await Linking.openURL(url);
-    } catch (error) {
-      setMapErrorMessage(
-        "Verifique sua conexão, permissões de localização ou tente novamente em alguns instantes."
-      );
-
-      setShowMapErrorModal(true);
-    }
-  };
-
-  const formatarDistancia = (distancia) => {
+  const formatarDistancia = (
+    distancia
+  ) => {
     if (distancia == null)
-      return "Localização indisponível";
+      return "Distância indisponível";
 
     if (distancia < 1) {
       return `${Math.round(
@@ -238,188 +259,292 @@ export default function TelaInicio() {
       )} m`;
     }
 
-    return `${distancia.toFixed(1)} km`;
+    return `${distancia.toFixed(
+      1
+    )} km`;
   };
 
-  const HeroCard = ({ item }) => (
-    <TouchableOpacity
-      activeOpacity={0.92}
-      style={styles.heroCard}
-      onPress={() =>
-        navigation.navigate("Detalhes", {
-          evento: item.original,
-        })
-      }
-    >
-      <Image
-        source={{ uri: item.imagem }}
-        style={styles.heroImage}
-      />
+  const HeroCard = ({
+    item,
+    index,
+  }) => {
+    const scale =
+      useSharedValue(1);
 
-      <LinearGradient
-        colors={[
-          "transparent",
-          "rgba(0,0,0,0.95)",
-        ]}
-        style={styles.heroGradient}
-      />
+    const animatedStyle =
+      useAnimatedStyle(() => ({
+        transform: [
+          {
+            scale: scale.value,
+          },
+        ],
+      }));
 
-      <View style={styles.heroContent}>
-        <View style={styles.heroBadge}>
-          <Text style={styles.heroBadgeText}>
-            {item.categoria}
-          </Text>
-        </View>
+    const imageStyle =
+      useAnimatedStyle(() => {
+        const imageScale =
+          interpolate(
+            scrollX.value,
+            [
+              (index - 1) *
+                (windowWidth *
+                  0.78 +
+                  16),
 
-        <Text
-          style={styles.heroTitle}
-          numberOfLines={2}
-        >
-          {item.titulo}
-        </Text>
+              index *
+                (windowWidth *
+                  0.78 +
+                  16),
 
-        <Text
-          style={styles.heroLocation}
-          numberOfLines={1}
-        >
-          📍 {item.local}
-        </Text>
+              (index + 1) *
+                (windowWidth *
+                  0.78 +
+                  16),
+            ],
+            [1, 1.08, 1]
+          );
 
-        <View style={styles.heroFooter}>
-          <View style={styles.metric}>
-            <MaterialCommunityIcons
-              name="heart"
-              size={14}
-              color="#FF4D6D"
-            />
+        return {
+          transform: [
+            {
+              scale:
+                imageScale,
+            },
+          ],
+        };
+      });
 
-            <Text style={styles.metricText}>
-              {item.likes}
-            </Text>
-          </View>
-
-          <View style={styles.metric}>
-            <MaterialCommunityIcons
-              name="eye-outline"
-              size={15}
-              color="#FFF"
-            />
-
-            <Text style={styles.metricText}>
-              {item.views}
-            </Text>
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const CardEvento = ({ item }) => (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      style={styles.card}
-      onPress={() =>
-        navigation.navigate("Detalhes", {
-          evento: item.original,
-        })
-      }
-    >
-      <Image
-        source={{ uri: item.imagem }}
-        style={styles.cardImage}
-      />
-
-      <LinearGradient
-        colors={[
-          "transparent",
-          "rgba(0,0,0,0.85)",
-        ]}
-        style={styles.cardGradient}
-      />
-
-      <View style={styles.cardContent}>
-        <View style={styles.cardTop}>
-          <View style={styles.categoryMini}>
-            <Text style={styles.categoryMiniText}>
-              {item.categoria}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.likeButton}
-          >
-            <MaterialCommunityIcons
-              name={
-                likedIds.includes(item.id)
-                  ? "heart"
-                  : "heart-outline"
+    return (
+      <Animated.View
+        entering={FadeInRight.delay(
+          index * 100
+        ).springify()}
+        style={animatedStyle}
+      >
+        <TouchableOpacity
+          activeOpacity={0.95}
+          style={styles.heroCard}
+          onPressIn={() => {
+            scale.value =
+              withSpring(0.97);
+          }}
+          onPressOut={() => {
+            scale.value =
+              withSpring(1);
+          }}
+          onPress={() =>
+            navigation.navigate(
+              "Detalhes",
+              {
+                evento:
+                  item.original,
               }
-              size={18}
-              color={
-                likedIds.includes(item.id)
-                  ? "#FF4D6D"
-                  : "#FFF"
+            )
+          }
+        >
+          <Animated.Image
+            source={{
+              uri: item.imagem,
+            }}
+            style={[
+              styles.heroImage,
+              imageStyle,
+            ]}
+          />
+
+          <LinearGradient
+            colors={[
+              "transparent",
+              "rgba(0,0,0,0.95)",
+            ]}
+            style={
+              styles.heroGradient
+            }
+          />
+
+          <View
+            style={
+              styles.heroContent
+            }
+          >
+            <View
+              style={
+                styles.heroBadge
               }
-            />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.cardBottom}>
-          <Text
-            style={styles.cardTitle}
-            numberOfLines={2}
-          >
-            {item.titulo}
-          </Text>
-
-          <Text
-            style={styles.cardLocation}
-            numberOfLines={1}
-          >
-            📍 {item.local}
-          </Text>
-
-          <View style={styles.cardFooter}>
-            <Text style={styles.distance}>
-              {formatarDistancia(
-                item.distancia
-              )}
-            </Text>
-
-            <View style={styles.rating}>
-              <MaterialCommunityIcons
-                name="star"
-                size={14}
-                color="#FFD166"
-              />
-
-              <Text style={styles.ratingText}>
-                {Math.round(item.score)}
+            >
+              <Text
+                style={
+                  styles.heroBadgeText
+                }
+              >
+                {item.categoria}
               </Text>
             </View>
+
+            <Text
+              style={
+                styles.heroTitle
+              }
+              numberOfLines={2}
+            >
+              {item.titulo}
+            </Text>
+
+            <Text
+              style={
+                styles.heroLocation
+              }
+            >
+              📍 {item.local}
+            </Text>
           </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+
+  const CardEvento = ({
+    item,
+    index,
+  }) => {
+    return (
+      <Animated.View
+        entering={FadeInDown.delay(
+          index * 100
+        ).springify()}
+      >
+        <TouchableOpacity
+          activeOpacity={0.95}
+          style={styles.card}
+          onPress={() =>
+            navigation.navigate(
+              "Detalhes",
+              {
+                evento:
+                  item.original,
+              }
+            )
+          }
+        >
+          <Image
+            source={{
+              uri: item.imagem,
+            }}
+            style={styles.cardImage}
+          />
+
+          <LinearGradient
+            colors={[
+              "transparent",
+              "rgba(0,0,0,0.95)",
+            ]}
+            style={
+              styles.cardGradient
+            }
+          />
+
+          <BlurView
+            intensity={40}
+            tint="dark"
+            style={
+              styles.glassFooter
+            }
+          >
+            <Text
+              style={
+                styles.cardTitle
+              }
+            >
+              {item.titulo}
+            </Text>
+
+            <Text
+              style={
+                styles.cardLocation
+              }
+            >
+              📍 {item.local}
+            </Text>
+
+            <View
+              style={
+                styles.cardFooter
+              }
+            >
+              <Text
+                style={
+                  styles.distance
+                }
+              >
+                {formatarDistancia(
+                  item.distancia
+                )}
+              </Text>
+
+              <View
+                style={
+                  styles.rating
+                }
+              >
+                <MaterialCommunityIcons
+                  name="star"
+                  size={14}
+                  color="#FFD166"
+                />
+
+                <Text
+                  style={
+                    styles.ratingText
+                  }
+                >
+                  {Math.round(
+                    item.score
+                  )}
+                </Text>
+              </View>
+            </View>
+          </BlurView>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   if (loading) {
     return (
-      <View style={styles.loading}>
-        <ActivityIndicator
-          size="large"
+      <View
+        style={
+          styles.loadingContainer
+        }
+      >
+        <MaterialCommunityIcons
+          name="calendar-star"
+          size={60}
           color={Colors.primary}
         />
+
+        <Text
+          style={
+            styles.loadingText
+          }
+        >
+          Carregando eventos...
+        </Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
+      {/* GLOW BACKGROUND */}
+      <View style={styles.glow1} />
+      <View style={styles.glow2} />
+
+      <Animated.ScrollView
+        showsVerticalScrollIndicator={
+          false
+        }
         contentContainerStyle={{
-          paddingBottom: 140,
+          paddingBottom: 120,
         }}
       >
         {/* HEADER */}
@@ -431,129 +556,334 @@ export default function TelaInicio() {
           style={styles.header}
         >
           <View>
-            <Text style={styles.saudacao}>
-              Olá 👋
+            <Text
+              style={
+                styles.saudacao
+              }
+            >
+              {saudacaoHorario}
             </Text>
 
             <Text style={styles.nome}>
               {nomeUsuario}
             </Text>
+
+            <Text
+              style={
+                styles.city
+              }
+            >
+              📍 Fortaleza, CE
+            </Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.notificationBtn}
+          <BlurView
+            intensity={25}
+            tint="dark"
+            style={
+              styles.notificationBtn
+            }
           >
             <MaterialCommunityIcons
               name="bell-outline"
               size={22}
               color="#FFF"
             />
-          </TouchableOpacity>
+          </BlurView>
         </LinearGradient>
 
-        {/* BUSCA */}
-        <TouchableOpacity
-          style={styles.searchBox}
-          activeOpacity={0.9}
-          onPress={() =>
-            navigation.navigate("Busca")
-          }
-        >
-          <MaterialCommunityIcons
-            name="magnify"
-            size={22}
-            color={Colors.textSecondary}
-          />
-
-          <Text style={styles.searchText}>
-            Buscar eventos, shows...
-          </Text>
-        </TouchableOpacity>
-
-        {/* DESTAQUES */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            Destaques
-          </Text>
-
-          <Text style={styles.sectionSub}>
-            Eventos em alta agora
-          </Text>
-        </View>
-
-        <FlashList
-          data={destaques}
-          renderItem={({ item }) => (
-            <HeroCard item={item} />
-          )}
-          keyExtractor={(item) =>
-            item.id.toString()
-          }
+        {/* STORIES */}
+        <ScrollView
           horizontal
-          estimatedItemSize={300}
-          showsHorizontalScrollIndicator={false}
+          showsHorizontalScrollIndicator={
+            false
+          }
           contentContainerStyle={{
             paddingHorizontal: 16,
+            paddingBottom: 12,
           }}
-        />
+        >
+          {eventos
+            .slice(0, 10)
+            .map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={
+                  styles.storyItem
+                }
+              >
+                <LinearGradient
+                  colors={[
+                    "#FF0080",
+                    "#7928CA",
+                  ]}
+                  style={
+                    styles.storyBorder
+                  }
+                >
+                  <Image
+                    source={{
+                      uri: item.imagem,
+                    }}
+                    style={
+                      styles.storyImage
+                    }
+                  />
+                </LinearGradient>
+
+                <Text
+                  numberOfLines={1}
+                  style={
+                    styles.storyText
+                  }
+                >
+                  {item.titulo}
+                </Text>
+              </TouchableOpacity>
+            ))}
+        </ScrollView>
+
+        {/* EVENTO DO MOMENTO */}
+        {destaques[0] && (
+          <TouchableOpacity
+            activeOpacity={0.95}
+            style={
+              styles.momentCard
+            }
+            onPress={() =>
+              navigation.navigate(
+                "Detalhes",
+                {
+                  evento:
+                    destaques[0]
+                      .original,
+                }
+              )
+            }
+          >
+            <Image
+              source={{
+                uri: destaques[0]
+                  .imagem,
+              }}
+              style={
+                styles.momentImage
+              }
+            />
+
+            <LinearGradient
+              colors={[
+                "transparent",
+                "rgba(0,0,0,0.95)",
+              ]}
+              style={
+                styles.momentOverlay
+              }
+            />
+
+            <View
+              style={
+                styles.momentContent
+              }
+            >
+              <Text
+                style={
+                  styles.momentLabel
+                }
+              >
+                EVENTO DO MOMENTO
+              </Text>
+
+              <Text
+                style={
+                  styles.momentTitle
+                }
+              >
+                {
+                  destaques[0]
+                    .titulo
+                }
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {/* CATEGORIAS */}
-        <FlashList
-          data={categorias}
+        <ScrollView
           horizontal
-          estimatedItemSize={100}
-          keyExtractor={(item) => item}
-          showsHorizontalScrollIndicator={false}
+          showsHorizontalScrollIndicator={
+            false
+          }
           contentContainerStyle={{
             paddingHorizontal: 16,
-            paddingTop: 24,
-            paddingBottom: 10,
+            marginTop: 20,
           }}
-          renderItem={({ item }) => {
-            const ativo =
-              item === categoriaAtiva;
+        >
+          {categorias.map((cat) => {
+            const active =
+              categoriaAtiva ===
+              cat;
 
             return (
               <TouchableOpacity
-                activeOpacity={0.9}
+                key={cat}
                 onPress={() =>
-                  setCategoriaAtiva(item)
+                  setCategoriaAtiva(
+                    cat
+                  )
                 }
                 style={[
-                  styles.categoryBtn,
-                  ativo &&
-                    styles.categoryBtnActive,
+                  styles.categoryPill,
+
+                  active &&
+                    styles.categoryPillActive,
                 ]}
               >
                 <Text
                   style={[
                     styles.categoryText,
-                    ativo &&
+
+                    active &&
                       styles.categoryTextActive,
                   ]}
                 >
-                  {item}
+                  {cat}
                 </Text>
               </TouchableOpacity>
             );
+          })}
+        </ScrollView>
+
+        {/* DESTAQUES */}
+        <View
+          style={
+            styles.sectionHeader
+          }
+        >
+          <Text
+            style={
+              styles.sectionTitle
+            }
+          >
+            Destaques
+          </Text>
+
+          <Text
+            style={
+              styles.sectionSub
+            }
+          >
+            Eventos em alta agora
+          </Text>
+        </View>
+
+        <AnimatedFlashList
+          horizontal
+          data={destaques}
+          renderItem={({
+            item,
+            index,
+          }) => (
+            <HeroCard
+              item={item}
+              index={index}
+            />
+          )}
+          keyExtractor={(item) =>
+            item.id.toString()
+          }
+          estimatedItemSize={300}
+          showsHorizontalScrollIndicator={
+            false
+          }
+          contentContainerStyle={{
+            paddingHorizontal: 16,
           }}
+          onScroll={
+            scrollHandler
+          }
+          scrollEventThrottle={16}
         />
 
-        {/* PROXIMOS */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
+        {/* MAPA AO VIVO */}
+        <TouchableOpacity
+          style={
+            styles.liveMapCard
+          }
+          onPress={() =>
+            navigation.navigate(
+              "MapaVivo"
+            )
+          }
+        >
+          <LinearGradient
+            colors={[
+              "#111827",
+              "#1F2937",
+            ]}
+            style={
+              styles.liveMapGradient
+            }
+          >
+            <MaterialCommunityIcons
+              name="map-marker-radius"
+              size={28}
+              color="#8B5CF6"
+            />
+
+            <View>
+              <Text
+                style={
+                  styles.liveMapTitle
+                }
+              >
+                Mapa Cultural Ao Vivo
+              </Text>
+
+              <Text
+                style={
+                  styles.liveMapSub
+                }
+              >
+                Veja eventos próximos agora
+              </Text>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* PRÓXIMOS */}
+        <View
+          style={
+            styles.sectionHeader
+          }
+        >
+          <Text
+            style={
+              styles.sectionTitle
+            }
+          >
             Próximos de você
           </Text>
 
-          <Text style={styles.sectionSub}>
+          <Text
+            style={
+              styles.sectionSub
+            }
+          >
             Baseado na sua localização
           </Text>
         </View>
 
         <FlashList
           data={proximos}
-          renderItem={({ item }) => (
-            <CardEvento item={item} />
+          renderItem={({
+            item,
+            index,
+          }) => (
+            <CardEvento
+              item={item}
+              index={index}
+            />
           )}
           keyExtractor={(item) =>
             item.id.toString()
@@ -564,120 +894,7 @@ export default function TelaInicio() {
             paddingHorizontal: 16,
           }}
         />
-
-        {/* MAPA */}
-        <TouchableOpacity
-          activeOpacity={0.92}
-          onPress={abrirMapa}
-          style={styles.mapCard}
-        >
-          <Image
-            source={{
-              uri: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1200&auto=format&fit=crop",
-            }}
-            style={styles.mapImage}
-          />
-
-          <LinearGradient
-            colors={[
-              "transparent",
-              "rgba(0,0,0,0.92)",
-            ]}
-            style={styles.mapGradient}
-          />
-
-          <View style={styles.mapContent}>
-            <View style={styles.mapIcon}>
-              <MaterialCommunityIcons
-                name="map-marker-radius"
-                size={22}
-                color="#FFF"
-              />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.mapTitle}>
-                Explorar no mapa
-              </Text>
-
-              <Text style={styles.mapText}>
-                Veja eventos próximos à sua
-                localização em tempo real
-              </Text>
-            </View>
-
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={26}
-              color="#FFF"
-            />
-          </View>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* MODAL */}
-      <Modal
-        visible={showMapErrorModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() =>
-          setShowMapErrorModal(false)
-        }
-      >
-        <View style={styles.modalOverlay}>
-          <BlurView
-            intensity={70}
-            tint="dark"
-            style={styles.modalCard}
-          >
-            <LinearGradient
-              colors={[
-                Colors.primary,
-                "#7B5CFF",
-              ]}
-              style={styles.modalIcon}
-            >
-              <MaterialCommunityIcons
-                name="map-marker-off"
-                size={34}
-                color="#FFF"
-              />
-            </LinearGradient>
-
-            <Text style={styles.modalTitle}>
-              Não foi possível abrir o mapa
-            </Text>
-
-            <Text style={styles.modalMessage}>
-              {mapErrorMessage}
-            </Text>
-
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() =>
-                setShowMapErrorModal(false)
-              }
-              style={{ width: "100%" }}
-            >
-              <LinearGradient
-                colors={[
-                  Colors.primary,
-                  "#7B5CFF",
-                ]}
-                style={styles.modalButton}
-              >
-                <Text
-                  style={
-                    styles.modalButtonText
-                  }
-                >
-                  Entendi
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </BlurView>
-        </View>
-      </Modal>
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -685,86 +902,197 @@ export default function TelaInicio() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor:
+      Colors.background,
   },
 
-  loading: {
+  glow1: {
+    position: "absolute",
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor:
+      "#7C3AED",
+    opacity: 0.15,
+    top: -60,
+    left: -40,
+  },
+
+  glow2: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor:
+      "#EC4899",
+    opacity: 0.12,
+    top: 80,
+    right: -50,
+  },
+
+  loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.background,
+    backgroundColor:
+      Colors.background,
+  },
+
+  loadingText: {
+    color: "#FFF",
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: "600",
   },
 
   header: {
     paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingBottom: 20,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "center",
   },
 
   saudacao: {
-    color: Colors.textSecondary,
-    fontSize: 15,
+    color:
+      Colors.textSecondary,
+    fontSize: 16,
   },
 
   nome: {
     color: "#FFF",
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "bold",
     marginTop: 4,
   },
 
+  city: {
+    color:
+      "rgba(255,255,255,0.6)",
+    marginTop: 6,
+  },
+
   notificationBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.08)",
+    width: 50,
+    height: 50,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+
+  storyItem: {
+    alignItems: "center",
+    marginRight: 14,
+    width: 74,
+  },
+
+  storyBorder: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     justifyContent: "center",
     alignItems: "center",
   },
 
-  searchBox: {
-    marginHorizontal: 16,
-    backgroundColor: Colors.surface,
-    borderRadius: 18,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 22,
+  storyImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
   },
 
-  searchText: {
-    color: Colors.textSecondary,
-    marginLeft: 10,
-    fontSize: 14,
+  storyText: {
+    color: "#FFF",
+    fontSize: 11,
+    marginTop: 6,
+    textAlign: "center",
+  },
+
+  momentCard: {
+    height: 240,
+    marginHorizontal: 16,
+    borderRadius: 28,
+    overflow: "hidden",
+    marginTop: 12,
+  },
+
+  momentImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  momentOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  momentContent: {
+    position: "absolute",
+    bottom: 24,
+    left: 24,
+    right: 24,
+  },
+
+  momentLabel: {
+    color: "#A78BFA",
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+
+  momentTitle: {
+    color: "#FFF",
+    fontSize: 28,
+    fontWeight: "bold",
+  },
+
+  categoryPill: {
+    backgroundColor:
+      "rgba(255,255,255,0.08)",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+
+  categoryPillActive: {
+    backgroundColor:
+      Colors.primary,
+  },
+
+  categoryText: {
+    color:
+      "rgba(255,255,255,0.7)",
+    fontWeight: "600",
+  },
+
+  categoryTextActive: {
+    color: "#FFF",
   },
 
   sectionHeader: {
     paddingHorizontal: 16,
     marginBottom: 14,
-    marginTop: 8,
+    marginTop: 26,
   },
 
   sectionTitle: {
     color: "#FFF",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
   },
 
   sectionSub: {
-    color: Colors.textSecondary,
+    color:
+      Colors.textSecondary,
     marginTop: 4,
-    fontSize: 13,
   },
 
   heroCard: {
     width: windowWidth * 0.78,
-    height: 260,
+    height: 270,
     marginRight: 16,
-    borderRadius: 28,
+    borderRadius: 30,
     overflow: "hidden",
   },
 
@@ -786,7 +1114,8 @@ const styles = StyleSheet.create({
 
   heroBadge: {
     alignSelf: "flex-start",
-    backgroundColor: Colors.primary,
+    backgroundColor:
+      Colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -801,60 +1130,46 @@ const styles = StyleSheet.create({
 
   heroTitle: {
     color: "#FFF",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
     marginBottom: 8,
   },
 
   heroLocation: {
-    color: "rgba(255,255,255,0.75)",
-    marginBottom: 14,
+    color:
+      "rgba(255,255,255,0.75)",
   },
 
-  heroFooter: {
+  liveMapCard: {
+    marginTop: 24,
+    marginHorizontal: 16,
+  },
+
+  liveMapGradient: {
+    borderRadius: 24,
+    padding: 20,
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 14,
   },
 
-  metric: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-
-  metricText: {
+  liveMapTitle: {
     color: "#FFF",
-    fontSize: 12,
+    fontSize: 17,
+    fontWeight: "bold",
   },
 
-  categoryBtn: {
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 22,
-    marginRight: 10,
-  },
-
-  categoryBtnActive: {
-    backgroundColor: Colors.primary,
-  },
-
-  categoryText: {
-    color: Colors.textSecondary,
-    fontWeight: "600",
-  },
-
-  categoryTextActive: {
-    color: "#FFF",
+  liveMapSub: {
+    color:
+      "rgba(255,255,255,0.65)",
+    marginTop: 4,
   },
 
   card: {
     height: 260,
-    borderRadius: 26,
+    borderRadius: 28,
     overflow: "hidden",
     marginBottom: 18,
-    backgroundColor: Colors.surface,
   },
 
   cardImage: {
@@ -866,59 +1181,33 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
 
-  cardContent: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "space-between",
-    padding: 18,
+  glassFooter: {
+    position: "absolute",
+    left: 14,
+    right: 14,
+    bottom: 14,
+    borderRadius: 22,
+    padding: 16,
+    overflow: "hidden",
   },
-
-  cardTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-
-  categoryMini: {
-    backgroundColor: "rgba(255,255,255,0.15)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backdropFilter: "blur(10px)",
-  },
-
-  categoryMiniText: {
-    color: "#FFF",
-    fontSize: 11,
-    fontWeight: "bold",
-  },
-
-  likeButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  cardBottom: {},
 
   cardTitle: {
     color: "#FFF",
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 8,
   },
 
   cardLocation: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 13,
-    marginBottom: 14,
+    color:
+      "rgba(255,255,255,0.75)",
+    marginTop: 6,
   },
 
   cardFooter: {
+    marginTop: 14,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "center",
   },
 
@@ -931,7 +1220,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor:
+      "rgba(255,255,255,0.12)",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 14,
@@ -940,109 +1230,5 @@ const styles = StyleSheet.create({
   ratingText: {
     color: "#FFF",
     fontWeight: "bold",
-    fontSize: 12,
-  },
-
-  mapCard: {
-    height: 220,
-    marginHorizontal: 16,
-    marginTop: 10,
-    borderRadius: 28,
-    overflow: "hidden",
-  },
-
-  mapImage: {
-    width: "100%",
-    height: "100%",
-  },
-
-  mapGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-
-  mapContent: {
-    position: "absolute",
-    left: 20,
-    right: 20,
-    bottom: 20,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  mapIcon: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-
-  mapTitle: {
-    color: "#FFF",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-
-  mapText: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 13,
-    lineHeight: 20,
-  },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-
-  modalCard: {
-    width: "100%",
-    borderRadius: 28,
-    padding: 24,
-    alignItems: "center",
-    overflow: "hidden",
-    backgroundColor: "rgba(20,20,30,0.85)",
-  },
-
-  modalIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-
-  modalTitle: {
-    color: "#FFF",
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-
-  modalMessage: {
-    color: "rgba(255,255,255,0.72)",
-    textAlign: "center",
-    fontSize: 15,
-    lineHeight: 24,
-    marginBottom: 24,
-  },
-
-  modalButton: {
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-
-  modalButtonText: {
-    color: "#FFF",
-    fontWeight: "bold",
-    fontSize: 15,
   },
 });
