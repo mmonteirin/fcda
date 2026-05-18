@@ -25,23 +25,12 @@ import {
 } from "react-native";
 
 /**
- * IMPORT CONDICIONAL
- * evita crash no web
+ * IMPORTAÇÃO COM EXTENSÃO ESPECÍFICA POR PLATAFORMA
+ * MapComponents.native.js é usado em Android/iOS
+ * MapComponents.web.js é usado em Web
+ * Bundler não processa o arquivo nativo em web
  */
-let MapView = null;
-let Marker = null;
-let Circle = null;
-let PROVIDER_GOOGLE = null;
-
-if (Platform.OS !== "web") {
-  const Maps = require("react-native-maps");
-
-  MapView = Maps.default;
-  Marker = Maps.Marker;
-  Circle = Maps.Circle;
-  PROVIDER_GOOGLE =
-    Maps.PROVIDER_GOOGLE;
-}
+import { MapView, Marker, Circle, PROVIDER_GOOGLE, getMapComponents } from "./MapComponents";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -111,72 +100,9 @@ export default function TelaMapaVivo({
   navigation,
 }) {
   /**
-   * FALLBACK WEB
-   * react-native-maps não funciona no Expo Web
+   * FALLBACK WEB & LOADING
+   * Usado quando Platform.OS === "web" ou MapView não carregou
    */
-
-  if (Platform.OS === "web") {
-    return (
-      <View
-        style={
-          styles.webContainer
-        }
-      >
-        <StatusBar barStyle="light-content" />
-
-        <LinearGradient
-          colors={[
-            "#0F172A",
-            "#111827",
-          ]}
-          style={
-            styles.webGradient
-          }
-        >
-          <MaterialCommunityIcons
-            name="map-off"
-            size={90}
-            color="#64748B"
-          />
-
-          <Text
-            style={
-              styles.webTitle
-            }
-          >
-            Mapa indisponível
-          </Text>
-
-          <Text
-            style={
-              styles.webText
-            }
-          >
-            O Mapa Vivo está
-            disponível apenas no
-            Android e iOS.
-          </Text>
-
-          <TouchableOpacity
-            style={
-              styles.webButton
-            }
-            onPress={() =>
-              navigation.goBack()
-            }
-          >
-            <Text
-              style={
-                styles.webButtonText
-              }
-            >
-              Voltar
-            </Text>
-          </TouchableOpacity>
-        </LinearGradient>
-      </View>
-    );
-  }
 
   const {
     localizacao,
@@ -327,7 +253,11 @@ export default function TelaMapaVivo({
 
   /* ───────────────────────────────────────── */
 
-  if (!localizacao) {
+  if (
+    !localizacao ||
+    !MapView ||
+    Platform.OS === "web"
+  ) {
     return (
       <View
         style={
@@ -336,22 +266,78 @@ export default function TelaMapaVivo({
       >
         <StatusBar barStyle="light-content" />
 
-        <ActivityIndicator
-          size="large"
-          color={
-            Colors.primary
-          }
-        />
+        {!MapView ||
+        Platform.OS === "web" ? (
+          <LinearGradient
+            colors={[
+              "#0F172A",
+              "#111827",
+            ]}
+            style={
+              styles.webGradient
+            }
+          >
+            <MaterialCommunityIcons
+              name="map-off"
+              size={90}
+              color="#64748B"
+            />
 
-        <Text
-          style={
-            styles.loadingText
-          }
-        >
-          {permissaoNegada
-            ? "Usando localização padrão..."
-            : "Localizando você..."}
-        </Text>
+            <Text
+              style={
+                styles.webTitle
+              }
+            >
+              Mapa indisponível
+            </Text>
+
+            <Text
+              style={
+                styles.webText
+              }
+            >
+              O Mapa Vivo está
+              disponível apenas no
+              Android e iOS.
+            </Text>
+
+            <TouchableOpacity
+              style={
+                styles.webButton
+              }
+              onPress={() =>
+                navigation.goBack()
+              }
+            >
+              <Text
+                style={
+                  styles.webButtonText
+                }
+              >
+                Voltar
+              </Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        ) : (
+          <>
+            <ActivityIndicator
+              size="large"
+              color={
+                Colors.primary
+              }
+            />
+
+            <Text
+              style={
+                styles.loadingText
+              }
+            >
+              {permissaoNegada
+                ? "Usando localização padrão..."
+                : "Localizando você..."}
+            </Text>
+          </>
+        )}
       </View>
     );
   }
@@ -364,112 +350,115 @@ export default function TelaMapaVivo({
 
       {/* MAPA */}
 
-      <MapView
-        ref={mapRef}
-        style={
-          StyleSheet.absoluteFill
-        }
-        provider={
-          Platform.OS ===
-          "android"
-            ? PROVIDER_GOOGLE
-            : undefined
-        }
-        initialRegion={{
-          ...localizacao,
-          ...REGION_DELTA,
-        }}
-        showsUserLocation
-        showsMyLocationButton={
-          false
-        }
-        customMapStyle={
-          darkMapStyle
-        }
-      >
-        {/* HEATMAP */}
+      {MapView ? (
+        <MapView
+          ref={mapRef}
+          style={
+            StyleSheet.absoluteFill
+          }
+          provider={
+            Platform.OS ===
+            "android"
+              ? PROVIDER_GOOGLE
+              : undefined
+          }
+          initialRegion={{
+            ...localizacao,
+            ...REGION_DELTA,
+          }}
+          showsUserLocation
+          showsMyLocationButton={
+            false
+          }
+          customMapStyle={
+            darkMapStyle
+          }
+        >
+          {/* HEATMAP */}
 
-        {mostrarHeatmap &&
-          hotspots.map(
-            (h, i) => {
-              const {
-                fill,
-                stroke,
-              } = heatColor(
-                h.intensity
-              );
+          {mostrarHeatmap &&
+            hotspots.map(
+              (h, i) => {
+                const {
+                  fill,
+                  stroke,
+                } = heatColor(
+                  h.intensity
+                );
 
-              return (
-                <Circle
-                  key={`hs_${i}`}
-                  center={{
+                return Circle ? (
+                  <Circle
+                    key={`hs_${i}`}
+                    center={{
+                      latitude:
+                        h.latitude,
+
+                      longitude:
+                        h.longitude,
+                    }}
+                    radius={
+                      400 +
+                      h.intensity *
+                        12
+                    }
+                    fillColor={
+                      fill
+                    }
+                    strokeColor={
+                      stroke
+                    }
+                    strokeWidth={
+                      1.5
+                    }
+                  />
+                ) : null;
+              }
+            )}
+
+          {/* MARCADORES */}
+
+          {eventos.map(
+            (evento) =>
+              Marker ? (
+                <Marker
+                  key={evento.id}
+                  coordinate={{
                     latitude:
-                      h.latitude,
+                      evento
+                        .location
+                        .latitude,
 
                     longitude:
-                      h.longitude,
+                      evento
+                        .location
+                        .longitude,
                   }}
-                  radius={
-                    400 +
-                    h.intensity *
-                      12
+                  onPress={() =>
+                    focarEvento(
+                      evento
+                    )
                   }
-                  fillColor={
-                    fill
+                  tracksViewChanges={
+                    false
                   }
-                  strokeColor={
-                    stroke
-                  }
-                  strokeWidth={
-                    1.5
-                  }
-                />
-              );
-            }
+                >
+                  <MapEventMarker
+                    {...evento}
+                    isSelected={
+                      eventoSelecionado?.id ===
+                      evento.id
+                    }
+                    onPress={() =>
+                      focarEvento(
+                        evento
+                      )
+                    }
+                  />
+                </Marker>
+              ) : null
           )}
-
-        {/* MARCADORES */}
-
-        {eventos.map(
-          (evento) => (
-            <Marker
-              key={evento.id}
-              coordinate={{
-                latitude:
-                  evento
-                    .location
-                    .latitude,
-
-                longitude:
-                  evento
-                    .location
-                    .longitude,
-              }}
-              onPress={() =>
-                focarEvento(
-                  evento
-                )
-              }
-              tracksViewChanges={
-                false
-              }
-            >
-              <MapEventMarker
-                {...evento}
-                isSelected={
-                  eventoSelecionado?.id ===
-                  evento.id
-                }
-                onPress={() =>
-                  focarEvento(
-                    evento
-                  )
-                }
-              />
-            </Marker>
-          )
-        )}
-      </MapView>
+        </MapView>
+      ) : null}
 
       {/* FILTRO */}
 
@@ -697,12 +686,6 @@ const styles =
       marginTop: 14,
       color:
         Colors.textSecondary,
-    },
-
-    webContainer: {
-      flex: 1,
-      backgroundColor:
-        "#0F172A",
     },
 
     webGradient: {
