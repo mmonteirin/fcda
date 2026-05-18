@@ -7,6 +7,7 @@ import EventoAvaliacao from "../screens/EventoAvaliacao";
 import EventosPublicos from "../screens/EventoPublico";
 import TelaCulturaViva from "../screens/TelaCulturaViva";
 import TelaExploreCidade from "../screens/TelaExploreCidade";
+import EventoIngresso from "../screens/EventoIngresso";
 
 const Stack = createStackNavigator();
 
@@ -28,6 +29,7 @@ export default function EventoStack() {
       <Stack.Screen name="Avaliacao" component={EventoAvaliacao} />
       <Stack.Screen name="TelaCulturaViva" component={TelaCulturaViva} />
       <Stack.Screen name="TelaExploreCidade" component={TelaExploreCidade} />
+      <Stack.Screen name="EventoIngresso" component={EventoIngresso} />
 
     </Stack.Navigator>
   );

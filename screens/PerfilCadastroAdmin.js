@@ -1,22 +1,8 @@
 import React, { useState, useRef } from "react";
-/**
- * ╔════════════════════════════════════════════════════════════════════════════╗
- * ║ PerfilCadastroAdmin - REFATORAÇÃO PROFISSIONAL (FLUIDA + iOS-LIKE)        ║
- * ╠════════════════════════════════════════════════════════════════════════════╣
- * ║ ✅ KeyboardAwareScrollView para gerenciar teclado automaticamente         ║
- * ║ ✅ Scroll suave sem pulos - scrollToFocusedInput nativo                   ║
- * ║ ✅ Foco automático com delay suave (100ms) para melhor UX                 ║
- * ║ ✅ Inputs com feedback visual ao focar (borda colorida + sombra)          ║
- * ║ ✅ Modais profissionais com animações fade e ícones melhorados            ║
- * ║ ✅ iOS-like behavior: teclado nunca quebra a tela                         ║
- * ║ ✅ Sem measureLayout - layout mais previsível                             ║
- * ║ ✅ Scroll natural com extraScrollHeight adaptativo (iOS: 80, Android: 100)║
- * ╚════════════════════════════════════════════════════════════════════════════╝
- */
 import {
   View,
-  TextInput,
   Text,
+  TextInput,
   TouchableOpacity,
   ImageBackground,
   StatusBar,
@@ -24,14 +10,14 @@ import {
   Modal,
   StyleSheet,
   Platform,
+  ScrollView,
+  KeyboardAvoidingView,
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { MotiView } from "moti";
-
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 import { useCadastro } from "../context/CadastroContext";
 import GlobalStyles from "../styles/GlobalStyles";
@@ -50,8 +36,11 @@ const FIELD_ORDER = [
 ];
 
 export default function PerfilCadastroAdmin({ navigation }) {
-  const { registerUser } = useCadastro();
+  const { registerUser, sendVerificationCode, verifyCode } = useCadastro();
+
   const scrollRef = useRef(null);
+  const inputRefs = useRef({});
+  const fieldYPositions = useRef({});
 
   const [form, setForm] = useState({
     nome: "",
@@ -64,32 +53,31 @@ export default function PerfilCadastroAdmin({ navigation }) {
     cnpj: "",
   });
 
-  const [generatedCode, setGeneratedCode] = useState("");
   const [error, setError] = useState("");
+  const [codeError, setCodeError] = useState("");
+
   const [loading, setLoading] = useState(false);
+  const [loadingCode, setLoadingCode] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showCodeModal, setShowCodeModal] = useState(false);
 
-  const inputRefs = useRef({});
-
-  // ─── helpers ───────────────────────────────
-  const formatCNPJ = (value) => {
-    const digits = value.replace(/\D/g, "").slice(0, 14);
-    return digits
-      .replace(/^(\d{2})(\d)/, "$1.$2")
-      .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-      .replace(/\.(\d{3})(\d)/, ".$1/$2")
-      .replace(/(\d{4})(\d)/, "$1-$2");
-  };
+  const [step, setStep] = useState("form");
 
   const handleChange = (field, value) => {
     let newValue = value;
 
-    if (field === "cnpj") newValue = formatCNPJ(value);
-    if (field === "email") newValue = value.trim().toLowerCase();
+    if (field === "email") {
+      newValue = value.trim().toLowerCase();
+    }
 
-    setForm((prev) => ({ ...prev, [field]: newValue }));
+    if (field === "verificationCode") {
+      newValue = value.replace(/[^0-9]/g, "").slice(0, 6);
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      [field]: newValue,
+    }));
   };
 
   const focusNext = (field) => {
@@ -97,28 +85,60 @@ export default function PerfilCadastroAdmin({ navigation }) {
     const next = FIELD_ORDER[index + 1];
 
     if (next && inputRefs.current[next]) {
-      setTimeout(() => {
-        inputRefs.current[next].focus();
-      }, 100);
+      setTimeout(() => inputRefs.current[next].focus(), 80);
     }
   };
 
-  // ─── code ───────────────────────────────
-  const handleSendCode = () => {
+  const handleFieldFocus = (field) => {
+    setTimeout(() => {
+      const y = fieldYPositions.current[field];
+
+      if (y !== undefined && scrollRef.current) {
+        scrollRef.current.scrollTo({
+          y: Math.max(0, y - 120),
+          animated: true,
+        });
+      }
+    }, 150);
+  };
+
+  // ─────────────────────────────────────
+  // ENVIAR CÓDIGO
+  // ─────────────────────────────────────
+
+  const handleSendCode = async () => {
+    setError("");
+
     if (!form.nome || !form.email) {
       setError("Preencha nome e email");
       return;
     }
 
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedCode(code);
-    setShowCodeModal(true);
-    setError("");
+    if (!/\S+@\S+\.\S+/.test(form.email)) {
+      setError("Email inválido");
+      return;
+    }
+
+    setLoading(true);
+
+    const result = await sendVerificationCode(form.email);
+
+    setLoading(false);
+
+    if (result.success) {
+      setStep("verify");
+      setCodeError("");
+    } else {
+      setError(result.message);
+    }
   };
 
-  // ─── submit ───────────────────────────────
+  // ─────────────────────────────────────
+  // CRIAR ORGANIZADOR
+  // ─────────────────────────────────────
+
   const handleSubmit = async () => {
-    setError("");
+    setCodeError("");
 
     const {
       nome,
@@ -141,23 +161,26 @@ export default function PerfilCadastroAdmin({ navigation }) {
       !localAtuacao ||
       !cnpj
     ) {
-      setError("Preencha todos os campos");
-      return;
-    }
-
-    if (verificationCode !== generatedCode) {
-      setError("Código inválido");
+      setCodeError("Preencha todos os campos");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Senhas não coincidem");
+      setCodeError("As senhas não coincidem");
+      return;
+    }
+
+    setLoadingCode(true);
+
+    const codeResult = await verifyCode(email, verificationCode);
+
+    if (!codeResult.success) {
+      setLoadingCode(false);
+      setCodeError(codeResult.message);
       return;
     }
 
     try {
-      setLoading(true);
-
       const response = await registerUser({
         nome,
         email,
@@ -168,71 +191,72 @@ export default function PerfilCadastroAdmin({ navigation }) {
         cnpj,
       });
 
+      setLoadingCode(false);
+
       if (response.success) {
-        setShowSuccessModal(true);
+        setStep("success");
       } else {
-        setError(response.message);
+        setCodeError(response.message);
       }
-    } catch (e) {
-      setError("Erro ao criar organizador");
-    } finally {
-      setLoading(false);
+    } catch {
+      setLoadingCode(false);
+      setCodeError("Erro ao criar organizador");
     }
   };
 
-  // ─── input renderer ───────────────────────────────
-  const renderInput = ({
-    label,
-    field,
-    placeholder,
-    icon,
-    secure,
-    keyboardType,
-    maxLength,
-  }) => {
+  // ─────────────────────────────────────
+  // REENVIAR CÓDIGO
+  // ─────────────────────────────────────
+
+  const handleResendCode = async () => {
+    setCodeError("");
+
+    setLoadingCode(true);
+
+    const result = await sendVerificationCode(form.email);
+
+    setLoadingCode(false);
+
+    if (!result.success) {
+      setCodeError(result.message);
+    }
+  };
+
+  const renderInput = (field, label, icon, options = {}) => {
     const isLast = FIELD_ORDER[FIELD_ORDER.length - 1] === field;
-    const [isFocused, setIsFocused] = useState(false);
 
     return (
-      <View style={{ marginBottom: 12 }}>
+      <View
+        key={field}
+        onLayout={(e) => {
+          fieldYPositions.current[field] = e.nativeEvent.layout.y;
+        }}
+        style={{ marginBottom: 14 }}
+      >
         <Text style={styles.label}>{label}</Text>
 
-        <View
-          style={[
-            styles.inputContainer,
-            isFocused && styles.inputContainerFocused,
-          ]}
-        >
-          <Feather
-            name={icon}
-            size={16}
-            color={isFocused ? colors.primary : "rgba(255,255,255,0.5)"}
-            style={{ marginRight: 8 }}
-          />
+        <View style={styles.inputBox}>
+          <Feather name={icon} size={16} color="rgba(255,255,255,0.6)" />
 
           <TextInput
-            ref={(r) => (inputRefs.current[field] = r)}
+            ref={(r) => {
+              if (r) inputRefs.current[field] = r;
+            }}
             value={form[field]}
             onChangeText={(t) => handleChange(field, t)}
-            placeholder={placeholder}
-            placeholderTextColor="rgba(255,255,255,0.4)"
+            placeholder={label}
+            placeholderTextColor="rgba(255,255,255,0.3)"
             style={styles.input}
-            secureTextEntry={secure && !showPassword}
-            keyboardType={keyboardType}
-            maxLength={maxLength}
+            secureTextEntry={options.secure && !showPassword}
+            onFocus={() => handleFieldFocus(field)}
             returnKeyType={isLast ? "done" : "next"}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
-            onSubmitEditing={() => {
-              if (isLast) handleSubmit();
-              else focusNext(field);
-            }}
+            onSubmitEditing={() =>
+              isLast ? handleSubmit() : focusNext(field)
+            }
           />
 
-          {secure && (
-            <TouchableOpacity
-              onPress={() => setShowPassword((p) => !p)}
-            >
+          {options.secure && (
+            <TouchableOpacity onPress={() => setShowPassword((p) => !p)}>
               <Feather
                 name={showPassword ? "eye" : "eye-off"}
                 size={18}
@@ -256,201 +280,238 @@ export default function PerfilCadastroAdmin({ navigation }) {
         colors={["rgba(0,0,0,0.9)", "rgba(10,10,25,0.7)", "rgba(0,0,0,0.95)"]}
         style={{ flex: 1 }}
       >
-        <KeyboardAwareScrollView
-          ref={scrollRef}
-          enableOnAndroid={true}
-          keyboardShouldPersistTaps="handled"
-          extraScrollHeight={Platform.OS === "ios" ? 24 : 32}
-          enableAutomaticScroll={true}
-          scrollToOverflowEnabled={false}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-          alwaysBounceVertical={false}
-          overScrollMode="never"
-          contentContainerStyle={styles.container}
-          keyboardOpeningTime={0}
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
         >
-          {/* HEADER */}
-          <MotiView
-            from={{ opacity: 0, translateY: -20 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 600 }}
-            style={styles.header}
+          <Feather name="arrow-left" size={22} color="#fff" />
+        </TouchableOpacity>
+
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 20}
+        >
+          <ScrollView
+            ref={scrollRef}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            bounces={false}
+            overScrollMode="never"
+            contentContainerStyle={styles.container}
           >
-            <LinearGradient
-              colors={[colors.primary, "#7B5CFF"]}
-              style={styles.logo}
-            >
-              <Feather name="briefcase" size={30} color="#fff" />
-            </LinearGradient>
-
-            <View>
-              <Text style={styles.title}>Cadastro de Organizador</Text>
-              <Text style={styles.subtitle}>
-                Cadastro protegido por validação
-              </Text>
-            </View>
-          </MotiView>
-
-          <BlurView intensity={60} tint="dark" style={styles.card}>
-            {renderInput({
-              label: "Nome",
-              field: "nome",
-              placeholder: "Nome",
-              icon: "user",
-            })}
-
-            {renderInput({
-              label: "Email",
-              field: "email",
-              placeholder: "email@email.com",
-              icon: "mail",
-              keyboardType: "email-address",
-            })}
-
-            <View style={styles.row}>
-              <TouchableOpacity
-                style={styles.codeButton}
-                onPress={handleSendCode}
-              >
-                <LinearGradient
-                  colors={[colors.primary, "#2563EB"]}
-                  style={styles.codeGradient}
-                >
-                  <Feather name="send" color="#fff" />
-                  <Text style={{ color: "#fff", marginLeft: 6 }}>
-                    Enviar
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
-
-              {renderInput({
-                label: "Código",
-                field: "verificationCode",
-                placeholder: "000000",
-                icon: "shield",
-                keyboardType: "numeric",
-              })}
-            </View>
-
-            {renderInput({
-              label: "Área",
-              field: "areaAtuacao",
-              placeholder: "Eventos",
-              icon: "grid",
-            })}
-
-            {renderInput({
-              label: "Local",
-              field: "localAtuacao",
-              placeholder: "Fortaleza",
-              icon: "map-pin",
-            })}
-
-            {renderInput({
-              label: "CNPJ",
-              field: "cnpj",
-              placeholder: "00.000.000/0000-00",
-              icon: "file-text",
-              keyboardType: "numeric",
-              maxLength: 18,
-            })}
-
-            {renderInput({
-              label: "Senha",
-              field: "password",
-              placeholder: "••••••••",
-              icon: "lock",
-              secure: true,
-            })}
-
-            {renderInput({
-              label: "Confirmar",
-              field: "confirmPassword",
-              placeholder: "••••••••",
-              icon: "check-circle",
-              secure: true,
-            })}
-
-            {error !== "" && <Text style={styles.error}>{error}</Text>}
-
-            <TouchableOpacity onPress={handleSubmit}>
+            <MotiView style={styles.header}>
               <LinearGradient
                 colors={[colors.primary, "#7B5CFF"]}
-                style={styles.submit}
+                style={styles.logo}
               >
-                {loading ? (
+                <Feather name="briefcase" size={28} color="#fff" />
+              </LinearGradient>
+
+              <View>
+                <Text style={styles.title}>Cadastro de Organizador</Text>
+
+                <Text style={styles.subtitle}>
+                  Cadastro protegido por validação
+                </Text>
+              </View>
+            </MotiView>
+
+            <BlurView intensity={60} tint="dark" style={styles.card}>
+              {renderInput("nome", "Nome", "user")}
+              {renderInput("email", "Email", "mail")}
+
+              <View style={styles.row}>
+                <TouchableOpacity
+                  style={styles.codeBtn}
+                  onPress={handleSendCode}
+                >
+                  <LinearGradient
+                    colors={[colors.primary, "#2563EB"]}
+                    style={styles.codeGrad}
+                  >
+                    {loading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Feather name="send" color="#fff" />
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <View style={{ flex: 1 }}>
+                  {renderInput("verificationCode", "Código", "shield")}
+                </View>
+              </View>
+
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  {renderInput("areaAtuacao", "Área", "grid")}
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  {renderInput("localAtuacao", "Local", "map-pin")}
+                </View>
+              </View>
+
+              {renderInput("cnpj", "CNPJ", "file-text")}
+
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  {renderInput("password", "Senha", "lock", {
+                    secure: true,
+                  })}
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  {renderInput("confirmPassword", "Confirmar", "check-circle", {
+                    secure: true,
+                  })}
+                </View>
+              </View>
+
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
+              <TouchableOpacity
+                onPress={handleSubmit}
+                disabled={loadingCode}
+              >
+                <LinearGradient
+                  colors={[colors.primary, "#7B5CFF"]}
+                  style={styles.submit}
+                >
+                  {loadingCode ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                      Criar Organizador
+                    </Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            </BlurView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+
+      {/* ───────────────── MODAL VERIFICAÇÃO ───────────────── */}
+
+      <Modal visible={step === "verify"} transparent animationType="fade">
+        <View style={styles.modal}>
+          <BlurView intensity={80} tint="dark" style={styles.modalCard}>
+            <LinearGradient
+              colors={[colors.primary, "#7B5CFF"]}
+              style={styles.modalIcon}
+            >
+              <Feather name="mail" size={28} color="#fff" />
+            </LinearGradient>
+
+            <Text style={styles.modalTitle}>
+              Código enviado!
+            </Text>
+
+            <Text style={styles.modalSubtitle}>
+              Verifique sua caixa de entrada em{"\n"}
+
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                {form.email}
+              </Text>
+            </Text>
+
+            <Text style={styles.modalHint}>
+              Digite o código de 6 dígitos para concluir o cadastro.
+            </Text>
+
+            <View style={styles.codeInputContainer}>
+              <TextInput
+                value={form.verificationCode}
+                onChangeText={(t) =>
+                  handleChange("verificationCode", t)
+                }
+                keyboardType="numeric"
+                maxLength={6}
+                placeholder="000000"
+                placeholderTextColor="rgba(255,255,255,0.25)"
+                style={styles.codeInput}
+              />
+            </View>
+
+            {codeError ? (
+              <Text style={styles.error}>{codeError}</Text>
+            ) : null}
+
+            <TouchableOpacity
+              onPress={handleSubmit}
+              disabled={loadingCode}
+              style={{ width: "100%" }}
+            >
+              <LinearGradient
+                colors={[colors.primary, "#7B5CFF"]}
+                style={styles.modalBtn}
+              >
+                {loadingCode ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <Text style={{ color: "#fff", fontWeight: "bold" }}>
-                    Criar Organizador
+                    Confirmar código
                   </Text>
                 )}
               </LinearGradient>
             </TouchableOpacity>
-          </BlurView>
-        </KeyboardAwareScrollView>
-      </LinearGradient>
-
-      {/* MODALS */}
-      <Modal visible={showCodeModal} transparent animationType="fade">
-        <View style={styles.modal}>
-          <BlurView intensity={80} tint="dark" style={styles.modalCard}>
-            <View style={styles.modalIcon}>
-              <Feather name="mail" size={32} color={colors.primary} />
-            </View>
-
-            <Text style={styles.modalTitle}>Código Enviado</Text>
-            <Text style={styles.modalText}>
-              Código dinâmico enviado para:
-            </Text>
-            <Text style={styles.modalEmail}>{form.email}</Text>
-
-            <View style={styles.codeBox}>
-              <Text style={styles.modalCode}>{generatedCode}</Text>
-            </View>
 
             <TouchableOpacity
-              onPress={() => setShowCodeModal(false)}
-              style={styles.modalButton}
+              onPress={handleResendCode}
+              disabled={loadingCode}
             >
-              <LinearGradient
-                colors={[colors.primary, "#2563EB"]}
-                style={styles.modalButtonGradient}
-              >
-                <Text style={styles.modalButtonText}>Continuar</Text>
-              </LinearGradient>
+              <Text style={styles.resendText}>
+                Reenviar código
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setStep("form");
+                setCodeError("");
+              }}
+            >
+              <Text style={styles.changeEmail}>
+                Alterar email
+              </Text>
             </TouchableOpacity>
           </BlurView>
         </View>
       </Modal>
 
-      <Modal visible={showSuccessModal} transparent animationType="fade">
+      {/* ───────────────── MODAL SUCESSO ───────────────── */}
+
+      <Modal visible={step === "success"} transparent animationType="fade">
         <View style={styles.modal}>
           <BlurView intensity={80} tint="dark" style={styles.modalCard}>
-            <View
-              style={[
-                styles.modalIcon,
-                { backgroundColor: "rgba(34,197,94,0.2)" },
-              ]}
+            <LinearGradient
+              colors={["#22c55e", "#16a34a"]}
+              style={styles.modalIcon}
             >
-              <Feather name="check" size={32} color="#22C55E" />
-            </View>
+              <Feather name="check" size={28} color="#fff" />
+            </LinearGradient>
 
-            <Text style={styles.modalTitle}>Cadastro Realizado!</Text>
-            <Text style={styles.modalText}>
-              Organizador criado com sucesso.
+            <Text style={styles.modalTitle}>
+              Organizador criado!
+            </Text>
+
+            <Text style={styles.modalSubtitle}>
+              O cadastro foi concluído com sucesso.
             </Text>
 
             <TouchableOpacity
               onPress={() => navigation.navigate("Login")}
-              style={styles.modalButton}
+              style={{ width: "100%" }}
             >
               <LinearGradient
-                colors={[colors.primary, "#7B5CFF"]}
-                style={styles.modalButtonGradient}
+                colors={["#22c55e", "#16a34a"]}
+                style={styles.modalBtn}
               >
-                <Text style={styles.modalButtonText}>Ir para Login</Text>
+                <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                  Ir para Login
+                </Text>
               </LinearGradient>
             </TouchableOpacity>
           </BlurView>
@@ -460,64 +521,69 @@ export default function PerfilCadastroAdmin({ navigation }) {
   );
 }
 
-// ─── styles ───────────────────────────────
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
     padding: 16,
-    paddingBottom: Platform.OS === "ios" ? 28 : 32,
+    paddingBottom: 60,
+    flexGrow: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-    gap: 12,
-  },
-  logo: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+
+  backButton: {
+    marginLeft: 16,
+    marginTop: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.08)",
     justifyContent: "center",
     alignItems: "center",
   },
-  title: { color: "#fff", fontSize: 18, fontWeight: "bold" },
-  subtitle: { color: "rgba(255,255,255,0.6)" },
 
-  card: {
-    padding: 20,
-    borderRadius: 20,
-    backgroundColor: "rgba(20,20,20,0.35)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    shadowColor: "rgba(0,0,0,0.4)",
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 18,
+    gap: 12,
   },
 
-  inputContainer: {
+  logo: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  title: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+
+  subtitle: {
+    color: "rgba(255,255,255,0.6)",
+  },
+
+  card: {
+    padding: 18,
+    borderRadius: 20,
+    backgroundColor: "rgba(20,20,20,0.35)",
+    overflow: "hidden",
+  },
+
+  inputBox: {
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
     borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.06)",
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.08)",
-    transition: "all 200ms ease-in-out",
-  },
-
-  inputContainerFocused: {
-    backgroundColor: "rgba(255,255,255,0.09)",
-    borderColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
   },
 
   input: {
     flex: 1,
     color: "#fff",
+    marginLeft: 8,
+    paddingVertical: 4,
   },
 
   label: {
@@ -527,21 +593,23 @@ const styles = StyleSheet.create({
 
   row: {
     flexDirection: "row",
+    alignItems: "flex-start",
     gap: 10,
-    alignItems: "center",
+    flexWrap: "nowrap",
   },
 
-  codeButton: {
-    overflow: "hidden",
+  codeBtn: {
+    width: 48,
+    height: 48,
     borderRadius: 12,
-    flex: 0.4,
+    overflow: "hidden",
+    marginTop: 22,
   },
 
-  codeGradient: {
-    padding: 10,
-    flexDirection: "row",
-    alignItems: "center",
+  codeGrad: {
+    flex: 1,
     justifyContent: "center",
+    alignItems: "center",
   },
 
   submit: {
@@ -549,10 +617,6 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 14,
     alignItems: "center",
-    shadowColor: colors.primary,
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
   },
 
   error: {
@@ -565,83 +629,85 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.5)",
     padding: 20,
   },
 
   modalCard: {
-    padding: 24,
-    borderRadius: 24,
-    width: "88%",
+    padding: 20,
+    borderRadius: 20,
+    width: "100%",
     alignItems: "center",
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
   },
 
   modalIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 72,
+    height: 72,
+    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: `rgba(${colors.primary ? "123,92,255" : "100,100,255"},0.2)`,
-    marginBottom: 16,
+    marginBottom: 18,
   },
 
   modalTitle: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 20,
+    marginBottom: 10,
     fontWeight: "bold",
-    marginBottom: 8,
-  },
-
-  modalText: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 14,
     textAlign: "center",
-    marginBottom: 4,
   },
 
-  modalEmail: {
-    color: colors.primary,
+  modalSubtitle: {
+    color: "rgba(255,255,255,0.65)",
+    textAlign: "center",
     fontSize: 14,
-    fontWeight: "600",
+    lineHeight: 22,
+    marginBottom: 10,
+  },
+
+  modalHint: {
+    color: "rgba(255,255,255,0.4)",
+    textAlign: "center",
+    fontSize: 12,
+    lineHeight: 18,
     marginBottom: 16,
   },
 
-  codeBox: {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-
-  modalCode: {
-    color: "#fff",
-    fontSize: 32,
-    fontWeight: "bold",
-    letterSpacing: 6,
-    textAlign: "center",
-  },
-
-  modalButton: {
-    marginTop: 16,
-    borderRadius: 12,
-    overflow: "hidden",
+  codeInputContainer: {
     width: "100%",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 16,
+    marginTop: 10,
+    marginBottom: 14,
+    paddingHorizontal: 18,
   },
 
-  modalButtonGradient: {
-    padding: 14,
-    alignItems: "center",
-  },
-
-  modalButtonText: {
+  codeInput: {
     color: "#fff",
+    fontSize: 28,
+    textAlign: "center",
+    letterSpacing: 10,
+    paddingVertical: 18,
+  },
+
+  modalBtn: {
+    padding: 14,
+    borderRadius: 14,
+    width: "100%",
+    alignItems: "center",
+    marginTop: 10,
+  },
+
+  resendText: {
+    color: colors.primary,
+    marginTop: 16,
     fontWeight: "bold",
-    fontSize: 16,
+  },
+
+  changeEmail: {
+    color: "rgba(255,255,255,0.45)",
+    marginTop: 14,
+    fontSize: 13,
   },
 });

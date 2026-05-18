@@ -1,14 +1,21 @@
+import React from "react";
+
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 import {
-  View,
-  StyleSheet,
-  Platform,
+	View,
+	Text,
+	StyleSheet,
+	Platform,
 } from "react-native";
 
 import { BlurView } from "expo-blur";
 
-import AnimatedTabIcon from "./AnimatedTabIcon";
+import { LinearGradient } from "expo-linear-gradient";
+
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import HomeStack from "./HomeStack";
 import BuscaStack from "./BuscaStack";
@@ -22,228 +29,308 @@ const Tab = createBottomTabNavigator();
 
 const colors = Colors;
 
+function CustomTabIcon({
+	focused,
+	icon,
+	label,
+}) {
+	return (
+		<View style={styles.tabItem}>
+			{/* ACTIVE BACKGROUND */}
+			{focused && (
+				<LinearGradient
+					colors={[
+						colors.primary,
+						colors.primaryLight ||
+							colors.primary,
+					]}
+					start={{ x: 0, y: 0 }}
+					end={{ x: 1, y: 1 }}
+					style={styles.activeBackground}
+				/>
+			)}
+
+			{/* ICON */}
+			<View
+				style={[
+					styles.iconWrapper,
+
+					focused && styles.iconWrapperActive,
+				]}
+			>
+				<MaterialCommunityIcons
+					name={icon}
+					size={22}
+					color={
+						focused
+							? "#fff"
+							: colors.textMuted
+					}
+				/>
+			</View>
+
+			{/* LABEL */}
+			<Text
+				style={[
+					styles.label,
+
+					{
+						color: focused
+							? colors.textPrimary
+							: colors.textMuted,
+					},
+				]}
+			>
+				{label}
+			</Text>
+
+			{/* INDICATOR */}
+			{focused && <View style={styles.dot} />}
+		</View>
+	);
+}
+
 export default function TabNavigator() {
-  return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
+	const insets = useSafeAreaInsets();
 
-        /* 🌌 TAB BAR */
-        tabBarStyle: {
-          position: "absolute",
+	return (
+		<Tab.Navigator
+			screenOptions={({ route }) => ({
+				headerShown: false,
 
-          left: 16,
-          right: 16,
-          bottom: 18,
+				tabBarShowLabel: false,
 
-          height: 78,
+				tabBarHideOnKeyboard: true,
 
-          borderRadius: 30,
+				/* TAB BAR */
+				tabBarStyle: {
+					position: "absolute",
 
-          borderTopWidth: 0,
+					left: 18,
+					right: 18,
 
-          elevation: 0,
+					bottom:
+						Platform.OS === "ios"
+							? insets.bottom + 10
+							: 18,
 
-          backgroundColor: "transparent",
+					height: 82,
 
-          shadowColor: colors.primary,
+					paddingTop: 10,
 
-          shadowOffset: {
-            width: 0,
-            height: 10,
-          },
+					borderRadius: 30,
 
-          shadowOpacity: 0.22,
+					borderTopWidth: 0,
 
-          shadowRadius: 20,
-        },
+					backgroundColor: "transparent",
 
-        /* 🧊 GLASS EFFECT */
-        tabBarBackground: () => (
-          <BlurView
-            intensity={100}
-            tint="dark"
-            style={styles.blur}
-          />
-        ),
+					elevation: 0,
 
-        /* 📝 LABEL */
-        tabBarLabelStyle: {
-          fontSize: 11,
+					shadowColor: "#000",
 
-          fontWeight: "600",
+					shadowOffset: {
+						width: 0,
+						height: 10,
+					},
 
-          marginBottom: 6,
+					shadowOpacity: 0.2,
 
-          marginTop: -2,
-        },
+					shadowRadius: 25,
+				},
 
-        /* 🔥 ITEM */
-        tabBarItemStyle: {
-          paddingTop: 8,
-        },
+				/* GLASS EFFECT */
+				tabBarBackground: () => (
+					<BlurView
+						intensity={80}
+						tint="dark"
+						style={styles.blurContainer}
+					>
+						<View style={styles.overlay} />
+					</BlurView>
+				),
 
-        /* 🎯 ÍCONES */
-        tabBarIcon: ({ focused }) => {
-          let iconName;
+				/* ICON */
+				tabBarIcon: ({ focused }) => {
+					let iconName;
+					let label;
 
-          switch (route.name) {
-            case "Inicio":
-              iconName = focused
-                ? "home"
-                : "home-outline";
-              break;
+					switch (route.name) {
+						case "Inicio":
+							iconName = focused
+								? "home"
+								: "home-outline";
+							label = "Início";
+							break;
 
-            case "Busca":
-              iconName = "magnify";
-              break;
+						case "Busca":
+							iconName = focused
+								? "magnify"
+								: "magnify";
+							label = "Busca";
+							break;
 
-            case "Feed":
-              iconName = "rss";
-              break;
+						case "Feed":
+							iconName = focused
+								? "compass"
+								: "compass-outline";
+							label = "Feed";
+							break;
 
-            case "Ingressos":
-              iconName = focused
-                ? "ticket"
-                : "ticket-outline";
-              break;
+						case "Ingressos":
+							iconName = focused
+								? "ticket-confirmation"
+								: "ticket-confirmation-outline";
+							label = "Tickets";
+							break;
 
-            case "Conta":
-              iconName = focused
-                ? "account"
-                : "account-outline";
-              break;
-          }
+						case "Conta":
+							iconName = focused
+								? "account"
+								: "account-outline";
+							label = "Perfil";
+							break;
+					}
 
-          return (
-            <View style={styles.iconContainer}>
-              {/* ✨ GLOW */}
-              {focused && (
-                <>
-                  <View style={styles.glow} />
+					return (
+						<CustomTabIcon
+							focused={focused}
+							icon={iconName}
+							label={label}
+						/>
+					);
+				},
+			})}
+		>
+			<Tab.Screen
+				name="Inicio"
+				component={HomeStack}
+			/>
 
-                  <View style={styles.activePill} />
-                </>
-              )}
+			<Tab.Screen
+				name="Busca"
+				component={BuscaStack}
+			/>
 
-              <AnimatedTabIcon
-                name={iconName}
-                size={24}
-                color={
-                  focused
-                    ? colors.primaryLight
-                    : colors.textMuted
-                }
-                focused={focused}
-              />
-            </View>
-          );
-        },
+			<Tab.Screen
+				name="Feed"
+				component={FeedStack}
+			/>
 
-        /* 🎨 CORES */
-        tabBarActiveTintColor:
-          colors.primaryLight,
+			<Tab.Screen
+				name="Ingressos"
+				component={EventoStack}
+			/>
 
-        tabBarInactiveTintColor:
-          colors.textMuted,
-      })}
-    >
-      <Tab.Screen
-        name="Inicio"
-        component={HomeStack}
-      />
-
-      <Tab.Screen
-        name="Busca"
-        component={BuscaStack}
-      />
-
-      <Tab.Screen
-        name="Feed"
-        component={FeedStack}
-      />
-
-      <Tab.Screen
-        name="Ingressos"
-        component={EventoStack}
-      />
-
-      <Tab.Screen
-        name="Conta"
-        component={PerfilStack}
-      />
-    </Tab.Navigator>
-  );
+			<Tab.Screen
+				name="Conta"
+				component={PerfilStack}
+			/>
+		</Tab.Navigator>
+	);
 }
 
 const styles = StyleSheet.create({
-  /* 🌌 GLASS */
-  blur: {
-    flex: 1,
+	/* BLUR */
+	blurContainer: {
+		flex: 1,
 
-    borderRadius: 30,
+		borderRadius: 30,
 
-    overflow: "hidden",
+		overflow: "hidden",
 
-    backgroundColor:
-      colors.surface + "DD",
+		borderWidth: 1,
 
-    borderWidth: 1,
+		borderColor:
+			colors.glassBorder ||
+			"rgba(255,255,255,0.06)",
 
-    borderColor:
-      colors.glassBorder ||
-      "rgba(255,255,255,0.08)",
-  },
+		backgroundColor: "rgba(15,15,20,0.82)",
+	},
 
-  /* 🎯 ÍCONES */
-  iconContainer: {
-    alignItems: "center",
+	overlay: {
+		flex: 1,
 
-    justifyContent: "center",
-  },
+		backgroundColor:
+			colors.surface + "CC",
+	},
 
-  /* ✨ GLOW */
-  glow: {
-    position: "absolute",
+	/* TAB ITEM */
+	tabItem: {
+		width: 68,
 
-    width: 56,
-    height: 56,
+		alignItems: "center",
 
-    borderRadius: 28,
+		justifyContent: "center",
 
-    backgroundColor:
-      colors.purpleGlow ||
-      "rgba(108,92,231,0.25)",
+		paddingTop: 6,
+	},
 
-    shadowColor: colors.primary,
+	/* ACTIVE BG */
+	activeBackground: {
+		position: "absolute",
 
-    shadowOffset: {
-      width: 0,
-      height: 0,
-    },
+		top: -2,
 
-    shadowOpacity: 0.8,
+		width: 58,
+		height: 58,
 
-    shadowRadius: 18,
+		borderRadius: 20,
 
-    elevation: 12,
-  },
+		opacity: 0.18,
+	},
 
-  /* 🔥 PILL */
-  activePill: {
-    position: "absolute",
+	/* ICON */
+	iconWrapper: {
+		width: 46,
+		height: 46,
 
-    width: 48,
-    height: 48,
+		borderRadius: 16,
 
-    borderRadius: 24,
+		alignItems: "center",
+		justifyContent: "center",
+	},
 
-    backgroundColor:
-      "rgba(108,92,231,0.18)",
+	iconWrapperActive: {
+		backgroundColor:
+			colors.primary ||
+			"#6C5CE7",
 
-    borderWidth: 1,
+		shadowColor:
+			colors.primary ||
+			"#6C5CE7",
 
-    borderColor:
-      "rgba(255,255,255,0.08)",
-  },
+		shadowOffset: {
+			width: 0,
+			height: 6,
+		},
+
+		shadowOpacity: 0.35,
+
+		shadowRadius: 12,
+
+		elevation: 8,
+	},
+
+	/* LABEL */
+	label: {
+		fontSize: 11,
+
+		fontWeight: "700",
+
+		marginTop: 5,
+	},
+
+	/* DOT */
+	dot: {
+		width: 5,
+		height: 5,
+
+		borderRadius: 999,
+
+		backgroundColor:
+			colors.primaryLight ||
+			colors.primary,
+
+		marginTop: 4,
+	},
 });

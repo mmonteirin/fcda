@@ -9,6 +9,7 @@ import {
   Text,
   ActivityIndicator,
   Dimensions,
+  Modal,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,7 +23,10 @@ import { Colors } from "../styles/Colors";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-// ─── Normaliza eventos do MonitoraCult (Firestore) ───────────────────────────
+/* ────────────────────────────────────────────────────────────── */
+/* NORMALIZA EVENTOS */
+/* ────────────────────────────────────────────────────────────── */
+
 function normalizarApp(item) {
   return {
     id: `app_${item.id}`,
@@ -31,18 +35,25 @@ function normalizarApp(item) {
       item.imagemEvento ||
       item.files?.header?.url ||
       "https://placehold.co/600x400?text=Evento",
-    local: item.localEvento || item.nomeLocal || item.location?.name || "Local não informado",
-    categoria: (item.categoria || item.tipoEvento || "outros").toLowerCase(),
-    descricao: item.descricao || item.shortDescription || "Evento cadastrado no MonitoraCult",
+    local:
+      item.localEvento ||
+      item.nomeLocal ||
+      item.location?.name ||
+      "Local não informado",
+    categoria:
+      (item.categoria || item.tipoEvento || "outros").toLowerCase(),
+    descricao:
+      item.descricao ||
+      item.shortDescription ||
+      "Evento cadastrado no MonitoraCult",
     score: item.score || 0,
     likes: item.likes || 0,
     views: item.views || 0,
-    origem: "app",        // ← distingue a fonte
+    origem: "app",
     original: item,
   };
 }
 
-// ─── Normaliza eventos do Mapa Cultural (API externa) ────────────────────────
 function normalizarMapa(item, index) {
   return {
     id: `mapa_${item.id || index}`,
@@ -53,7 +64,9 @@ function normalizarMapa(item, index) {
       "https://placehold.co/600x400?text=Evento",
     local: item?.location?.name || "Local não informado",
     categoria: (item?.type || "outros").toLowerCase(),
-    descricao: item?.shortDescription || "Evento do Mapa Cultural do Ceará",
+    descricao:
+      item?.shortDescription ||
+      "Evento do Mapa Cultural do Ceará",
     score: 0,
     likes: 0,
     views: 0,
@@ -62,37 +75,48 @@ function normalizarMapa(item, index) {
   };
 }
 
-/* ─── CATEGORIAS FIXAS ───────────────────────────────────────────────────── */
+/* ────────────────────────────────────────────────────────────── */
+/* CATEGORIAS */
+/* ────────────────────────────────────────────────────────────── */
+
 const CATEGORIAS = [
-  { nome: "teatro",      icon: "drama-masks" },
-  { nome: "shows",       icon: "music" },
-  { nome: "cinema",      icon: "movie" },
-  { nome: "exposição",   icon: "image-frame" },
-  { nome: "dança",       icon: "human" },
+  { nome: "teatro", icon: "drama-masks" },
+  { nome: "shows", icon: "music" },
+  { nome: "cinema", icon: "movie" },
+  { nome: "exposição", icon: "image-frame" },
+  { nome: "dança", icon: "human" },
   { nome: "gastronomia", icon: "silverware-fork-knife" },
-  { nome: "infantil",    icon: "baby-face-outline" },
-  { nome: "outros",      icon: "dots-horizontal" },
+  { nome: "infantil", icon: "baby-face-outline" },
+  { nome: "outros", icon: "dots-horizontal" },
 ];
 
-/* ─── ABAS DE FONTE ──────────────────────────────────────────────────────── */
 const ABAS = [
-  { key: "todos",    label: "Todos" },
-  { key: "app",     label: "MonitoraCult" },
-  { key: "mapa",    label: "Mapa Cultural" },
+  { key: "todos", label: "Todos" },
+  { key: "app", label: "MonitoraCult" },
+  { key: "mapa", label: "Mapa Cultural" },
 ];
 
 export default function TelaBusca({ navigation }) {
   const insets = useSafeAreaInsets();
 
-  const [query, setQuery]                       = useState("");
-  const [eventosApp, setEventosApp]             = useState([]);
-  const [eventosMapa, setEventosMapa]           = useState([]);
-  const [loadingApp, setLoadingApp]             = useState(true);
-  const [loadingMapa, setLoadingMapa]           = useState(true);
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
-  const [abaAtiva, setAbaAtiva]                 = useState("todos");
+  const [query, setQuery] = useState("");
+  const [eventosApp, setEventosApp] = useState([]);
+  const [eventosMapa, setEventosMapa] = useState([]);
+  const [loadingApp, setLoadingApp] = useState(true);
+  const [loadingMapa, setLoadingMapa] = useState(true);
 
-  // ── Carrega eventos do MonitoraCult primeiro (prioridade) ─────────────────
+  const [categoriaSelecionada, setCategoriaSelecionada] =
+    useState(null);
+
+  const [abaAtiva, setAbaAtiva] = useState("todos");
+
+  /* MODAL */
+  const [modalVisible, setModalVisible] = useState(false);
+
+  /* ────────────────────────────────────────────────────────── */
+  /* LOAD APP */
+  /* ────────────────────────────────────────────────────────── */
+
   useEffect(() => {
     (async () => {
       try {
@@ -106,14 +130,19 @@ export default function TelaBusca({ navigation }) {
     })();
   }, []);
 
-  // ── Carrega Mapa Cultural em paralelo (sem bloquear a UI) ─────────────────
+  /* ────────────────────────────────────────────────────────── */
+  /* LOAD MAPA */
+  /* ────────────────────────────────────────────────────────── */
+
   useEffect(() => {
     (async () => {
       try {
         const response = await getEventos();
+
         const lista = Array.isArray(response)
           ? response
           : response?.data || response?.results || [];
+
         setEventosMapa(lista.map(normalizarMapa));
       } catch (e) {
         console.log("Erro eventos mapa:", e);
@@ -123,21 +152,30 @@ export default function TelaBusca({ navigation }) {
     })();
   }, []);
 
-  // ── Merge: app primeiro, depois mapa (sem duplicatas por título) ──────────
+  /* ────────────────────────────────────────────────────────── */
+  /* MERGE */
+  /* ────────────────────────────────────────────────────────── */
+
   const todosMerged = useMemo(() => {
-    const titulosApp = new Set(eventosApp.map((e) => e.titulo.toLowerCase()));
+    const titulosApp = new Set(
+      eventosApp.map((e) => e.titulo.toLowerCase())
+    );
 
     const mapaFiltrado = eventosMapa.filter(
       (e) => !titulosApp.has(e.titulo.toLowerCase())
     );
 
-    // Ordena app por score desc, mapa sem score fica no fim
-    const appOrdenado = [...eventosApp].sort((a, b) => b.score - a.score);
+    const appOrdenado = [...eventosApp].sort(
+      (a, b) => b.score - a.score
+    );
 
     return [...appOrdenado, ...mapaFiltrado];
   }, [eventosApp, eventosMapa]);
 
-  // ── Filtragem por aba + categoria + texto ─────────────────────────────────
+  /* ────────────────────────────────────────────────────────── */
+  /* FILTROS */
+  /* ────────────────────────────────────────────────────────── */
+
   const eventosFiltrados = useMemo(() => {
     let base = todosMerged;
 
@@ -153,6 +191,7 @@ export default function TelaBusca({ navigation }) {
 
     if (query.trim()) {
       const q = query.toLowerCase();
+
       base = base.filter(
         (e) =>
           e.titulo.toLowerCase().includes(q) ||
@@ -162,61 +201,113 @@ export default function TelaBusca({ navigation }) {
     }
 
     return base;
-  }, [todosMerged, abaAtiva, categoriaSelecionada, query]);
+  }, [
+    todosMerged,
+    abaAtiva,
+    categoriaSelecionada,
+    query,
+  ]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
   const toggleCategoria = useCallback((nome) => {
-    setCategoriaSelecionada((prev) => (prev === nome ? null : nome));
+    setCategoriaSelecionada((prev) =>
+      prev === nome ? null : nome
+    );
   }, []);
 
-  const loading = loadingApp; // UI aparece assim que o app carrega
+  const loading = loadingApp;
 
-  // ── Render: Card ──────────────────────────────────────────────────────────
+  /* ────────────────────────────────────────────────────────── */
+  /* ABRIR EVENTO */
+  /* ────────────────────────────────────────────────────────── */
+
+  const abrirEvento = (item) => {
+    if (item.origem === "mapa") {
+      setModalVisible(true);
+      return;
+    }
+
+    navigation.navigate("Detalhes", {
+      evento: item.original,
+    });
+  };
+
+  /* ────────────────────────────────────────────────────────── */
+  /* CARD */
+  /* ────────────────────────────────────────────────────────── */
+
   const renderCard = (item) => (
     <TouchableOpacity
       key={item.id}
       activeOpacity={0.9}
       style={styles.card}
-      onPress={() =>
-        navigation.navigate("Detalhes", { evento: item.original })
-      }
+      onPress={() => abrirEvento(item)}
     >
-      <Image source={{ uri: item.imagem }} style={styles.img} />
+      <Image
+        source={{ uri: item.imagem }}
+        style={styles.img}
+      />
 
       <LinearGradient
-        colors={["transparent", "rgba(0,0,0,0.85)"]}
+        colors={[
+          "transparent",
+          "rgba(0,0,0,0.30)",
+          "rgba(0,0,0,0.95)",
+        ]}
         style={styles.overlay}
       />
 
-      {/* Badge de origem */}
+      {/* BADGE */}
       <View
         style={[
           styles.badge,
-          item.origem === "app" ? styles.badgeApp : styles.badgeMapa,
+          item.origem === "app"
+            ? styles.badgeApp
+            : styles.badgeMapa,
         ]}
       >
         <MaterialCommunityIcons
-          name={item.origem === "app" ? "star" : "map-marker"}
+          name={
+            item.origem === "app"
+              ? "star"
+              : "earth"
+          }
           size={11}
           color="#fff"
         />
+
         <Text style={styles.badgeText}>
-          {item.origem === "app" ? "MonitoraCult" : "Mapa Cultural"}
+          {item.origem === "app"
+            ? "MonitoraCult"
+            : "Evento Público"}
         </Text>
       </View>
 
-      {/* Info */}
+      {/* INFO */}
       <View style={styles.cardInfo}>
-        {/* Métricas (apenas eventos do app têm) */}
         {item.origem === "app" && (
           <View style={styles.metricsRow}>
             <View style={styles.metric}>
-              <MaterialCommunityIcons name="heart" size={12} color={Colors.error} />
-              <Text style={styles.metricText}>{item.likes}</Text>
+              <MaterialCommunityIcons
+                name="heart"
+                size={12}
+                color={Colors.error}
+              />
+
+              <Text style={styles.metricText}>
+                {item.likes}
+              </Text>
             </View>
+
             <View style={styles.metric}>
-              <MaterialCommunityIcons name="eye-outline" size={12} color={Colors.textSecondary} />
-              <Text style={styles.metricText}>{item.views}</Text>
+              <MaterialCommunityIcons
+                name="eye-outline"
+                size={12}
+                color="#fff"
+              />
+
+              <Text style={styles.metricText}>
+                {item.views}
+              </Text>
             </View>
           </View>
         )}
@@ -225,12 +316,20 @@ export default function TelaBusca({ navigation }) {
           {item.titulo}
         </Text>
 
-        <Text numberOfLines={1} style={styles.descricao}>
+        <Text
+          numberOfLines={2}
+          style={styles.descricao}
+        >
           {item.descricao}
         </Text>
 
         <View style={styles.locationRow}>
-          <MaterialCommunityIcons name="map-marker" size={14} color="rgba(255,255,255,0.7)" />
+          <MaterialCommunityIcons
+            name="map-marker"
+            size={14}
+            color="rgba(255,255,255,0.8)"
+          />
+
           <Text numberOfLines={1} style={styles.local}>
             {item.local}
           </Text>
@@ -239,36 +338,59 @@ export default function TelaBusca({ navigation }) {
     </TouchableOpacity>
   );
 
-  // ── Render: Linha compacta (mapa cultural em busca textual) ───────────────
+  /* ────────────────────────────────────────────────────────── */
+  /* LINHA */
+  /* ────────────────────────────────────────────────────────── */
+
   const renderLinha = (item) => (
     <TouchableOpacity
       key={item.id}
-      activeOpacity={0.85}
+      activeOpacity={0.9}
       style={styles.linha}
-      onPress={() =>
-        navigation.navigate("Detalhes", { evento: item.original })
-      }
+      onPress={() => abrirEvento(item)}
     >
-      <Image source={{ uri: item.imagem }} style={styles.linhaImg} />
+      <Image
+        source={{ uri: item.imagem }}
+        style={styles.linhaImg}
+      />
+
       <View style={styles.linhaInfo}>
-        <Text numberOfLines={1} style={styles.linhaTitulo}>
+        <Text
+          numberOfLines={1}
+          style={styles.linhaTitulo}
+        >
           {item.titulo}
         </Text>
-        <Text numberOfLines={1} style={styles.linhaLocal}>
+
+        <Text
+          numberOfLines={1}
+          style={styles.linhaLocal}
+        >
           📍 {item.local}
         </Text>
-        <Text numberOfLines={1} style={styles.linhaCategoria}>
+
+        <Text
+          numberOfLines={1}
+          style={styles.linhaCategoria}
+        >
           {item.categoria}
         </Text>
       </View>
+
       <View
         style={[
           styles.linhaBadge,
-          item.origem === "app" ? styles.badgeApp : styles.badgeMapa,
+          item.origem === "app"
+            ? styles.badgeApp
+            : styles.badgeMapa,
         ]}
       >
         <MaterialCommunityIcons
-          name={item.origem === "app" ? "star" : "map-marker"}
+          name={
+            item.origem === "app"
+              ? "star"
+              : "earth"
+          }
           size={10}
           color="#fff"
         />
@@ -276,52 +398,77 @@ export default function TelaBusca({ navigation }) {
     </TouchableOpacity>
   );
 
+  /* ────────────────────────────────────────────────────────── */
+  /* RENDER */
+  /* ────────────────────────────────────────────────────────── */
+
   return (
     <View style={styles.container}>
-      {/* ── HEADER ────────────────────────────────────────────────────────── */}
+      {/* HEADER */}
       <LinearGradient
         colors={["#1A1333", Colors.background]}
-        style={[styles.header, { paddingTop: insets.top + 10 }]}
+        style={[
+          styles.header,
+          { paddingTop: insets.top + 10 },
+        ]}
       >
         <View style={styles.headerTop}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backButton}
           >
-            <MaterialCommunityIcons name="arrow-left" size={22} color="#fff" />
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={22}
+              color="#fff"
+            />
           </TouchableOpacity>
 
           <View>
-            <Text style={styles.headerTitle}>Explorar Eventos</Text>
+            <Text style={styles.headerTitle}>
+              Explorar Eventos
+            </Text>
+
             <Text style={styles.headerSub}>
               Descubra experiências incríveis ✨
             </Text>
           </View>
         </View>
 
-        {/* Campo de busca */}
+        {/* SEARCH */}
         <BlurView
           intensity={40}
           tint="dark"
           style={styles.searchBox}
         >
-          <MaterialCommunityIcons name="magnify" size={22} color={Colors.textMuted} />
+          <MaterialCommunityIcons
+            name="magnify"
+            size={22}
+            color={Colors.textMuted}
+          />
+
           <TextInput
             placeholder="Buscar eventos, locais..."
             placeholderTextColor={Colors.textMuted}
             value={query}
             onChangeText={setQuery}
             style={styles.input}
-            returnKeyType="search"
           />
+
           {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery("")}>
-              <MaterialCommunityIcons name="close-circle" size={20} color={Colors.textMuted} />
+            <TouchableOpacity
+              onPress={() => setQuery("")}
+            >
+              <MaterialCommunityIcons
+                name="close-circle"
+                size={20}
+                color={Colors.textMuted}
+              />
             </TouchableOpacity>
           )}
         </BlurView>
 
-        {/* Abas de fonte */}
+        {/* ABAS */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -329,21 +476,25 @@ export default function TelaBusca({ navigation }) {
         >
           {ABAS.map((aba) => {
             const ativo = abaAtiva === aba.key;
+
             return (
               <TouchableOpacity
                 key={aba.key}
-                style={[styles.aba, ativo && styles.abaAtiva]}
-                onPress={() => setAbaAtiva(aba.key)}
+                style={[
+                  styles.aba,
+                  ativo && styles.abaAtiva,
+                ]}
+                onPress={() =>
+                  setAbaAtiva(aba.key)
+                }
               >
-                {aba.key === "app" && (
-                  <MaterialCommunityIcons
-                    name="star"
-                    size={13}
-                    color={ativo ? Colors.background : Colors.primary}
-                    style={{ marginRight: 5 }}
-                  />
-                )}
-                <Text style={[styles.abaText, ativo && styles.abaTextAtiva]}>
+                <Text
+                  style={[
+                    styles.abaText,
+                    ativo &&
+                      styles.abaTextAtiva,
+                  ]}
+                >
                   {aba.label}
                 </Text>
               </TouchableOpacity>
@@ -352,50 +503,67 @@ export default function TelaBusca({ navigation }) {
         </ScrollView>
       </LinearGradient>
 
-      {/* ── CONTEÚDO ──────────────────────────────────────────────────────── */}
+      {/* CONTENT */}
       {loading ? (
         <View style={styles.loading}>
-          <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>Carregando eventos...</Text>
+          <ActivityIndicator
+            size="large"
+            color={Colors.primary}
+          />
         </View>
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          nestedScrollEnabled={true}
-          contentContainerStyle={{ paddingBottom: 120 }}
+          contentContainerStyle={{
+            paddingBottom: 120,
+          }}
         >
-
-          {/* ── CATEGORIAS ────────────────────────────────────────────────── */}
+          {/* CATEGORIAS */}
           <View style={styles.sectionRow}>
-            <Text style={styles.section}>Categorias</Text>
-            {categoriaSelecionada && (
-              <TouchableOpacity onPress={() => setCategoriaSelecionada(null)}>
-                <Text style={styles.clearText}>Limpar</Text>
-              </TouchableOpacity>
-            )}
+            <Text style={styles.section}>
+              Categorias
+            </Text>
           </View>
 
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            nestedScrollEnabled={true}
             contentContainerStyle={styles.chips}
           >
             {CATEGORIAS.map((cat) => {
-              const ativo = categoriaSelecionada === cat.nome;
+              const ativo =
+                categoriaSelecionada ===
+                cat.nome;
+
               return (
                 <TouchableOpacity
                   key={cat.nome}
-                  activeOpacity={0.8}
-                  style={[styles.chip, ativo && styles.chipActive]}
-                  onPress={() => toggleCategoria(cat.nome)}
+                  style={[
+                    styles.chip,
+                    ativo &&
+                      styles.chipActive,
+                  ]}
+                  onPress={() =>
+                    toggleCategoria(cat.nome)
+                  }
                 >
                   <MaterialCommunityIcons
                     name={cat.icon}
-                    size={17}
-                    color={ativo ? Colors.background : Colors.primary}
+                    size={16}
+                    color={
+                      ativo
+                        ? Colors.background
+                        : Colors.primary
+                    }
                   />
-                  <Text style={[styles.chipText, ativo && styles.chipTextActive]}>
+
+                  <Text
+                    style={[
+                      styles.chipText,
+                      ativo &&
+                        styles.chipTextActive,
+                    ]}
+                  >
                     {cat.nome}
                   </Text>
                 </TouchableOpacity>
@@ -403,117 +571,88 @@ export default function TelaBusca({ navigation }) {
             })}
           </ScrollView>
 
-          {/* ── DESTAQUE: Eventos do MonitoraCult (se aba não filtrar) ──── */}
-          {abaAtiva !== "mapa" && !query && !categoriaSelecionada && (
-            <>
-              <View style={styles.sectionRow}>
-                <View style={styles.sectionLabelRow}>
-                  <MaterialCommunityIcons name="star" size={16} color={Colors.primary} />
-                  <Text style={[styles.section, { marginLeft: 6 }]}>
-                    MonitoraCult
-                  </Text>
-                </View>
-                <Text style={styles.count}>{eventosApp.length} eventos</Text>
-              </View>
+          {/* RESULTADOS */}
+          <View style={styles.sectionRow}>
+            <Text style={styles.section}>
+              Eventos
+            </Text>
 
-              {eventosApp.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.empty}>Nenhum evento cadastrado ainda.</Text>
-                </View>
-              ) : (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  nestedScrollEnabled={true}
-                  contentContainerStyle={styles.cardsRow}
-                >
-                  {eventosApp.map((item) => renderCard(item))}
-                </ScrollView>
+            <Text style={styles.count}>
+              {eventosFiltrados.length} encontrados
+            </Text>
+          </View>
+
+          {query ? (
+            eventosFiltrados.map((item) =>
+              renderLinha(item)
+            )
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={
+                false
+              }
+              contentContainerStyle={
+                styles.cardsRow
+              }
+            >
+              {eventosFiltrados.map((item) =>
+                renderCard(item)
               )}
-
-              {/* ── Mapa Cultural como seção secundária ─────────────────── */}
-              {abaAtiva !== "app" && (
-                <>
-                  <View style={styles.sectionRow}>
-                    <View style={styles.sectionLabelRow}>
-                      <MaterialCommunityIcons name="map-marker" size={16} color={Colors.textSecondary} />
-                      <Text style={[styles.section, { marginLeft: 6 }]}>
-                        Mapa Cultural
-                      </Text>
-                    </View>
-                    {loadingMapa ? (
-                      <ActivityIndicator size="small" color={Colors.primary} />
-                    ) : (
-                      <Text style={styles.count}>{eventosMapa.length} eventos</Text>
-                    )}
-                  </View>
-
-                  {!loadingMapa && eventosMapa.length === 0 && (
-                    <Text style={[styles.empty, { paddingHorizontal: 16 }]}>
-                      Mapa Cultural indisponível no momento.
-                    </Text>
-                  )}
-
-                  {!loadingMapa &&
-                    eventosMapa.slice(0, 6).map((item) => renderLinha(item))}
-                </>
-              )}
-            </>
+            </ScrollView>
           )}
-
-          {/* ── RESULTADOS DE BUSCA / FILTRO / ABA ──────────────────────── */}
-          {(query || categoriaSelecionada || abaAtiva !== "todos") && (
-            <>
-              <View style={styles.sectionRow}>
-                <Text style={styles.section}>Resultados</Text>
-                <Text style={styles.count}>
-                  {eventosFiltrados.length} encontrados
-                </Text>
-              </View>
-
-              {eventosFiltrados.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                  <MaterialCommunityIcons
-                    name="emoticon-sad-outline"
-                    size={56}
-                    color={Colors.textMuted}
-                  />
-                  <Text style={styles.empty}>Nenhum evento encontrado</Text>
-                  {abaAtiva === "app" && (
-                    <TouchableOpacity
-                      style={styles.switchAbaBtn}
-                      onPress={() => setAbaAtiva("todos")}
-                    >
-                      <Text style={styles.switchAbaText}>
-                        Ver também no Mapa Cultural
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              ) : query ? (
-                // Busca textual → lista vertical (mais fácil de ler)
-                eventosFiltrados.map((item) => renderLinha(item))
-              ) : (
-                // Filtro por aba/categoria → cards horizontais
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  nestedScrollEnabled={true}
-                  contentContainerStyle={styles.cardsRow}
-                >
-                  {eventosFiltrados.map((item) => renderCard(item))}
-                </ScrollView>
-              )}
-            </>
-          )}
-
         </ScrollView>
       )}
+
+      {/* MODAL EVENTO PUBLICO */}
+      <Modal
+        visible={modalVisible}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <BlurView
+            intensity={60}
+            tint="dark"
+            style={styles.modalCard}
+          >
+            <View style={styles.modalIcon}>
+              <MaterialCommunityIcons
+                name="earth"
+                size={36}
+                color="#fff"
+              />
+            </View>
+
+            <Text style={styles.modalTitle}>
+              Evento Público
+            </Text>
+
+            <Text style={styles.modalText}>
+              Procure mais informações no
+              site da Secretaria da Cultura
+              do Ceará.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() =>
+                setModalVisible(false)
+              }
+            >
+              <Text
+                style={styles.modalButtonText}
+              >
+                Entendi
+              </Text>
+            </TouchableOpacity>
+          </BlurView>
+        </View>
+      </Modal>
     </View>
   );
 }
 
-/* ─── STYLES ─────────────────────────────────────────────────────────────── */
 const CARD_W = SCREEN_WIDTH * 0.72;
 
 const styles = StyleSheet.create({
@@ -522,37 +661,40 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
 
-  /* HEADER */
   header: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingBottom: 18,
   },
+
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 18,
   },
+
   backButton: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    marginRight: 12,
+    backgroundColor:
+      "rgba(255,255,255,0.08)",
+    marginRight: 14,
   },
+
   headerTitle: {
     color: "#fff",
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "800",
   },
+
   headerSub: {
     color: Colors.textMuted,
-    marginTop: 2,
+    marginTop: 4,
     fontSize: 13,
   },
 
-  /* BUSCA */
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -560,10 +702,11 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     paddingHorizontal: 16,
     paddingVertical: 14,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)",
-    marginBottom: 14,
+    borderColor: "rgba(255,255,255,0.06)",
   },
+
   input: {
     flex: 1,
     color: "#fff",
@@ -571,70 +714,57 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 
-  /* ABAS */
   abas: {
-    paddingRight: 8,
+    flexDirection: "row",
     gap: 8,
-    flexDirection: "row",
   },
+
   aba: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 20,
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
   },
+
   abaAtiva: {
     backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
+
   abaText: {
     color: Colors.textSecondary,
-    fontSize: 13,
     fontWeight: "600",
   },
+
   abaTextAtiva: {
     color: "#fff",
   },
 
-  /* SEÇÕES */
   sectionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    marginTop: 22,
-    marginBottom: 12,
+    marginTop: 24,
+    marginBottom: 14,
   },
-  sectionLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+
   section: {
     color: "#fff",
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "700",
   },
+
   count: {
     color: Colors.textMuted,
     fontSize: 12,
   },
-  clearText: {
-    color: Colors.primary,
-    fontSize: 13,
-    fontWeight: "600",
-  },
 
-  /* CHIPS */
   chips: {
     paddingHorizontal: 16,
-    paddingBottom: 4,
-    gap: 8,
+    gap: 10,
     flexDirection: "row",
   },
+
   chip: {
     flexDirection: "row",
     alignItems: "center",
@@ -642,193 +772,237 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)",
     gap: 6,
   },
+
   chipActive: {
     backgroundColor: Colors.primary,
   },
+
   chipText: {
     color: "#fff",
     fontWeight: "600",
-    fontSize: 13,
     textTransform: "capitalize",
   },
+
   chipTextActive: {
     color: Colors.background,
   },
 
-  /* CARDS HORIZONTAIS */
   cardsRow: {
     paddingHorizontal: 16,
-    paddingBottom: 8,
-    gap: 14,
+    gap: 16,
     flexDirection: "row",
   },
+
   card: {
     width: CARD_W,
-    height: 340,
-    borderRadius: 24,
+    height: 360,
+    borderRadius: 28,
     overflow: "hidden",
     backgroundColor: Colors.card,
   },
+
   img: {
     width: "100%",
     height: "100%",
     position: "absolute",
   },
+
   overlay: {
     ...StyleSheet.absoluteFillObject,
   },
 
-  /* BADGE DE ORIGEM */
   badge: {
     position: "absolute",
-    top: 14,
-    left: 14,
+    top: 16,
+    left: 16,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 30,
     gap: 5,
   },
+
   badgeApp: {
-    backgroundColor: Colors.primary + "CC",
+    backgroundColor: Colors.primary + "DD",
   },
+
   badgeMapa: {
-    backgroundColor: "rgba(0,0,0,0.50)",
+    backgroundColor: "rgba(0,0,0,0.55)",
   },
+
   badgeText: {
     color: "#fff",
     fontSize: 11,
     fontWeight: "700",
   },
 
-  /* CARD INFO */
   cardInfo: {
     position: "absolute",
     bottom: 0,
     width: "100%",
-    padding: 16,
+    padding: 18,
   },
+
   metricsRow: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 8,
+    marginBottom: 10,
   },
+
   metric: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
+
   metricText: {
-    color: "rgba(255,255,255,0.85)",
+    color: "#fff",
     fontSize: 12,
   },
+
   titulo: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "800",
-    lineHeight: 26,
+    lineHeight: 28,
   },
+
   descricao: {
-    color: "rgba(255,255,255,0.70)",
+    color: "rgba(255,255,255,0.75)",
     fontSize: 13,
-    marginTop: 6,
-    lineHeight: 18,
+    marginTop: 8,
+    lineHeight: 19,
   },
+
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 10,
-    gap: 4,
-  },
-  local: {
-    color: "rgba(255,255,255,0.80)",
-    fontSize: 13,
-    flex: 1,
+    marginTop: 12,
   },
 
-  /* LINHAS (busca textual / mapa secundário) */
+  local: {
+    color: "rgba(255,255,255,0.85)",
+    marginLeft: 4,
+    flex: 1,
+    fontSize: 13,
+  },
+
   linha: {
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: 16,
     marginBottom: 12,
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: Colors.border,
   },
+
   linhaImg: {
-    width: 72,
-    height: 72,
+    width: 78,
+    height: 78,
   },
+
   linhaInfo: {
     flex: 1,
     padding: 12,
   },
+
   linhaTitulo: {
     color: Colors.textPrimary,
     fontWeight: "700",
     fontSize: 14,
   },
+
   linhaLocal: {
     color: Colors.textSecondary,
+    marginTop: 4,
     fontSize: 12,
-    marginTop: 3,
   },
+
   linhaCategoria: {
     color: Colors.textMuted,
+    marginTop: 3,
     fontSize: 11,
-    marginTop: 2,
     textTransform: "capitalize",
   },
+
   linhaBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
   },
 
-  /* LOADING / EMPTY */
   loading: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  loadingText: {
-    color: Colors.textMuted,
-    marginTop: 12,
-  },
-  emptyContainer: {
+
+  /* MODAL */
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.70)",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 40,
-    paddingHorizontal: 32,
+    padding: 24,
   },
-  empty: {
-    color: Colors.textSecondary,
-    marginTop: 12,
-    fontSize: 15,
-    textAlign: "center",
-  },
-  switchAbaBtn: {
-    marginTop: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+
+  modalCard: {
+    width: "100%",
+    borderRadius: 28,
+    padding: 28,
+    alignItems: "center",
+    overflow: "hidden",
+    backgroundColor:
+      "rgba(25,25,35,0.85)",
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: "rgba(255,255,255,0.06)",
   },
-  switchAbaText: {
-    color: Colors.primary,
-    fontWeight: "600",
-    fontSize: 13,
+
+  modalIcon: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.primary,
+    marginBottom: 20,
+  },
+
+  modalTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "800",
+    marginBottom: 10,
+  },
+
+  modalText: {
+    color: Colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 22,
+    fontSize: 15,
+  },
+
+  modalButton: {
+    marginTop: 24,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 18,
+  },
+
+  modalButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
   },
 });

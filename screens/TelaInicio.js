@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+
 import {
   View,
   Text,
@@ -8,34 +9,52 @@ import {
   ActivityIndicator,
   ScrollView,
   Dimensions,
-  Alert,
+  Linking,
+  Modal,
 } from "react-native";
+
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useNavigation } from "@react-navigation/native";
 import { FlashList } from "@shopify/flash-list";
 
 import { getUserLocation } from "../services/locationService";
 import { calcularDistancia } from "../utils/distance";
+
 import {
   getEventosApp,
   getUserLikes,
 } from "../services/eventosAppService";
+
 import { useAuth } from "../context/AuthContext";
 import { Colors } from "../styles/Colors";
 
 const windowWidth = Dimensions.get("window").width;
-const DEFAULT_IMAGE = "https://placehold.co/600x400?text=Evento";
+
+const DEFAULT_IMAGE =
+  "https://placehold.co/600x400?text=Evento";
 
 export default function TelaInicio() {
   const navigation = useNavigation();
+
   const { user, nome } = useAuth();
 
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [categoriaAtiva, setCategoriaAtiva] = useState("Todos");
+
+  const [categoriaAtiva, setCategoriaAtiva] =
+    useState("Todos");
+
   const [location, setLocation] = useState(null);
-  const [locationError, setLocationError] = useState("");
+
   const [likedIds, setLikedIds] = useState([]);
+
+  const [showMapErrorModal, setShowMapErrorModal] =
+    useState(false);
+
+  const [mapErrorMessage, setMapErrorMessage] =
+    useState("");
 
   const nomeUsuario =
     nome ||
@@ -58,69 +77,82 @@ export default function TelaInicio() {
       const ids = await getUserLikes(user.uid);
       setLikedIds(ids);
     } catch (error) {
-      console.log("Erro ao carregar likes:", error);
+      console.log(error);
     }
   };
 
   const carregarEventos = async () => {
     try {
       const data = await getEventosApp();
+
       const tratados = data.map((item) => ({
         id: item.id,
-        titulo: item.tituloEvento || item.name || "Evento",
-        imagem: item.imagemEvento || item.files?.header?.url || DEFAULT_IMAGE,
+
+        titulo:
+          item.tituloEvento ||
+          item.name ||
+          "Evento",
+
+        imagem:
+          item.imagemEvento ||
+          item.files?.header?.url ||
+          DEFAULT_IMAGE,
+
         local:
-          item.localEvento || item.nomeLocal || item.location?.name || "Local",
-        categoria: item.categoria || item.tipoEvento || "Outros",
+          item.localEvento ||
+          item.nomeLocal ||
+          item.location?.name ||
+          "Local",
+
+        categoria:
+          item.categoria ||
+          item.tipoEvento ||
+          "Outros",
+
         latitude: item.latitude ?? null,
+
         longitude: item.longitude ?? null,
+
         likes: item.likes || 0,
+
         views: item.views || 0,
-        comentarios: item.comentarios || 0,
+
         score: item.score || 0,
+
         original: item,
       }));
 
       const usuario = await getUserLocation();
+
       if (usuario) {
         setLocation(usuario);
-      } else {
-        setLocationError("Permissão de localização negada ou localização indisponível.");
       }
 
       setEventos(tratados);
     } catch (error) {
-      console.log("Erro ao carregar eventos:", error);
-      Alert.alert("Erro", "Não foi possível carregar os eventos.");
+      console.log(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatarDistancia = (distancia) => {
-    if (distancia == null) return "Localização indisponível";
-    if (distancia < 1) {
-      return `${Math.round(distancia * 1000)} m`;
-    }
-    return `${distancia.toFixed(1)} km`;
-  };
+  const eventosComDistancia = useMemo(() => {
+    return eventos.map((item) => ({
+      ...item,
 
-  const eventosComDistancia = useMemo(
-    () =>
-      eventos.map((item) => ({
-        ...item,
-        distancia:
-          location && item.latitude != null && item.longitude != null
-            ? calcularDistancia(
-                location.latitude,
-                location.longitude,
-                item.latitude,
-                item.longitude
-              )
-            : null,
-      })),
-    [eventos, location]
-  );
+      distancia:
+        location &&
+        item.latitude != null &&
+        item.longitude != null
+          ? calcularDistancia(
+              location.latitude,
+              location.longitude,
+              item.latitude,
+              item.longitude
+            )
+          : null,
+    }));
+  }, [eventos, location]);
 
   const categorias = useMemo(() => {
     const valores = eventos
@@ -131,7 +163,9 @@ export default function TelaInicio() {
   }, [eventos]);
 
   const eventosFiltrados = useMemo(() => {
-    if (categoriaAtiva === "Todos") return eventosComDistancia;
+    if (categoriaAtiva === "Todos") {
+      return eventosComDistancia;
+    }
 
     return eventosComDistancia.filter((evento) =>
       evento.categoria
@@ -140,110 +174,230 @@ export default function TelaInicio() {
     );
   }, [categoriaAtiva, eventosComDistancia]);
 
-  const destaques = useMemo(
-    () =>
-      eventosFiltrados
-        .slice()
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 8),
-    [eventosFiltrados]
-  );
+  const destaques = useMemo(() => {
+    return eventosFiltrados
+      .slice()
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8);
+  }, [eventosFiltrados]);
 
-  const proximos = useMemo(
-    () =>
-      eventosFiltrados
-        .filter((item) => typeof item.distancia === "number")
-        .sort((a, b) => a.distancia - b.distancia)
-        .slice(0, 6),
-    [eventosFiltrados]
-  );
+  const proximos = useMemo(() => {
+    return eventosFiltrados
+      .filter(
+        (item) =>
+          typeof item.distancia === "number"
+      )
+      .sort((a, b) => a.distancia - b.distancia)
+      .slice(0, 6);
+  }, [eventosFiltrados]);
 
-  const recomendados = useMemo(
-    () =>
-      eventosFiltrados
-        .slice()
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 6),
-    [eventosFiltrados]
-  );
+  const abrirMapa = async () => {
+    try {
+      if (!location) {
+        setMapErrorMessage(
+          "Sua localização ainda não foi carregada."
+        );
 
-  const estaCurtir = (eventoId) => likedIds.includes(eventoId);
+        setShowMapErrorModal(true);
+
+        return;
+      }
+
+      const url = `https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`;
+
+      const supported =
+        await Linking.canOpenURL(url);
+
+      if (!supported) {
+        setMapErrorMessage(
+          "Não foi possível abrir o aplicativo de mapas neste dispositivo."
+        );
+
+        setShowMapErrorModal(true);
+
+        return;
+      }
+
+      await Linking.openURL(url);
+    } catch (error) {
+      setMapErrorMessage(
+        "Verifique sua conexão, permissões de localização ou tente novamente em alguns instantes."
+      );
+
+      setShowMapErrorModal(true);
+    }
+  };
+
+  const formatarDistancia = (distancia) => {
+    if (distancia == null)
+      return "Localização indisponível";
+
+    if (distancia < 1) {
+      return `${Math.round(
+        distancia * 1000
+      )} m`;
+    }
+
+    return `${distancia.toFixed(1)} km`;
+  };
 
   const HeroCard = ({ item }) => (
     <TouchableOpacity
-      activeOpacity={0.9}
+      activeOpacity={0.92}
       style={styles.heroCard}
-      onPress={() => navigation.navigate("Detalhes", { evento: item.original })}
+      onPress={() =>
+        navigation.navigate("Detalhes", {
+          evento: item.original,
+        })
+      }
     >
-      <Image source={{ uri: item.imagem }} style={styles.heroImage} />
-      <View style={styles.heroOverlay} />
-      <View style={styles.heroInfo}>
-        <Text style={styles.heroTag}>{item.categoria}</Text>
-        <Text style={styles.heroTitle} numberOfLines={2}>
+      <Image
+        source={{ uri: item.imagem }}
+        style={styles.heroImage}
+      />
+
+      <LinearGradient
+        colors={[
+          "transparent",
+          "rgba(0,0,0,0.95)",
+        ]}
+        style={styles.heroGradient}
+      />
+
+      <View style={styles.heroContent}>
+        <View style={styles.heroBadge}>
+          <Text style={styles.heroBadgeText}>
+            {item.categoria}
+          </Text>
+        </View>
+
+        <Text
+          style={styles.heroTitle}
+          numberOfLines={2}
+        >
           {item.titulo}
         </Text>
-        <View style={styles.heroMetrics}>
-          <View style={styles.heroMetric}>
+
+        <Text
+          style={styles.heroLocation}
+          numberOfLines={1}
+        >
+          📍 {item.local}
+        </Text>
+
+        <View style={styles.heroFooter}>
+          <View style={styles.metric}>
             <MaterialCommunityIcons
               name="heart"
-              size={16}
-              color={Colors.error}
+              size={14}
+              color="#FF4D6D"
             />
-            <Text style={styles.heroMetricText}>{item.likes || 0}</Text>
+
+            <Text style={styles.metricText}>
+              {item.likes}
+            </Text>
           </View>
-          <View style={styles.heroMetric}>
+
+          <View style={styles.metric}>
             <MaterialCommunityIcons
               name="eye-outline"
-              size={16}
-              color={Colors.textSecondary}
+              size={15}
+              color="#FFF"
             />
-            <Text style={styles.heroMetricText}>{item.views || 0}</Text>
+
+            <Text style={styles.metricText}>
+              {item.views}
+            </Text>
           </View>
         </View>
       </View>
     </TouchableOpacity>
   );
 
-  const CardHorizontal = ({ item }) => (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      style={styles.cardHorizontal}
-      onPress={() => navigation.navigate("Detalhes", { evento: item.original })}
-    >
-      <Image source={{ uri: item.imagem }} style={styles.imgHorizontal} />
-      <Text style={styles.titleCard} numberOfLines={2}>
-        {item.titulo}
-      </Text>
-      <Text style={styles.localCard}>📍 {item.local}</Text>
-      <View style={styles.cardFooter}>
-        <Text style={styles.footerLabel}>{formatarDistancia(item.distancia)}</Text>
-        <Text style={styles.footerLabel}>⭐ {Math.round(item.score)}</Text>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const CardVertical = ({ item }) => (
+  const CardEvento = ({ item }) => (
     <TouchableOpacity
       activeOpacity={0.9}
-      style={styles.cardVertical}
-      onPress={() => navigation.navigate("Detalhes", { evento: item.original })}
+      style={styles.card}
+      onPress={() =>
+        navigation.navigate("Detalhes", {
+          evento: item.original,
+        })
+      }
     >
-      <Image source={{ uri: item.imagem }} style={styles.imgVertical} />
-      <View style={styles.cardVerticalContent}>
-        <Text style={styles.titleCard} numberOfLines={2}>
-          {item.titulo}
-        </Text>
-        <Text style={styles.localCard}>📍 {item.local}</Text>
-        <View style={styles.cardFooterRow}>
-          <View style={styles.badge}>
-            <MaterialCommunityIcons
-              name={estaCurtir(item.id) ? "heart" : "heart-outline"}
-              size={14}
-              color={estaCurtir(item.id) ? Colors.error : Colors.textSecondary}
-            />
-            <Text style={styles.badgeText}>{item.likes || 0}</Text>
+      <Image
+        source={{ uri: item.imagem }}
+        style={styles.cardImage}
+      />
+
+      <LinearGradient
+        colors={[
+          "transparent",
+          "rgba(0,0,0,0.85)",
+        ]}
+        style={styles.cardGradient}
+      />
+
+      <View style={styles.cardContent}>
+        <View style={styles.cardTop}>
+          <View style={styles.categoryMini}>
+            <Text style={styles.categoryMiniText}>
+              {item.categoria}
+            </Text>
           </View>
-          <Text style={styles.smallText}>{formatarDistancia(item.distancia)}</Text>
+
+          <TouchableOpacity
+            style={styles.likeButton}
+          >
+            <MaterialCommunityIcons
+              name={
+                likedIds.includes(item.id)
+                  ? "heart"
+                  : "heart-outline"
+              }
+              size={18}
+              color={
+                likedIds.includes(item.id)
+                  ? "#FF4D6D"
+                  : "#FFF"
+              }
+            />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.cardBottom}>
+          <Text
+            style={styles.cardTitle}
+            numberOfLines={2}
+          >
+            {item.titulo}
+          </Text>
+
+          <Text
+            style={styles.cardLocation}
+            numberOfLines={1}
+          >
+            📍 {item.local}
+          </Text>
+
+          <View style={styles.cardFooter}>
+            <Text style={styles.distance}>
+              {formatarDistancia(
+                item.distancia
+              )}
+            </Text>
+
+            <View style={styles.rating}>
+              <MaterialCommunityIcons
+                name="star"
+                size={14}
+                color="#FFD166"
+              />
+
+              <Text style={styles.ratingText}>
+                {Math.round(item.score)}
+              </Text>
+            </View>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -252,126 +406,279 @@ export default function TelaInicio() {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <ActivityIndicator
+          size="large"
+          color={Colors.primary}
+        />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.saudacao}>Olá,</Text>
-          <Text style={styles.nome}>{nomeUsuario}</Text>
-        </View>
-        <TouchableOpacity style={styles.iconBtn}>
-          <MaterialCommunityIcons
-            name="bell-outline"
-            size={22}
-            color={Colors.primary}
-          />
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity
-        style={styles.searchBox}
-        onPress={() => navigation.navigate("Busca")}
-        activeOpacity={0.85}
+    <View style={styles.container}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: 140,
+        }}
       >
-        <MaterialCommunityIcons
-          name="magnify"
-          size={20}
-          color={Colors.textSecondary}
+        {/* HEADER */}
+        <LinearGradient
+          colors={[
+            "#10131F",
+            Colors.background,
+          ]}
+          style={styles.header}
+        >
+          <View>
+            <Text style={styles.saudacao}>
+              Olá 👋
+            </Text>
+
+            <Text style={styles.nome}>
+              {nomeUsuario}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.notificationBtn}
+          >
+            <MaterialCommunityIcons
+              name="bell-outline"
+              size={22}
+              color="#FFF"
+            />
+          </TouchableOpacity>
+        </LinearGradient>
+
+        {/* BUSCA */}
+        <TouchableOpacity
+          style={styles.searchBox}
+          activeOpacity={0.9}
+          onPress={() =>
+            navigation.navigate("Busca")
+          }
+        >
+          <MaterialCommunityIcons
+            name="magnify"
+            size={22}
+            color={Colors.textSecondary}
+          />
+
+          <Text style={styles.searchText}>
+            Buscar eventos, shows...
+          </Text>
+        </TouchableOpacity>
+
+        {/* DESTAQUES */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>
+            Destaques
+          </Text>
+
+          <Text style={styles.sectionSub}>
+            Eventos em alta agora
+          </Text>
+        </View>
+
+        <FlashList
+          data={destaques}
+          renderItem={({ item }) => (
+            <HeroCard item={item} />
+          )}
+          keyExtractor={(item) =>
+            item.id.toString()
+          }
+          horizontal
+          estimatedItemSize={300}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+          }}
         />
-        <Text style={styles.searchText}>
-          Buscar eventos, shows, teatros...
-        </Text>
-      </TouchableOpacity>
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.section}>Para você</Text>
-        <Text style={styles.sectionHint}>Baseado em likes, views e relevância</Text>
-      </View>
-
-      <FlashList
-        data={destaques}
-        renderItem={({ item }) => <HeroCard item={item} />}
-        keyExtractor={(item) => item.id.toString()}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        estimatedItemSize={250}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-      />
-
-      <View style={styles.categoryWrapper}>
+        {/* CATEGORIAS */}
         <FlashList
           data={categorias}
+          horizontal
+          estimatedItemSize={100}
           keyExtractor={(item) => item}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 24,
+            paddingBottom: 10,
+          }}
           renderItem={({ item }) => {
-            const ativo = item === categoriaAtiva;
+            const ativo =
+              item === categoriaAtiva;
+
             return (
               <TouchableOpacity
-                onPress={() => setCategoriaAtiva(item)}
+                activeOpacity={0.9}
+                onPress={() =>
+                  setCategoriaAtiva(item)
+                }
                 style={[
-                  styles.categoria,
-                  {
-                    backgroundColor: ativo ? Colors.primary : Colors.surface,
-                  },
+                  styles.categoryBtn,
+                  ativo &&
+                    styles.categoryBtnActive,
                 ]}
               >
                 <Text
-                  style={{
-                    color: ativo ? Colors.background : Colors.textSecondary,
-                    fontWeight: ativo ? "bold" : "normal",
-                  }}
+                  style={[
+                    styles.categoryText,
+                    ativo &&
+                      styles.categoryTextActive,
+                  ]}
                 >
                   {item}
                 </Text>
               </TouchableOpacity>
             );
           }}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          estimatedItemSize={120}
-          contentContainerStyle={styles.categorias}
         />
-      </View>
 
-      <Text style={styles.section}>Próximos de você</Text>
-      {proximos.length > 0 ? (
-        <FlashList
-          data={proximos}
-          renderItem={({ item }) => <CardVertical item={item} />}
-          keyExtractor={(item) => item.id.toString()}
-          estimatedItemSize={220}
-          contentContainerStyle={{ paddingHorizontal: 16 }}
-        />
-      ) : (
-        <View style={styles.emptyStateBox}>
-          <Text style={styles.emptyStateText}>
-            {locationError
-              ? locationError
-              : "Nenhum evento com coordenadas disponíveis."}
+        {/* PROXIMOS */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>
+            Próximos de você
+          </Text>
+
+          <Text style={styles.sectionSub}>
+            Baseado na sua localização
           </Text>
         </View>
-      )}
 
-      <Text style={styles.section}>Recomendados</Text>
-      {recomendados.length > 0 ? (
         <FlashList
-          data={recomendados}
-          renderItem={({ item }) => <CardHorizontal item={item} />}
-          keyExtractor={(item) => item.id.toString()}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          estimatedItemSize={200}
-          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
+          data={proximos}
+          renderItem={({ item }) => (
+            <CardEvento item={item} />
+          )}
+          keyExtractor={(item) =>
+            item.id.toString()
+          }
+          estimatedItemSize={260}
+          scrollEnabled={false}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+          }}
         />
-      ) : (
-        <Text style={styles.empty}>Nenhum evento encontrado.</Text>
-      )}
 
-    </ScrollView>
+        {/* MAPA */}
+        <TouchableOpacity
+          activeOpacity={0.92}
+          onPress={abrirMapa}
+          style={styles.mapCard}
+        >
+          <Image
+            source={{
+              uri: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1200&auto=format&fit=crop",
+            }}
+            style={styles.mapImage}
+          />
+
+          <LinearGradient
+            colors={[
+              "transparent",
+              "rgba(0,0,0,0.92)",
+            ]}
+            style={styles.mapGradient}
+          />
+
+          <View style={styles.mapContent}>
+            <View style={styles.mapIcon}>
+              <MaterialCommunityIcons
+                name="map-marker-radius"
+                size={22}
+                color="#FFF"
+              />
+            </View>
+
+            <View style={{ flex: 1 }}>
+              <Text style={styles.mapTitle}>
+                Explorar no mapa
+              </Text>
+
+              <Text style={styles.mapText}>
+                Veja eventos próximos à sua
+                localização em tempo real
+              </Text>
+            </View>
+
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={26}
+              color="#FFF"
+            />
+          </View>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* MODAL */}
+      <Modal
+        visible={showMapErrorModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() =>
+          setShowMapErrorModal(false)
+        }
+      >
+        <View style={styles.modalOverlay}>
+          <BlurView
+            intensity={70}
+            tint="dark"
+            style={styles.modalCard}
+          >
+            <LinearGradient
+              colors={[
+                Colors.primary,
+                "#7B5CFF",
+              ]}
+              style={styles.modalIcon}
+            >
+              <MaterialCommunityIcons
+                name="map-marker-off"
+                size={34}
+                color="#FFF"
+              />
+            </LinearGradient>
+
+            <Text style={styles.modalTitle}>
+              Não foi possível abrir o mapa
+            </Text>
+
+            <Text style={styles.modalMessage}>
+              {mapErrorMessage}
+            </Text>
+
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() =>
+                setShowMapErrorModal(false)
+              }
+              style={{ width: "100%" }}
+            >
+              <LinearGradient
+                colors={[
+                  Colors.primary,
+                  "#7B5CFF",
+                ]}
+                style={styles.modalButton}
+              >
+                <Text
+                  style={
+                    styles.modalButtonText
+                  }
+                >
+                  Entendi
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </BlurView>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
@@ -380,200 +687,362 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  header: {
-    padding: 16,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  saudacao: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-  },
-  nome: {
-    color: Colors.textPrimary,
-    fontSize: 26,
-    fontWeight: "bold",
-  },
-  iconBtn: {
-    padding: 10,
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-  },
-  searchBox: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: Colors.surface,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  searchText: {
-    color: Colors.textSecondary,
-    marginLeft: 10,
-  },
-  sectionHeader: {
-    paddingHorizontal: 16,
-    marginBottom: 6,
-  },
-  section: {
-    color: Colors.textPrimary,
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  sectionHint: {
-    color: Colors.textSecondary,
-    fontSize: 13,
-    marginTop: 4,
-  },
-  categoryWrapper: {
-    paddingBottom: 10,
-  },
-  categorias: {
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-  },
-  categoria: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    marginRight: 10,
-  },
-  heroCard: {
-    width: windowWidth * 0.78,
-    height: 220,
-    marginRight: 16,
-    borderRadius: 24,
-    overflow: "hidden",
-    backgroundColor: Colors.surface,
-  },
-  heroImage: {
-    width: "100%",
-    height: "100%",
-  },
-  heroOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.25)",
-  },
-  heroInfo: {
-    position: "absolute",
-    bottom: 16,
-    left: 16,
-    right: 16,
-  },
-  heroTag: {
-    color: Colors.background,
-    fontSize: 12,
-    marginBottom: 8,
-    fontWeight: "bold",
-  },
-  heroTitle: {
-    color: Colors.background,
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 12,
-  },
-  heroMetrics: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  heroMetric: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  heroMetricText: {
-    color: Colors.background,
-    fontSize: 12,
-  },
-  cardHorizontal: {
-    width: 160,
-    marginRight: 12,
-  },
-  imgHorizontal: {
-    width: "100%",
-    height: 110,
-    borderRadius: 16,
-  },
-  cardVertical: {
-    marginBottom: 18,
-    borderRadius: 18,
-    backgroundColor: Colors.surface,
-    overflow: "hidden",
-  },
-  imgVertical: {
-    width: "100%",
-    height: 170,
-  },
-  cardVerticalContent: {
-    padding: 14,
-  },
-  titleCard: {
-    color: Colors.textPrimary,
-    fontWeight: "bold",
-    marginTop: 10,
-    fontSize: 16,
-  },
-  localCard: {
-    color: Colors.textSecondary,
-    fontSize: 12,
-    marginTop: 6,
-  },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-  },
-  footerLabel: {
-    color: Colors.textSecondary,
-    fontSize: 11,
-  },
-  cardFooterRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 12,
-  },
-  badge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: Colors.background,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 14,
-  },
-  badgeText: {
-    color: Colors.textPrimary,
-    fontSize: 12,
-  },
-  smallText: {
-    color: Colors.textSecondary,
-    fontSize: 12,
-  },
-  emptyStateBox: {
-    marginHorizontal: 16,
-    padding: 20,
-    backgroundColor: Colors.surface,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  emptyStateText: {
-    color: Colors.textSecondary,
-    textAlign: "center",
-  },
-  empty: {
-    color: Colors.textSecondary,
-    textAlign: "center",
-    marginTop: 20,
-  },
+
   loading: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: Colors.background,
+  },
+
+  header: {
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  saudacao: {
+    color: Colors.textSecondary,
+    fontSize: 15,
+  },
+
+  nome: {
+    color: "#FFF",
+    fontSize: 28,
+    fontWeight: "bold",
+    marginTop: 4,
+  },
+
+  notificationBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  searchBox: {
+    marginHorizontal: 16,
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 22,
+  },
+
+  searchText: {
+    color: Colors.textSecondary,
+    marginLeft: 10,
+    fontSize: 14,
+  },
+
+  sectionHeader: {
+    paddingHorizontal: 16,
+    marginBottom: 14,
+    marginTop: 8,
+  },
+
+  sectionTitle: {
+    color: "#FFF",
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+
+  sectionSub: {
+    color: Colors.textSecondary,
+    marginTop: 4,
+    fontSize: 13,
+  },
+
+  heroCard: {
+    width: windowWidth * 0.78,
+    height: 260,
+    marginRight: 16,
+    borderRadius: 28,
+    overflow: "hidden",
+  },
+
+  heroImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  heroGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  heroContent: {
+    position: "absolute",
+    bottom: 18,
+    left: 18,
+    right: 18,
+  },
+
+  heroBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+
+  heroBadgeText: {
+    color: "#FFF",
+    fontSize: 11,
+    fontWeight: "bold",
+  },
+
+  heroTitle: {
+    color: "#FFF",
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+
+  heroLocation: {
+    color: "rgba(255,255,255,0.75)",
+    marginBottom: 14,
+  },
+
+  heroFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+
+  metric: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+
+  metricText: {
+    color: "#FFF",
+    fontSize: 12,
+  },
+
+  categoryBtn: {
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 22,
+    marginRight: 10,
+  },
+
+  categoryBtnActive: {
+    backgroundColor: Colors.primary,
+  },
+
+  categoryText: {
+    color: Colors.textSecondary,
+    fontWeight: "600",
+  },
+
+  categoryTextActive: {
+    color: "#FFF",
+  },
+
+  card: {
+    height: 260,
+    borderRadius: 26,
+    overflow: "hidden",
+    marginBottom: 18,
+    backgroundColor: Colors.surface,
+  },
+
+  cardImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  cardGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  cardContent: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "space-between",
+    padding: 18,
+  },
+
+  cardTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+
+  categoryMini: {
+    backgroundColor: "rgba(255,255,255,0.15)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backdropFilter: "blur(10px)",
+  },
+
+  categoryMiniText: {
+    color: "#FFF",
+    fontSize: 11,
+    fontWeight: "bold",
+  },
+
+  likeButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  cardBottom: {},
+
+  cardTitle: {
+    color: "#FFF",
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+
+  cardLocation: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+    marginBottom: 14,
+  },
+
+  cardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  distance: {
+    color: "#FFF",
+    fontWeight: "600",
+  },
+
+  rating: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+
+  ratingText: {
+    color: "#FFF",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+
+  mapCard: {
+    height: 220,
+    marginHorizontal: 16,
+    marginTop: 10,
+    borderRadius: 28,
+    overflow: "hidden",
+  },
+
+  mapImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  mapGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  mapContent: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: 20,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  mapIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
+  },
+
+  mapTitle: {
+    color: "#FFF",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+
+  mapText: {
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 13,
+    lineHeight: 20,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+
+  modalCard: {
+    width: "100%",
+    borderRadius: 28,
+    padding: 24,
+    alignItems: "center",
+    overflow: "hidden",
+    backgroundColor: "rgba(20,20,30,0.85)",
+  },
+
+  modalIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  modalTitle: {
+    color: "#FFF",
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+
+  modalMessage: {
+    color: "rgba(255,255,255,0.72)",
+    textAlign: "center",
+    fontSize: 15,
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+
+  modalButton: {
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: "center",
+  },
+
+  modalButtonText: {
+    color: "#FFF",
+    fontWeight: "bold",
+    fontSize: 15,
   },
 });

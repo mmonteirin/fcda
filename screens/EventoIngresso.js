@@ -1,651 +1,878 @@
 import React, { useState } from "react";
 
 import {
-  View,
-  Text,
-  ImageBackground,
-  TouchableOpacity,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  StatusBar,
-  ActivityIndicator,
+	View,
+	Text,
+	ImageBackground,
+	TouchableOpacity,
+	ScrollView,
+	StyleSheet,
+	StatusBar,
+	ActivityIndicator,
+	Modal,
 } from "react-native";
 
-import {
-  LinearGradient,
-} from "expo-linear-gradient";
+import { LinearGradient } from "expo-linear-gradient";
 
-import {
-  BlurView,
-} from "expo-blur";
+import { BlurView } from "expo-blur";
 
-import {
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-import {
-  MotiView,
-} from "moti";
+import { MotiView } from "moti";
+
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "../context/AuthContext";
 
-import {
-  comprarIngresso,
-} from "../services/ingressoService";
+import { comprarIngresso } from "../services/ingressoService";
 
-import Colors from "../styles/Colors";
+import { Colors } from "../styles/Colors";
 
 export default function EventoIngresso({
-  route,
-  navigation,
+	route,
+	navigation,
 }) {
-  const { evento } = route.params;
-
-  const { user } = useAuth();
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const handleCompra =
-    async () => {
-      setLoading(true);
-
-      const sucesso =
-        await comprarIngresso({
-          eventoId: evento.id,
-          user,
-          valor:
-            evento.valor || 0,
-        });
-
-      setLoading(false);
-
-      if (sucesso) {
-        Alert.alert(
-          "Sucesso 🎉",
-          "Ingresso comprado!"
-        );
-
-        navigation.goBack();
-      } else {
-        Alert.alert(
-          "Erro",
-          "Não foi possível concluir"
-        );
-      }
-    };
-
-  return (
-    <View style={styles.container}>
-
-      <StatusBar
-        barStyle="light-content"
-      />
-
-      {/* HERO IMAGE */}
-      <ImageBackground
-        source={{
-          uri:
-            evento.imagem ||
-            "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200",
-        }}
-        style={styles.hero}
-      >
-
-        <LinearGradient
-          colors={[
-            "rgba(0,0,0,0.15)",
-            "rgba(0,0,0,0.95)",
-          ]}
-          style={styles.overlay}
-        >
-
-          {/* HEADER */}
-          <View style={styles.header}>
-
-            <TouchableOpacity
-              onPress={() => {
-                if (
-                  navigation.canGoBack()
-                ) {
-                  navigation.goBack();
-                } else {
-                  navigation.navigate(
-                    "Inicio"
-                  );
-                }
-              }}
-              style={
-                styles.backBtn
-              }
-            >
-
-              <BlurView
-                intensity={60}
-                tint="dark"
-                style={
-                  styles.blurBtn
-                }
-              >
-
-                <MaterialCommunityIcons
-                  name="arrow-left"
-                  size={24}
-                  color="#FFF"
-                />
-
-              </BlurView>
-
-            </TouchableOpacity>
-
-          </View>
-
-          {/* TITULO */}
-          <MotiView
-            from={{
-              opacity: 0,
-              translateY: 30,
-            }}
-            animate={{
-              opacity: 1,
-              translateY: 0,
-            }}
-            transition={{
-              type: "timing",
-              duration: 700,
-            }}
-          >
-
-            <View
-              style={
-                styles.heroContent
-              }
-            >
-
-              <View
-                style={
-                  styles.badge
-                }
-              >
-
-                <MaterialCommunityIcons
-                  name="ticket-confirmation"
-                  size={16}
-                  color="#FFF"
-                />
-
-                <Text
-                  style={
-                    styles.badgeText
-                  }
-                >
-                  Ingresso
-                </Text>
-
-              </View>
-
-              <Text
-                style={
-                  styles.titulo
-                }
-              >
-                {evento.titulo}
-              </Text>
-
-              <Text
-                style={
-                  styles.local
-                }
-              >
-                📍{" "}
-                {evento.nomeLocal ||
-                  "Local não informado"}
-              </Text>
-
-            </View>
-
-          </MotiView>
-
-        </LinearGradient>
-
-      </ImageBackground>
-
-      {/* CONTENT */}
-      <ScrollView
-        showsVerticalScrollIndicator={
-          false
-        }
-        contentContainerStyle={
-          styles.content
-        }
-      >
-
-        {/* CARD */}
-        <MotiView
-          from={{
-            opacity: 0,
-            translateY: 20,
-          }}
-          animate={{
-            opacity: 1,
-            translateY: 0,
-          }}
-          transition={{
-            delay: 250,
-            duration: 700,
-          }}
-        >
-
-          <BlurView
-            intensity={40}
-            tint="dark"
-            style={styles.card}
-          >
-
-            {/* PREÇO */}
-            <View
-              style={
-                styles.priceRow
-              }
-            >
-
-              <View>
-
-                <Text
-                  style={
-                    styles.label
-                  }
-                >
-                  Tipo do ingresso
-                </Text>
-
-                <Text
-                  style={
-                    styles.tipo
-                  }
-                >
-                  {evento.tipoEvento ===
-                  "gratuito"
-                    ? "Evento Gratuito"
-                    : "Ingresso Pago"}
-                </Text>
-
-              </View>
-
-              <LinearGradient
-                colors={[
-                  "#7C3AED",
-                  "#5B21B6",
-                ]}
-                style={
-                  styles.priceBox
-                }
-              >
-
-                <Text
-                  style={
-                    styles.price
-                  }
-                >
-                  {evento.tipoEvento ===
-                  "gratuito"
-                    ? "FREE"
-                    : `R$ ${evento.valor}`}
-                </Text>
-
-              </LinearGradient>
-
-            </View>
-
-            {/* INFOS */}
-            <View
-              style={
-                styles.infoContainer
-              }
-            >
-
-              <View
-                style={
-                  styles.infoRow
-                }
-              >
-
-                <MaterialCommunityIcons
-                  name="calendar"
-                  size={18}
-                  color={
-                    Colors.primary
-                  }
-                />
-
-                <Text
-                  style={
-                    styles.infoText
-                  }
-                >
-                  {evento.dataEvento ||
-                    "Data não informada"}
-                </Text>
-
-              </View>
-
-              <View
-                style={
-                  styles.infoRow
-                }
-              >
-
-                <MaterialCommunityIcons
-                  name="map-marker"
-                  size={18}
-                  color={
-                    Colors.primary
-                  }
-                />
-
-                <Text
-                  style={
-                    styles.infoText
-                  }
-                >
-                  {evento.nomeLocal ||
-                    "Local não informado"}
-                </Text>
-
-              </View>
-
-            </View>
-
-          </BlurView>
-
-        </MotiView>
-
-        {/* BOTÃO */}
-        <MotiView
-          from={{
-            opacity: 0,
-            translateY: 20,
-          }}
-          animate={{
-            opacity: 1,
-            translateY: 0,
-          }}
-          transition={{
-            delay: 400,
-            duration: 700,
-          }}
-        >
-
-          <TouchableOpacity
-            activeOpacity={0.9}
-            disabled={loading}
-            onPress={handleCompra}
-          >
-
-            <LinearGradient
-              colors={[
-                "#7C3AED",
-                "#5B21B6",
-              ]}
-              style={
-                styles.button
-              }
-            >
-
-              {loading ? (
-                <ActivityIndicator
-                  color="#FFF"
-                />
-              ) : (
-                <>
-                  <MaterialCommunityIcons
-                    name="credit-card-outline"
-                    size={22}
-                    color="#FFF"
-                  />
-
-                  <Text
-                    style={
-                      styles.buttonText
-                    }
-                  >
-                    {evento.tipoEvento ===
-                    "gratuito"
-                      ? "Reservar ingresso"
-                      : "Comprar ingresso"}
-                  </Text>
-                </>
-              )}
-
-            </LinearGradient>
-
-          </TouchableOpacity>
-
-        </MotiView>
-
-      </ScrollView>
-
-    </View>
-  );
+	const { evento } = route.params;
+
+	const { user } = useAuth();
+
+	const insets = useSafeAreaInsets();
+
+	const [loading, setLoading] =
+		useState(false);
+
+	/* MODAL */
+	const [modalVisible, setModalVisible] =
+		useState(false);
+
+	const [modalData, setModalData] =
+		useState({
+			title: "",
+			message: "",
+			type: "success",
+		});
+
+	const showModal = (
+		title,
+		message,
+		type = "success"
+	) => {
+		setModalData({
+			title,
+			message,
+			type,
+		});
+
+		setModalVisible(true);
+	};
+
+	/* SEGURANÇA */
+	if (!evento) {
+		return (
+			<View style={styles.center}>
+				<Text style={styles.errorText}>
+					Evento não encontrado
+				</Text>
+			</View>
+		);
+	}
+
+	/* COMPRA / RESERVA */
+	const handleCompra =
+		async () => {
+			try {
+				setLoading(true);
+
+				const sucesso =
+					await comprarIngresso({
+						eventoId:
+							evento.id ||
+							evento.eventoId,
+
+						user,
+
+						valor:
+							evento.valor || 0,
+
+						tituloEvento:
+							evento.tituloEvento,
+
+						localEvento:
+							evento.localEvento,
+
+						dataEvento:
+							evento.dataEvento,
+
+						imagemEvento:
+							evento.imagemEvento,
+					});
+
+				setLoading(false);
+
+				if (sucesso) {
+					showModal(
+						"Sucesso 🎉",
+						evento.tipoEvento ===
+							"gratuito"
+							? "Reserva realizada com sucesso!"
+							: "Ingresso comprado com sucesso!",
+						"success"
+					);
+				} else {
+					showModal(
+						"Erro",
+						"Não foi possível concluir.",
+						"error"
+					);
+				}
+			} catch (e) {
+				console.log(e);
+
+				setLoading(false);
+
+				showModal(
+					"Erro",
+					"Falha ao processar ingresso.",
+					"error"
+				);
+			}
+		};
+
+	return (
+		<View style={styles.container}>
+			<StatusBar
+				barStyle="light-content"
+				backgroundColor="transparent"
+				translucent
+			/>
+
+			{/* MODAL */}
+			<Modal
+				transparent
+				visible={modalVisible}
+				animationType="fade"
+			>
+				<View style={styles.modalOverlay}>
+					<View style={styles.modalBox}>
+						<View
+							style={[
+								styles.modalIcon,
+								{
+									backgroundColor:
+										modalData.type ===
+										"success"
+											? "rgba(34,197,94,0.15)"
+											: "rgba(239,68,68,0.15)",
+								},
+							]}
+						>
+							<MaterialCommunityIcons
+								name={
+									modalData.type ===
+									"success"
+										? "check-circle"
+										: "close-circle"
+								}
+								size={42}
+								color={
+									modalData.type ===
+									"success"
+										? "#22C55E"
+										: "#EF4444"
+								}
+							/>
+						</View>
+
+						<Text style={styles.modalTitle}>
+							{modalData.title}
+						</Text>
+
+						<Text style={styles.modalMessage}>
+							{modalData.message}
+						</Text>
+
+						<TouchableOpacity
+							style={styles.modalButton}
+							onPress={() => {
+								setModalVisible(false);
+
+								if (
+									modalData.type ===
+									"success"
+								) {
+									navigation.goBack();
+								}
+							}}
+						>
+							<Text
+								style={
+									styles.modalButtonText
+								}
+							>
+								OK
+							</Text>
+						</TouchableOpacity>
+					</View>
+				</View>
+			</Modal>
+
+			{/* HERO */}
+			<ImageBackground
+				source={{
+					uri:
+						evento.imagemEvento ||
+						"https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1200",
+				}}
+				style={styles.hero}
+			>
+				<LinearGradient
+					colors={[
+						"rgba(0,0,0,0.15)",
+						"rgba(0,0,0,0.97)",
+					]}
+					style={styles.overlay}
+				>
+					{/* HEADER */}
+					<View
+						style={[
+							styles.header,
+							{
+								paddingTop:
+									insets.top + 10,
+							},
+						]}
+					>
+						<TouchableOpacity
+							onPress={() => {
+								if (
+									navigation.canGoBack()
+								) {
+									navigation.goBack();
+								} else {
+									navigation.navigate(
+										"Inicio"
+									);
+								}
+							}}
+							style={styles.backBtn}
+						>
+							<BlurView
+								intensity={60}
+								tint="dark"
+								style={
+									styles.blurBtn
+								}
+							>
+								<MaterialCommunityIcons
+									name="arrow-left"
+									size={24}
+									color="#FFF"
+								/>
+							</BlurView>
+						</TouchableOpacity>
+					</View>
+
+					{/* HERO CONTENT */}
+					<MotiView
+						from={{
+							opacity: 0,
+							translateY: 30,
+						}}
+						animate={{
+							opacity: 1,
+							translateY: 0,
+						}}
+						transition={{
+							type: "timing",
+							duration: 700,
+						}}
+					>
+						<View
+							style={
+								styles.heroContent
+							}
+						>
+							{/* BADGE */}
+							<View
+								style={styles.badge}
+							>
+								<MaterialCommunityIcons
+									name="ticket-confirmation"
+									size={16}
+									color="#FFF"
+								/>
+
+								<Text
+									style={
+										styles.badgeText
+									}
+								>
+									Experiência Cultural
+								</Text>
+							</View>
+
+							{/* TITULO */}
+							<Text
+								style={
+									styles.titulo
+								}
+							>
+								{
+									evento.tituloEvento
+								}
+							</Text>
+
+							{/* LOCAL */}
+							<Text
+								style={
+									styles.local
+								}
+							>
+								📍{" "}
+								{evento.localEvento ||
+									"Local não informado"}
+							</Text>
+						</View>
+					</MotiView>
+				</LinearGradient>
+			</ImageBackground>
+
+			{/* CONTENT */}
+			<ScrollView
+				showsVerticalScrollIndicator={
+					false
+				}
+				contentContainerStyle={
+					styles.content
+				}
+			>
+				{/* CARD */}
+				<MotiView
+					from={{
+						opacity: 0,
+						translateY: 20,
+					}}
+					animate={{
+						opacity: 1,
+						translateY: 0,
+					}}
+					transition={{
+						delay: 250,
+						duration: 700,
+					}}
+				>
+					<BlurView
+						intensity={40}
+						tint="dark"
+						style={styles.card}
+					>
+						{/* PREÇO */}
+						<View
+							style={
+								styles.priceRow
+							}
+						>
+							<View>
+								<Text
+									style={
+										styles.label
+									}
+								>
+									Tipo do ingresso
+								</Text>
+
+								<Text
+									style={
+										styles.tipo
+									}
+								>
+									{evento.tipoEvento ===
+									"gratuito"
+										? "Evento Gratuito"
+										: "Ingresso Pago"}
+								</Text>
+							</View>
+
+							<LinearGradient
+								colors={[
+									"#7C3AED",
+									"#5B21B6",
+								]}
+								style={
+									styles.priceBox
+								}
+							>
+								<Text
+									style={
+										styles.price
+									}
+								>
+									{evento.tipoEvento ===
+									"gratuito"
+										? "FREE"
+										: `R$ ${
+												evento.valor ||
+												0
+										  }`}
+								</Text>
+							</LinearGradient>
+						</View>
+
+						{/* INFO */}
+						<View
+							style={
+								styles.infoContainer
+							}
+						>
+							{/* DATA */}
+							<View
+								style={
+									styles.infoRow
+								}
+							>
+								<MaterialCommunityIcons
+									name="calendar"
+									size={18}
+									color={
+										Colors.primary
+									}
+								/>
+
+								<Text
+									style={
+										styles.infoText
+									}
+								>
+									{evento.dataEvento ||
+										"Data não informada"}
+								</Text>
+							</View>
+
+							{/* HORA */}
+							<View
+								style={
+									styles.infoRow
+								}
+							>
+								<MaterialCommunityIcons
+									name="clock-outline"
+									size={18}
+									color={
+										Colors.primary
+									}
+								/>
+
+								<Text
+									style={
+										styles.infoText
+									}
+								>
+									{evento.horaInicio ||
+										"Horário não informado"}
+								</Text>
+							</View>
+
+							{/* LOCAL */}
+							<View
+								style={
+									styles.infoRow
+								}
+							>
+								<MaterialCommunityIcons
+									name="map-marker"
+									size={18}
+									color={
+										Colors.primary
+									}
+								/>
+
+								<Text
+									style={
+										styles.infoText
+									}
+								>
+									{evento.localEvento ||
+										"Local não informado"}
+								</Text>
+							</View>
+						</View>
+					</BlurView>
+				</MotiView>
+
+				{/* BOTÃO */}
+				<MotiView
+					from={{
+						opacity: 0,
+						translateY: 20,
+					}}
+					animate={{
+						opacity: 1,
+						translateY: 0,
+					}}
+					transition={{
+						delay: 400,
+						duration: 700,
+					}}
+				>
+					<TouchableOpacity
+						activeOpacity={0.9}
+						disabled={loading}
+						onPress={
+							handleCompra
+						}
+					>
+						<LinearGradient
+							colors={[
+								"#7C3AED",
+								"#5B21B6",
+							]}
+							style={
+								styles.button
+							}
+						>
+							{loading ? (
+								<ActivityIndicator
+									color="#FFF"
+								/>
+							) : (
+								<>
+									<MaterialCommunityIcons
+										name="credit-card-outline"
+										size={22}
+										color="#FFF"
+									/>
+
+									<Text
+										style={
+											styles.buttonText
+										}
+									>
+										{evento.tipoEvento ===
+										"gratuito"
+											? "Reservar ingresso"
+											: "Comprar ingresso"}
+									</Text>
+								</>
+							)}
+						</LinearGradient>
+					</TouchableOpacity>
+				</MotiView>
+			</ScrollView>
+		</View>
+	);
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor:
-      "#070B14",
-  },
+	container: {
+		flex: 1,
+		backgroundColor:
+			"#070B14",
+	},
 
-  /* HERO */
-  hero: {
-    height: 360,
-  },
+	hero: {
+		height: 360,
+	},
 
-  overlay: {
-    flex: 1,
+	overlay: {
+		flex: 1,
+		justifyContent:
+			"space-between",
+	},
 
-    justifyContent:
-      "space-between",
-  },
+	header: {
+		paddingHorizontal: 20,
+	},
 
-  header: {
-    paddingTop: 55,
-    paddingHorizontal: 20,
-  },
+	backBtn: {
+		alignSelf: "flex-start",
+	},
 
-  backBtn: {
-    alignSelf: "flex-start",
-  },
+	blurBtn: {
+		width: 48,
+		height: 48,
 
-  blurBtn: {
-    width: 48,
-    height: 48,
+		borderRadius: 18,
 
-    borderRadius: 18,
+		justifyContent: "center",
+		alignItems: "center",
 
-    justifyContent: "center",
-    alignItems: "center",
+		overflow: "hidden",
 
-    overflow: "hidden",
+		borderWidth: 1,
 
-    borderWidth: 1,
+		borderColor:
+			"rgba(255,255,255,0.08)",
+	},
 
-    borderColor:
-      "rgba(255,255,255,0.08)",
-  },
+	heroContent: {
+		padding: 24,
+		paddingBottom: 40,
+	},
 
-  heroContent: {
-    padding: 24,
-  },
+	badge: {
+		alignSelf: "flex-start",
 
-  badge: {
-    alignSelf: "flex-start",
+		flexDirection: "row",
+		alignItems: "center",
 
-    flexDirection: "row",
-    alignItems: "center",
+		backgroundColor:
+			"rgba(255,255,255,0.12)",
 
-    backgroundColor:
-      "rgba(255,255,255,0.12)",
+		paddingHorizontal: 12,
+		paddingVertical: 7,
 
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+		borderRadius: 20,
 
-    borderRadius: 20,
+		marginBottom: 15,
+	},
 
-    marginBottom: 15,
-  },
+	badgeText: {
+		color: "#FFF",
 
-  badgeText: {
-    color: "#FFF",
+		marginLeft: 6,
 
-    marginLeft: 6,
+		fontWeight: "600",
 
-    fontWeight: "600",
+		fontSize: 12,
+	},
 
-    fontSize: 12,
-  },
+	titulo: {
+		color: "#FFF",
 
-  titulo: {
-    color: "#FFF",
+		fontSize: 30,
 
-    fontSize: 30,
+		fontWeight: "800",
 
-    fontFamily:
-      "PoppinsBold",
+		lineHeight: 40,
+	},
 
-    lineHeight: 40,
-  },
+	local: {
+		color:
+			"rgba(255,255,255,0.75)",
 
-  local: {
-    color:
-      "rgba(255,255,255,0.75)",
+		marginTop: 10,
 
-    marginTop: 10,
+		fontSize: 14,
 
-    fontSize: 14,
+		lineHeight: 22,
+	},
 
-    lineHeight: 22,
-  },
+	content: {
+		padding: 20,
 
-  /* CONTENT */
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-    marginTop: -40,
-  },
+		paddingBottom: 120,
 
-  card: {
-    borderRadius: 28,
+		marginTop: -40,
+	},
 
-    padding: 22,
+	card: {
+		borderRadius: 28,
 
-    overflow: "hidden",
+		padding: 22,
 
-    backgroundColor:
-      "rgba(255,255,255,0.05)",
+		overflow: "hidden",
 
-    borderWidth: 1,
+		backgroundColor:
+			"rgba(255,255,255,0.05)",
 
-    borderColor:
-      "rgba(255,255,255,0.08)",
-  },
+		borderWidth: 1,
 
-  priceRow: {
-    flexDirection: "row",
+		borderColor:
+			"rgba(255,255,255,0.08)",
+	},
 
-    justifyContent:
-      "space-between",
+	priceRow: {
+		flexDirection: "row",
 
-    alignItems: "center",
-  },
+		justifyContent:
+			"space-between",
 
-  label: {
-    color:
-      "rgba(255,255,255,0.55)",
+		alignItems: "center",
+	},
 
-    fontSize: 13,
-  },
+	label: {
+		color:
+			"rgba(255,255,255,0.55)",
 
-  tipo: {
-    color: "#FFF",
+		fontSize: 13,
+	},
 
-    fontSize: 18,
+	tipo: {
+		color: "#FFF",
 
-    marginTop: 4,
+		fontSize: 18,
 
-    fontFamily:
-      "PoppinsSemiBold",
-  },
+		marginTop: 4,
 
-  priceBox: {
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+		fontWeight: "700",
+	},
 
-    borderRadius: 18,
-  },
+	priceBox: {
+		paddingHorizontal: 18,
+		paddingVertical: 12,
 
-  price: {
-    color: "#FFF",
+		borderRadius: 18,
+	},
 
-    fontSize: 16,
+	price: {
+		color: "#FFF",
 
-    fontFamily:
-      "PoppinsBold",
-  },
+		fontSize: 16,
 
-  infoContainer: {
-    marginTop: 25,
+		fontWeight: "800",
+	},
 
-    gap: 16,
-  },
+	infoContainer: {
+		marginTop: 25,
+		gap: 16,
+	},
 
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+	infoRow: {
+		flexDirection: "row",
+		alignItems: "center",
+	},
 
-  infoText: {
-    color:
-      "rgba(255,255,255,0.72)",
+	infoText: {
+		color:
+			"rgba(255,255,255,0.72)",
 
-    marginLeft: 10,
+		marginLeft: 10,
 
-    fontSize: 14,
+		fontSize: 14,
 
-    flex: 1,
-  },
+		flex: 1,
+	},
 
-  /* BUTTON */
-  button: {
-    marginTop: 24,
+	button: {
+		marginTop: 24,
 
-    borderRadius: 22,
+		borderRadius: 22,
 
-    paddingVertical: 18,
+		paddingVertical: 18,
 
-    justifyContent: "center",
-    alignItems: "center",
+		justifyContent: "center",
+		alignItems: "center",
 
-    flexDirection: "row",
+		flexDirection: "row",
 
-    gap: 10,
+		gap: 10,
 
-    shadowColor: "#7C3AED",
+		shadowColor: "#7C3AED",
 
-    shadowOpacity: 0.4,
+		shadowOpacity: 0.4,
 
-    shadowRadius: 10,
+		shadowRadius: 10,
 
-    elevation: 8,
-  },
+		elevation: 8,
+	},
 
-  buttonText: {
-    color: "#FFF",
+	buttonText: {
+		color: "#FFF",
 
-    fontSize: 16,
+		fontSize: 16,
 
-    fontFamily:
-      "PoppinsBold",
-  },
+		fontWeight: "800",
+	},
+
+	center: {
+		flex: 1,
+
+		justifyContent: "center",
+		alignItems: "center",
+
+		backgroundColor:
+			"#070B14",
+	},
+
+	errorText: {
+		color: "#FFF",
+		fontSize: 16,
+	},
+
+	/* MODAL */
+	modalOverlay: {
+		flex: 1,
+
+		backgroundColor:
+			"rgba(0,0,0,0.7)",
+
+		justifyContent: "center",
+		alignItems: "center",
+
+		padding: 24,
+	},
+
+	modalBox: {
+		width: "100%",
+
+		backgroundColor:
+			"#111827",
+
+		borderRadius: 28,
+
+		padding: 28,
+
+		alignItems: "center",
+
+		borderWidth: 1,
+
+		borderColor:
+			"rgba(255,255,255,0.08)",
+	},
+
+	modalIcon: {
+		width: 84,
+		height: 84,
+
+		borderRadius: 42,
+
+		justifyContent: "center",
+		alignItems: "center",
+
+		marginBottom: 20,
+	},
+
+	modalTitle: {
+		color: "#FFF",
+
+		fontSize: 22,
+
+		fontWeight: "800",
+
+		marginBottom: 10,
+
+		textAlign: "center",
+	},
+
+	modalMessage: {
+		color:
+			"rgba(255,255,255,0.75)",
+
+		fontSize: 15,
+
+		lineHeight: 24,
+
+		textAlign: "center",
+	},
+
+	modalButton: {
+		marginTop: 24,
+
+		backgroundColor:
+			"#7C3AED",
+
+		paddingVertical: 14,
+
+		paddingHorizontal: 32,
+
+		borderRadius: 18,
+	},
+
+	modalButtonText: {
+		color: "#FFF",
+
+		fontSize: 15,
+
+		fontWeight: "700",
+	},
 });

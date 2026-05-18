@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
 	View,
 	Text,
@@ -8,19 +8,24 @@ import {
 	Alert,
 	ActivityIndicator,
 	Platform,
-	Animated,
+	StyleSheet,
+	StatusBar,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import {
 	collection,
 	query,
 	where,
-	onSnapshot,
 	deleteDoc,
 	doc,
 	orderBy,
+	limit,
+	startAfter,
+	getDocs,
 } from "firebase/firestore";
 
 import { db } from "../firebaseConfig";
@@ -28,92 +33,176 @@ import { useAuth } from "../context/AuthContext";
 import { Colors } from "../styles/Colors";
 import { getUserFeedLikes, toggleEventoLike } from "../services/feedService";
 
+const PAGE_SIZE = 10;
+
 export default function TelaFeed({ navigation }) {
-	const { user, nome, foto, isAdmin } = useAuth();
+	const insets = useSafeAreaInsets();
+
+	const { user, isAdmin } = useAuth();
+
 	const [eventos, setEventos] = useState([]);
 	const [loading, setLoading] = useState(true);
+	const [loadingMore, setLoadingMore] = useState(false);
+	const [hasMore, setHasMore] = useState(true);
 	const [likedIds, setLikedIds] = useState([]);
 
-	// 🔥 Carregar likes do usuário
+	const lastDocRef = useRef(null);
+
+	/* =========================
+	 * ❤️ Likes
+	 * ========================= */
 	useEffect(() => {
 		const carregarLikes = async () => {
-			if (user?.uid) {
+			if (!user?.uid) return;
+
+			try {
 				const likes = await getUserFeedLikes(user.uid);
 				setLikedIds(likes);
+			} catch (e) {
+				console.log(e);
 			}
 		};
+
 		carregarLikes();
 	}, [user?.uid]);
 
-	// 🔥 Filtra por uidEvento (campo real do banco)
+	/* =========================
+	 * 📦 Feed
+	 * ========================= */
 	useEffect(() => {
 		if (!user?.uid) return;
 
-		let q;
+		setEventos([]);
+		lastDocRef.current = null;
+		setHasMore(true);
 
-		// ✅ ADMIN -> apenas eventos dele
-		if (isAdmin) {
-			q = query(
-				collection(db, "eventos"),
-				where("uidEvento", "==", user.uid),
-				orderBy("createdAt", "desc")
-			);
-		}
-
-		// ✅ USER -> todos os eventos
-		else {
-			q = query(collection(db, "eventos"), orderBy("createdAt", "desc"));
-		}
-
-		const unsub = onSnapshot(
-			q,
-			(snapshot) => {
-				const lista = snapshot.docs
-					.map((d) => ({
-						id: d.id,
-						...d.data(),
-					}))
-					.filter((item) => item.id !== "_init");
-
-				setEventos(lista);
-				setLoading(false);
-			},
-			(err) => {
-				console.log("Erro ao carregar eventos:", err);
-				setLoading(false);
-			}
-		);
-
-		return () => unsub();
+		carregarPagina(true);
 	}, [user?.uid, isAdmin]);
 
+	const carregarPagina = async (isFirst = false) => {
+		if (!user?.uid) return;
+
+		isFirst ? setLoading(true) : setLoadingMore(true);
+
+		try {
+			let q;
+
+			if (isAdmin) {
+				q =
+					isFirst || !lastDocRef.current
+						? query(
+								collection(db, "eventos"),
+								where("uidEvento", "==", user.uid),
+								orderBy("createdAt", "desc"),
+								limit(PAGE_SIZE)
+						  )
+						: query(
+								collection(db, "eventos"),
+								where("uidEvento", "==", user.uid),
+								orderBy("createdAt", "desc"),
+								startAfter(lastDocRef.current),
+								limit(PAGE_SIZE)
+						  );
+			} else {
+				q =
+					isFirst || !lastDocRef.current
+						? query(
+								collection(db, "eventos"),
+								orderBy("createdAt", "desc"),
+								limit(PAGE_SIZE)
+						  )
+						: query(
+								collection(db, "eventos"),
+								orderBy("createdAt", "desc"),
+								startAfter(lastDocRef.current),
+								limit(PAGE_SIZE)
+						  );
+			}
+
+			const snapshot = await getDocs(q);
+
+			const novos = snapshot.docs
+				.map((d) => ({
+					id: d.id,
+					...d.data(),
+				}))
+				.filter((item) => item.id !== "_init");
+
+			if (snapshot.docs.length > 0) {
+				lastDocRef.current =
+					snapshot.docs[snapshot.docs.length - 1];
+			}
+
+			if (snapshot.docs.length < PAGE_SIZE) {
+				setHasMore(false);
+			}
+
+			setEventos((prev) =>
+				isFirst ? novos : [...prev, ...novos]
+			);
+		} catch (e) {
+			console.log("Erro ao carregar feed:", e);
+		} finally {
+			setLoading(false);
+			setLoadingMore(false);
+		}
+	};
+
+	const handleEndReached = () => {
+		if (!loadingMore && hasMore) {
+			carregarPagina(false);
+		}
+	};
+
+	/* =========================
+	 * ❤️ Like
+	 * ========================= */
 	const toggleLike = async (eventoId) => {
 		if (!user?.uid) return;
 
 		try {
-			const isNowLiked = await toggleEventoLike(eventoId, user.uid);
-			if (isNowLiked) {
+			const liked = await toggleEventoLike(
+				eventoId,
+				user.uid
+			);
+
+			if (liked) {
 				setLikedIds((prev) => [...prev, eventoId]);
 			} else {
-				setLikedIds((prev) => prev.filter((id) => id !== eventoId));
+				setLikedIds((prev) =>
+					prev.filter((id) => id !== eventoId)
+				);
 			}
-		} catch (error) {
-			console.log("Erro ao fazer like:", error);
+		} catch (e) {
+			console.log(e);
 		}
 	};
 
+	/* =========================
+	 * 🗑️ Excluir
+	 * ========================= */
 	const deletarEvento = async (id) => {
 		try {
-			let confirmado = false;
-
-			// 🔥 WEB
 			if (Platform.OS === "web") {
-				confirmado = window.confirm("Deseja excluir este evento?");
+				const confirmado = window.confirm(
+					"Deseja excluir este evento?"
+				);
+
+				if (!confirmado) return;
+
+				await deleteDoc(doc(db, "eventos", id));
+
+				setEventos((prev) =>
+					prev.filter((e) => e.id !== id)
+				);
+
+				return;
 			}
 
-			// 🔥 MOBILE
-			else {
-				return Alert.alert("Excluir", "Deseja excluir este evento?", [
+			Alert.alert(
+				"Excluir evento",
+				"Tem certeza que deseja excluir?",
+				[
 					{
 						text: "Cancelar",
 						style: "cancel",
@@ -123,262 +212,384 @@ export default function TelaFeed({ navigation }) {
 						style: "destructive",
 						onPress: async () => {
 							try {
-								await deleteDoc(doc(db, "eventos", id));
-							} catch (error) {
-								console.log(error);
-								Alert.alert("Erro ao excluir");
+								await deleteDoc(
+									doc(db, "eventos", id)
+								);
+
+								setEventos((prev) =>
+									prev.filter(
+										(e) => e.id !== id
+									)
+								);
+							} catch (e) {
+								console.log(e);
+								Alert.alert(
+									"Erro",
+									"Não foi possível excluir."
+								);
 							}
 						},
 					},
-				]);
-			}
-
-			// 🔥 WEB DELETE
-			if (confirmado) {
-				await deleteDoc(doc(db, "eventos", id));
-			}
-		} catch (error) {
-			console.log(error);
-
-			if (Platform.OS === "web") {
-				window.alert("Erro ao excluir");
-			} else {
-				Alert.alert("Erro ao excluir");
-			}
+				]
+			);
+		} catch (e) {
+			console.log(e);
 		}
 	};
 
+	/* =========================
+	 * 📅 Helpers
+	 * ========================= */
 	const formatarNumero = (num) => {
-		if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
-		if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+		if (!num) return "0";
+
+		if (num >= 1000000)
+			return (num / 1000000).toFixed(1) + "M";
+
+		if (num >= 1000)
+			return (num / 1000).toFixed(1) + "K";
+
 		return num.toString();
 	};
 
 	const formatarData = (timestamp) => {
-		if (!timestamp) return "Há pouco";
-		const date = timestamp.toDate?.() || new Date(timestamp);
+		if (!timestamp) return "Agora";
+
+		const data = timestamp.toDate?.() || new Date(timestamp);
+
 		const agora = new Date();
-		const diff = agora - date;
+
+		const diff = agora - data;
+
 		const minutos = Math.floor(diff / 60000);
 		const horas = Math.floor(diff / 3600000);
 		const dias = Math.floor(diff / 86400000);
 
 		if (minutos < 1) return "Agora";
-		if (minutos < 60) return `${minutos}m atrás`;
-		if (horas < 24) return `${horas}h atrás`;
-		if (dias < 7) return `${dias}d atrás`;
+		if (minutos < 60) return `${minutos}m`;
+		if (horas < 24) return `${horas}h`;
+		if (dias < 7) return `${dias}d`;
 
-		return date.toLocaleDateString("pt-BR");
+		return data.toLocaleDateString("pt-BR");
 	};
 
-	const CardInstagram = ({ item }) => {
+	/* =========================
+	 * 📸 CARD
+	 * ========================= */
+	const renderItem = ({ item }) => {
 		const isLiked = likedIds.includes(item.id);
 
 		return (
-			<View style={styles.instagramCard}>
-				{/* 📸 HEADER - Info do Criador */}
+			<View style={styles.card}>
+				{/* HEADER */}
 				<View style={styles.cardHeader}>
-					<View style={styles.creatorInfo}>
+					<View style={styles.userInfo}>
 						<Image
 							source={{
-								uri: item.userPhoto || "https://via.placeholder.com/40",
+								uri:
+									item.userPhoto ||
+									"https://i.pravatar.cc/150",
 							}}
-							style={styles.creatorAvatar}
+							style={styles.avatar}
 						/>
+
 						<View style={{ flex: 1 }}>
-							<Text style={styles.creatorName} numberOfLines={1}>
+							<Text
+								numberOfLines={1}
+								style={styles.userName}
+							>
 								{item.adminNome || "Organizador"}
 							</Text>
-							<Text style={styles.creatorDate}>
-								{formatarData(item.createdAt)}
-							</Text>
+
+							<View style={styles.locationRow}>
+								<MaterialCommunityIcons
+									name="map-marker"
+									size={12}
+									color={Colors.textMuted}
+								/>
+
+								<Text
+									numberOfLines={1}
+									style={styles.locationText}
+								>
+									{item.localEvento ||
+										item.nomeLocal ||
+										"Local"}
+								</Text>
+							</View>
 						</View>
 					</View>
 
-					{isAdmin && item.uidEvento === user?.uid && (
-						<TouchableOpacity
-							style={styles.menuBtn}
-							onPress={() => deletarEvento(item.id)}
-						>
-							<MaterialCommunityIcons
-								name="trash-can-outline"
-								size={20}
-								color={Colors.error}
-							/>
-						</TouchableOpacity>
-					)}
+					<View style={styles.headerActions}>
+						<Text style={styles.dateText}>
+							{formatarData(item.createdAt)}
+						</Text>
+
+						{isAdmin &&
+							item.uidEvento === user?.uid && (
+								<TouchableOpacity
+									style={styles.deleteBtn}
+									onPress={() =>
+										deletarEvento(item.id)
+									}
+								>
+									<MaterialCommunityIcons
+										name="trash-can-outline"
+										size={20}
+										color={Colors.error}
+									/>
+								</TouchableOpacity>
+							)}
+					</View>
 				</View>
 
-				{/* 🖼️ IMAGEM PRINCIPAL */}
+				{/* IMAGE */}
 				<TouchableOpacity
 					activeOpacity={0.9}
 					onPress={() =>
-						navigation.navigate("Detalhes", { evento: item })
+						navigation.navigate("Detalhes", {
+							evento: item,
+						})
 					}
+					style={styles.imageWrapper}
 				>
 					<Image
 						source={{
 							uri:
 								item.imagemEvento ||
-								"https://placehold.co/400x400/1a0533/ffffff?text=Evento",
+								"https://placehold.co/600x600",
 						}}
 						style={styles.mainImage}
 					/>
-					
-					{/* Overlay com info rápida */}
+
 					<LinearGradient
-						colors={["transparent", "rgba(0,0,0,0.8)"]}
-						style={styles.imageOverlay}
+						colors={[
+							"transparent",
+							"rgba(0,0,0,0.88)",
+						]}
+						style={styles.overlay}
 					>
-						<Text style={styles.eventTitle} numberOfLines={2}>
-							{item.tituloEvento || "Sem título"}
+						<View style={styles.badge}>
+							<MaterialCommunityIcons
+								name="calendar"
+								size={13}
+								color="#fff"
+							/>
+
+							<Text style={styles.badgeText}>
+								{item.dataEvento || "Evento"}
+							</Text>
+						</View>
+
+						<Text
+							numberOfLines={2}
+							style={styles.eventTitle}
+						>
+							{item.tituloEvento ||
+								"Evento sem título"}
 						</Text>
-						<Text style={styles.eventLocal} numberOfLines={1}>
-							📍 {item.localEvento || item.nomeLocal || "Local"}
-						</Text>
+
+						{item.horaInicio && (
+							<Text style={styles.eventTime}>
+								🕐 {item.horaInicio}
+								{item.horaFim
+									? ` às ${item.horaFim}`
+									: ""}
+							</Text>
+						)}
 					</LinearGradient>
 				</TouchableOpacity>
 
-				{/* 🎯 BOTÕES DE INTERAÇÃO */}
-				<View style={styles.actionButtons}>
-					<TouchableOpacity
-						style={styles.actionBtn}
-						onPress={() => toggleLike(item.id)}
-					>
-						<MaterialCommunityIcons
-							name={isLiked ? "heart" : "heart-outline"}
-							size={24}
-							color={isLiked ? Colors.error : Colors.textSecondary}
-						/>
-					</TouchableOpacity>
+				{/* ACTIONS */}
+				<View style={styles.actions}>
+					<View style={styles.leftActions}>
+						<TouchableOpacity
+							style={styles.actionBtn}
+							onPress={() =>
+								toggleLike(item.id)
+							}
+						>
+							<MaterialCommunityIcons
+								name={
+									isLiked
+										? "heart"
+										: "heart-outline"
+								}
+								size={25}
+								color={
+									isLiked
+										? Colors.error
+										: Colors.textPrimary
+								}
+							/>
+						</TouchableOpacity>
+
+						<TouchableOpacity
+							style={styles.actionBtn}
+							onPress={() =>
+								navigation.navigate(
+									"Detalhes",
+									{
+										evento: item,
+									}
+								)
+							}
+						>
+							<MaterialCommunityIcons
+								name="comment-outline"
+								size={24}
+								color={
+									Colors.textPrimary
+								}
+							/>
+						</TouchableOpacity>
+
+						<TouchableOpacity
+							style={styles.actionBtn}
+						>
+							<MaterialCommunityIcons
+								name="share-variant-outline"
+								size={23}
+								color={
+									Colors.textPrimary
+								}
+							/>
+						</TouchableOpacity>
+					</View>
 
 					<TouchableOpacity
 						style={styles.actionBtn}
-						onPress={() =>
-							navigation.navigate("Detalhes", { evento: item })
-						}
-					>
-						<MaterialCommunityIcons
-							name="comment-outline"
-							size={24}
-							color={Colors.textSecondary}
-						/>
-					</TouchableOpacity>
-
-					<TouchableOpacity style={styles.actionBtn}>
-						<MaterialCommunityIcons
-							name="share-outline"
-							size={24}
-							color={Colors.textSecondary}
-						/>
-					</TouchableOpacity>
-
-					<View style={{ flex: 1 }} />
-
-					<TouchableOpacity
-						style={styles.actionBtn}
-						onPress={() =>
-							navigation.navigate("Detalhes", { evento: item })
-						}
 					>
 						<MaterialCommunityIcons
 							name="bookmark-outline"
 							size={24}
-							color={Colors.textSecondary}
+							color={Colors.textPrimary}
 						/>
 					</TouchableOpacity>
 				</View>
 
-				{/* 📊 MÉTRICAS */}
-				<View style={styles.metrics}>
-					<Text style={styles.metricsText}>
-						<Text style={styles.metricsBold}>
-							{formatarNumero(item.likes || 0)}
-						</Text>
-						{" likes"}
+				{/* METRICS */}
+				<View style={styles.metricsContainer}>
+					<Text style={styles.likesText}>
+						{formatarNumero(item.likes || 0)} curtidas
 					</Text>
-					<Text style={styles.metricsText}>
-						<Text style={styles.metricsBold}>
-							{formatarNumero(item.views || 0)}
-						</Text>
-						{" visualizações"}
+
+					<Text style={styles.viewsText}>
+						{formatarNumero(
+							item.views || 0
+						)}{" "}
+						visualizações
 					</Text>
 				</View>
 
-				{/* 📝 DESCRIÇÃO */}
-				{item.descricao && (
-					<View style={styles.descriptionBox}>
-						<Text style={styles.descriptionText} numberOfLines={3}>
-							<Text style={styles.creatorName}>{item.adminNome}: </Text>
+				{/* DESCRIPTION */}
+				{!!item.descricao && (
+					<View style={styles.descriptionContainer}>
+						<Text
+							numberOfLines={3}
+							style={styles.description}
+						>
+							<Text style={styles.descriptionUser}>
+								{item.adminNome || "Organizador"}{" "}
+							</Text>
+
 							{item.descricao}
 						</Text>
 					</View>
 				)}
-
-				{/* 📅 DATA E HORA */}
-				<View style={styles.infoFooter}>
-					<Text style={styles.infoFooterText}>
-						📅 {item.dataEvento || "Data TBA"}
-					</Text>
-					{item.horaInicio && (
-						<Text style={styles.infoFooterText}>
-							🕐 {item.horaInicio}
-							{item.horaFim ? ` às ${item.horaFim}` : ""}
-						</Text>
-					)}
-				</View>
-
-				{/* DIVIDER */}
-				<View style={styles.divider} />
 			</View>
 		);
 	};
 
+	/* =========================
+	 * ⏳ Loading
+	 * ========================= */
 	if (loading) {
 		return (
-			<View style={styles.loading}>
-				<ActivityIndicator size="large" color={Colors.primary} />
+			<View style={styles.loadingContainer}>
+				<ActivityIndicator
+					size="large"
+					color={Colors.primary}
+				/>
 			</View>
 		);
 	}
 
 	return (
-		<View style={{ flex: 1, backgroundColor: Colors.background }}>
+		<View style={styles.container}>
+			<StatusBar
+				barStyle="light-content"
+				backgroundColor={Colors.background}
+			/>
+
+			{/* HEADER */}
 			<LinearGradient
 				colors={[Colors.background, Colors.surface]}
-				style={styles.header}
+				style={[
+					styles.header,
+					{
+						paddingTop: insets.top + 8,
+					},
+				]}
 			>
-				<Text style={styles.headerTitle}>Feed</Text>
+				<View>
+					<Text style={styles.feedTitle}>Explorar</Text>
+					<Text style={styles.feedSubtitle}>
+						Eventos acontecendo agora
+					</Text>
+				</View>
+
 				<TouchableOpacity
-					onPress={() => navigation.navigate("CriarPost")}
-					style={styles.createBtn}
+					style={styles.createButton}
+					onPress={() =>
+						navigation.navigate("CriarPost")
+					}
 				>
 					<MaterialCommunityIcons
 						name="plus"
-						size={26}
-						color={Colors.primary}
+						size={24}
+						color="#fff"
 					/>
 				</TouchableOpacity>
 			</LinearGradient>
 
+			{/* FEED */}
 			<FlatList
 				data={eventos}
-				renderItem={({ item }) => <CardInstagram item={item} />}
+				renderItem={renderItem}
 				keyExtractor={(item) => item.id}
-				scrollEnabled={true}
-				showsVerticalScrollIndicator={true}
-				initialNumToRender={3}
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{
+					paddingBottom: 40,
+				}}
+				initialNumToRender={4}
 				maxToRenderPerBatch={5}
-				updateCellsBatchingPeriod={50}
+				windowSize={7}
+				onEndReached={handleEndReached}
+				onEndReachedThreshold={0.3}
+				ListFooterComponent={
+					loadingMore ? (
+						<View style={styles.footerLoader}>
+							<ActivityIndicator
+								color={Colors.primary}
+							/>
+						</View>
+					) : null
+				}
 				ListEmptyComponent={
 					<View style={styles.emptyState}>
 						<MaterialCommunityIcons
-							name="inbox-outline"
-							size={60}
-							color={Colors.textSecondary}
+							name="calendar-blank-outline"
+							size={70}
+							color={Colors.textMuted}
 						/>
-						<Text style={styles.emptyStateText}>
-							Nenhum evento ainda
+
+						<Text style={styles.emptyTitle}>
+							Nenhum evento encontrado
+						</Text>
+
+						<Text style={styles.emptySubtitle}>
+							Novos eventos aparecerão aqui
 						</Text>
 					</View>
 				}
@@ -387,168 +598,257 @@ export default function TelaFeed({ navigation }) {
 	);
 }
 
-const styles = {
-	loading: {
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: Colors.background,
+	},
+
+	loadingContainer: {
 		flex: 1,
 		justifyContent: "center",
 		alignItems: "center",
 		backgroundColor: Colors.background,
 	},
+
+	/* HEADER */
 	header: {
+		paddingHorizontal: 18,
+		paddingBottom: 16,
 		flexDirection: "row",
-		justifyContent: "space-between",
 		alignItems: "center",
-		paddingHorizontal: 16,
-		paddingTop: 12,
-		paddingBottom: 12,
-		backgroundColor: Colors.background,
+		justifyContent: "space-between",
 	},
-	headerTitle: {
+
+	feedTitle: {
 		color: Colors.textPrimary,
-		fontSize: 28,
-		fontWeight: "bold",
+		fontSize: 30,
+		fontWeight: "800",
 	},
-	createBtn: {
-		padding: 8,
+
+	feedSubtitle: {
+		color: Colors.textMuted,
+		fontSize: 13,
+		marginTop: 2,
 	},
-	emptyState: {
-		flex: 1,
+
+	createButton: {
+		width: 46,
+		height: 46,
+		borderRadius: 23,
+		backgroundColor: Colors.primary,
 		justifyContent: "center",
 		alignItems: "center",
-		paddingVertical: 60,
-	},
-	emptyStateText: {
-		color: Colors.textSecondary,
-		fontSize: 14,
-		marginTop: 12,
-		textAlign: "center",
+		elevation: 4,
 	},
 
-	/* 📸 CARD INSTAGRAM */
-	instagramCard: {
+	/* CARD */
+	card: {
 		backgroundColor: Colors.surface,
-		marginBottom: 12,
-		borderBottomWidth: 0.5,
-		borderBottomColor: Colors.border,
+		marginHorizontal: 14,
+		marginBottom: 20,
+		borderRadius: 24,
+		overflow: "hidden",
+
+		borderWidth: 1,
+		borderColor: Colors.border,
+
+		shadowColor: "#000",
+		shadowOffset: {
+			width: 0,
+			height: 4,
+		},
+		shadowOpacity: 0.15,
+		shadowRadius: 10,
+
+		elevation: 5,
 	},
 
-	/* HEADER DO CARD */
+	/* HEADER CARD */
 	cardHeader: {
+		paddingHorizontal: 14,
+		paddingVertical: 14,
 		flexDirection: "row",
 		justifyContent: "space-between",
 		alignItems: "center",
-		paddingHorizontal: 12,
-		paddingVertical: 12,
 	},
-	creatorInfo: {
+
+	userInfo: {
 		flexDirection: "row",
 		alignItems: "center",
 		flex: 1,
 	},
-	creatorAvatar: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
+
+	avatar: {
+		width: 48,
+		height: 48,
+		borderRadius: 24,
 		marginRight: 12,
 		backgroundColor: Colors.border,
 	},
-	creatorName: {
+
+	userName: {
 		color: Colors.textPrimary,
-		fontSize: 13,
-		fontWeight: "600",
+		fontSize: 14,
+		fontWeight: "700",
 	},
-	creatorDate: {
-		color: Colors.textSecondary,
+
+	locationRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		marginTop: 4,
+	},
+
+	locationText: {
+		color: Colors.textMuted,
 		fontSize: 12,
-		marginTop: 2,
+		marginLeft: 3,
+		flex: 1,
 	},
-	menuBtn: {
+
+	headerActions: {
+		alignItems: "flex-end",
+	},
+
+	dateText: {
+		color: Colors.textMuted,
+		fontSize: 11,
+	},
+
+	deleteBtn: {
+		marginTop: 6,
+		padding: 4,
+	},
+
+	/* IMAGE */
+	imageWrapper: {
+		position: "relative",
+	},
+
+	mainImage: {
+		width: "100%",
+		height: 420,
+		backgroundColor: Colors.border,
+	},
+
+	overlay: {
+		position: "absolute",
+		left: 0,
+		right: 0,
+		bottom: 0,
+		paddingHorizontal: 16,
+		paddingBottom: 16,
+		paddingTop: 40,
+	},
+
+	badge: {
+		alignSelf: "flex-start",
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: "rgba(255,255,255,0.18)",
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+		borderRadius: 50,
+		marginBottom: 10,
+	},
+
+	badgeText: {
+		color: "#fff",
+		fontSize: 11,
+		fontWeight: "600",
+		marginLeft: 5,
+	},
+
+	eventTitle: {
+		color: "#fff",
+		fontSize: 22,
+		fontWeight: "800",
+		lineHeight: 28,
+	},
+
+	eventTime: {
+		color: "#fff",
+		fontSize: 13,
+		marginTop: 6,
+	},
+
+	/* ACTIONS */
+	actions: {
+		paddingHorizontal: 10,
+		paddingTop: 10,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+	},
+
+	leftActions: {
+		flexDirection: "row",
+		alignItems: "center",
+	},
+
+	actionBtn: {
 		padding: 8,
 	},
 
-	/* IMAGEM PRINCIPAL */
-	mainImage: {
-		width: "100%",
-		height: 380,
-		backgroundColor: Colors.border,
-	},
-	imageOverlay: {
-		position: "absolute",
-		bottom: 0,
-		left: 0,
-		right: 0,
-		height: 120,
-		justifyContent: "flex-end",
-		paddingHorizontal: 12,
-		paddingBottom: 12,
-	},
-	eventTitle: {
-		color: "#fff",
-		fontSize: 16,
-		fontWeight: "bold",
-		marginBottom: 4,
-	},
-	eventLocal: {
-		color: "#fff",
-		fontSize: 12,
+	/* METRICS */
+	metricsContainer: {
+		paddingHorizontal: 16,
+		paddingTop: 4,
 	},
 
-	/* BOTÕES DE AÇÃO */
-	actionButtons: {
-		flexDirection: "row",
-		alignItems: "center",
-		paddingHorizontal: 12,
-		paddingVertical: 10,
-		backgroundColor: Colors.surface,
-	},
-	actionBtn: {
-		marginRight: 16,
-		padding: 6,
-	},
-
-	/* MÉTRICAS */
-	metrics: {
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		backgroundColor: Colors.surface,
-	},
-	metricsText: {
-		color: Colors.textSecondary,
-		fontSize: 12,
-		marginBottom: 4,
-	},
-	metricsBold: {
+	likesText: {
 		color: Colors.textPrimary,
-		fontWeight: "bold",
+		fontWeight: "700",
+		fontSize: 13,
 	},
 
-	/* DESCRIÇÃO */
-	descriptionBox: {
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		backgroundColor: Colors.surface,
-	},
-	descriptionText: {
-		color: Colors.textSecondary,
+	viewsText: {
+		color: Colors.textMuted,
 		fontSize: 12,
-		lineHeight: 16,
+		marginTop: 3,
 	},
 
-	/* INFO FOOTER */
-	infoFooter: {
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		backgroundColor: Colors.surface,
+	/* DESCRIPTION */
+	descriptionContainer: {
+		paddingHorizontal: 16,
+		paddingTop: 10,
+		paddingBottom: 18,
 	},
-	infoFooterText: {
+
+	description: {
 		color: Colors.textSecondary,
-		fontSize: 11,
-		marginBottom: 4,
+		fontSize: 13,
+		lineHeight: 20,
 	},
 
-	/* DIVIDER */
-	divider: {
-		height: 8,
-		backgroundColor: Colors.background,
+	descriptionUser: {
+		color: Colors.textPrimary,
+		fontWeight: "700",
 	},
-};
+
+	/* EMPTY */
+	emptyState: {
+		alignItems: "center",
+		paddingTop: 100,
+		paddingHorizontal: 30,
+	},
+
+	emptyTitle: {
+		color: Colors.textPrimary,
+		fontSize: 18,
+		fontWeight: "700",
+		marginTop: 18,
+	},
+
+	emptySubtitle: {
+		color: Colors.textMuted,
+		fontSize: 13,
+		marginTop: 6,
+		textAlign: "center",
+	},
+
+	footerLoader: {
+		paddingVertical: 30,
+		alignItems: "center",
+	},
+});

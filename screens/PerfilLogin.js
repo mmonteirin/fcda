@@ -44,80 +44,40 @@ export default function PerfilLogin({ navigation }) {
     type: "error",
   });
 
-  const showModal = (
-    title,
-    message,
-    type = "error"
-  ) => {
-    setModalData({
-      title,
-      message,
-      type,
-    });
-
+  const showModal = (title, message, type = "error") => {
+    setModalData({ title, message, type });
     setModalVisible(true);
   };
 
-  const isValidEmail = (email) =>
-    /\S+@\S+\.\S+/.test(email);
+  const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
   const handleSubmit = async () => {
-    const emptyField = [email, password].some(
-      (f) => f.trim() === ""
-    );
+    const emptyField = [email, password].some((f) => f.trim() === "");
 
     if (emptyField) {
-      showModal(
-        "Campos obrigatórios",
-        "Preencha email e senha."
-      );
-
+      showModal("Campos obrigatórios", "Preencha email e senha.");
       return;
     }
 
     if (!isValidEmail(email)) {
-      showModal(
-        "Email inválido",
-        "Digite um email válido."
-      );
-
+      showModal("Email inválido", "Digite um email válido.");
       return;
     }
 
     try {
       setLoading(true);
-
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
       if (
-        error.code ===
-          "auth/invalid-credential" ||
-        error.code ===
-          "auth/user-not-found" ||
-        error.code ===
-          "auth/wrong-password"
+        error.code === "auth/invalid-credential" ||
+        error.code === "auth/user-not-found" ||
+        error.code === "auth/wrong-password"
       ) {
-        showModal(
-          "Login inválido",
-          "Email ou senha incorretos."
-        );
-      } else if (
-        error.code ===
-        "auth/too-many-requests"
-      ) {
-        showModal(
-          "Muitas tentativas",
-          "Aguarde alguns minutos e tente novamente."
-        );
+        showModal("Login inválido", "Email ou senha incorretos.");
+      } else if (error.code === "auth/too-many-requests") {
+        showModal("Muitas tentativas", "Aguarde alguns minutos e tente novamente.");
       } else {
-        showModal(
-          "Erro",
-          "Não foi possível fazer login."
-        );
+        showModal("Erro", "Não foi possível fazer login.");
       }
     } finally {
       setLoading(false);
@@ -133,20 +93,13 @@ export default function PerfilLogin({ navigation }) {
       <StatusBar barStyle="light-content" />
 
       <LinearGradient
-        colors={[
-          "rgba(0,0,0,0.88)",
-          "rgba(15,15,30,0.72)",
-          "rgba(0,0,0,0.92)",
-        ]}
+        colors={["rgba(0,0,0,0.88)", "rgba(15,15,30,0.72)", "rgba(0,0,0,0.92)"]}
         style={styles.overlay}
       >
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={
-            Platform.OS === "ios"
-              ? "padding"
-              : undefined
-          }
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
           <ScrollView
             keyboardShouldPersistTaps="handled"
@@ -159,73 +112,37 @@ export default function PerfilLogin({ navigation }) {
           >
             {/* HEADER */}
             <MotiView
-              from={{
-                opacity: 0,
-                translateY: -20,
-              }}
-              animate={{
-                opacity: 1,
-                translateY: 0,
-              }}
-              transition={{
-                type: "timing",
-                duration: 700,
-              }}
+              from={{ opacity: 0, translateY: -20 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: "timing", duration: 700 }}
               style={styles.logoContainer}
             >
               <LinearGradient
-                colors={[
-                  Colors.primary,
-                  "#7B5CFF",
-                ]}
+                colors={[Colors.primary, "#7B5CFF"]}
                 style={styles.logoCircle}
               >
-                <Feather
-                  name="zap"
-                  size={30}
-                  color="#FFF"
-                />
+                <Feather name="zap" size={30} color="#FFF" />
               </LinearGradient>
 
-              <AppText style={styles.appName}>
-                MonitoraCult
-              </AppText>
+              <AppText style={styles.appName}>MonitoraCult</AppText>
 
-              <AppText style={styles.subtitle}>
-                Entre na sua conta
-              </AppText>
+              <AppText style={styles.subtitle}>Entre na sua conta</AppText>
             </MotiView>
 
             {/* CARD */}
             <MotiView
-              from={{
-                opacity: 0,
-                translateY: 30,
-              }}
-              animate={{
-                opacity: 1,
-                translateY: 0,
-              }}
-              transition={{
-                type: "timing",
-                duration: 850,
-              }}
+              from={{ opacity: 0, translateY: 30 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: "timing", duration: 850 }}
             >
-              <BlurView
-                intensity={65}
-                tint="dark"
-                style={styles.card}
-              >
+              <BlurView intensity={65} tint="dark" style={styles.card}>
                 {/* EMAIL */}
-                <AppText style={styles.label}>
-                  Email
-                </AppText>
+                <AppText style={styles.label}>Email</AppText>
 
                 <View
                   style={[
                     styles.inputContainer,
-                    focusedInput === "email" &&
-                      styles.inputFocused,
+                    focusedInput === "email" && styles.inputFocused,
                   ]}
                 >
                   <Feather
@@ -242,29 +159,20 @@ export default function PerfilLogin({ navigation }) {
                     autoCapitalize="none"
                     keyboardType="email-address"
                     placeholder="Digite seu email"
-                    placeholderTextColor={
-                      Colors.textMuted
-                    }
-                    onFocus={() =>
-                      setFocusedInput("email")
-                    }
-                    onBlur={() =>
-                      setFocusedInput(null)
-                    }
+                    placeholderTextColor={Colors.textMuted}
+                    onFocus={() => setFocusedInput("email")}
+                    onBlur={() => setFocusedInput(null)}
+                    returnKeyType="next"
                   />
                 </View>
 
                 {/* SENHA */}
-                <AppText style={styles.label}>
-                  Senha
-                </AppText>
+                <AppText style={styles.label}>Senha</AppText>
 
                 <View
                   style={[
                     styles.inputContainer,
-                    focusedInput ===
-                      "password" &&
-                      styles.inputFocused,
+                    focusedInput === "password" && styles.inputFocused,
                   ]}
                 >
                   <Feather
@@ -278,36 +186,18 @@ export default function PerfilLogin({ navigation }) {
                     style={styles.input}
                     value={password}
                     onChangeText={setPassword}
-                    secureTextEntry={
-                      !showPassword
-                    }
+                    secureTextEntry={!showPassword}
                     placeholder="Digite sua senha"
-                    placeholderTextColor={
-                      Colors.textMuted
-                    }
-                    onFocus={() =>
-                      setFocusedInput(
-                        "password"
-                      )
-                    }
-                    onBlur={() =>
-                      setFocusedInput(null)
-                    }
+                    placeholderTextColor={Colors.textMuted}
+                    onFocus={() => setFocusedInput("password")}
+                    onBlur={() => setFocusedInput(null)}
+                    returnKeyType="done"
+                    onSubmitEditing={handleSubmit}
                   />
 
-                  <TouchableOpacity
-                    onPress={() =>
-                      setShowPassword(
-                        !showPassword
-                      )
-                    }
-                  >
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                     <Feather
-                      name={
-                        showPassword
-                          ? "eye"
-                          : "eye-off"
-                      }
+                      name={showPassword ? "eye" : "eye-off"}
                       size={18}
                       color={Colors.primary}
                     />
@@ -317,15 +207,9 @@ export default function PerfilLogin({ navigation }) {
                 {/* ESQUECI */}
                 <TouchableOpacity
                   style={styles.forgot}
-                  onPress={() =>
-                    navigation.navigate(
-                      "ResetPassword"
-                    )
-                  }
+                  onPress={() => navigation.navigate("ResetPassword")}
                 >
-                  <AppText style={styles.link}>
-                    Esqueci minha senha
-                  </AppText>
+                  <AppText style={styles.link}>Esqueci minha senha</AppText>
                 </TouchableOpacity>
 
                 {/* LOGIN */}
@@ -336,138 +220,63 @@ export default function PerfilLogin({ navigation }) {
                   style={styles.buttonWrapper}
                 >
                   <LinearGradient
-                    colors={[
-                      Colors.primary,
-                      "#7B5CFF",
-                    ]}
+                    colors={[Colors.primary, "#7B5CFF"]}
                     style={styles.button}
                   >
                     {loading ? (
                       <ActivityIndicator color="#FFF" />
                     ) : (
-                      <AppText
-                        style={styles.buttonText}
-                      >
-                        Entrar
-                      </AppText>
+                      <AppText style={styles.buttonText}>Entrar</AppText>
                     )}
                   </LinearGradient>
                 </TouchableOpacity>
 
                 {/* CADASTRO */}
                 <View style={styles.row}>
-                  <AppText
-                    style={styles.rowText}
-                  >
-                    Não possui conta?
-                  </AppText>
+                  <AppText style={styles.rowText}>Não possui conta?</AppText>
 
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate(
-                        "Cadastro"
-                      )
-                    }
-                  >
-                    <AppText
-                      style={styles.linkBold}
-                    >
-                      Criar conta
-                    </AppText>
+                  <TouchableOpacity onPress={() => navigation.navigate("Cadastro")}>
+                    <AppText style={styles.linkBold}>Criar conta</AppText>
                   </TouchableOpacity>
                 </View>
 
                 {/* DIVIDER */}
-                <View
-                  style={
-                    styles.dividerContainer
-                  }
-                >
+                <View style={styles.dividerContainer}>
                   <View style={styles.line} />
-
-                  <AppText
-                    style={styles.divider}
-                  >
-                    ou continue com
-                  </AppText>
-
+                  <AppText style={styles.divider}>ou continue com</AppText>
                   <View style={styles.line} />
                 </View>
 
                 {/* SOCIAL */}
-                <View
-                  style={
-                    styles.socialContainer
-                  }
-                >
-                  <TouchableOpacity
-                    style={
-                      styles.socialButton
-                    }
-                  >
-                    <Feather
-                      name="chrome"
-                      size={20}
-                      color="#FFF"
-                    />
+                <View style={styles.socialContainer}>
+                  <TouchableOpacity style={styles.socialButton}>
+                    <Feather name="chrome" size={20} color="#FFF" />
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={
-                      styles.socialButton
-                    }
-                  >
-                    <Feather
-                      name="facebook"
-                      size={20}
-                      color="#FFF"
-                    />
+                  <TouchableOpacity style={styles.socialButton}>
+                    <Feather name="facebook" size={20} color="#FFF" />
                   </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={
-                      styles.socialButton
-                    }
-                  >
-                    <Feather
-                      name="twitter"
-                      size={20}
-                      color="#FFF"
-                    />
+                  <TouchableOpacity style={styles.socialButton}>
+                    <Feather name="twitter" size={20} color="#FFF" />
                   </TouchableOpacity>
                 </View>
 
                 {/* ORGANIZADOR */}
                 <TouchableOpacity
-                  style={
-                    styles.organizadorButton
-                  }
-                  onPress={() =>
-                    navigation.navigate(
-                      "CadastroAdmin"
-                    )
-                  }
+                  style={styles.organizadorButton}
+                  onPress={() => navigation.navigate("CadastroAdmin")}
                 >
-                  <Feather
-                    name="briefcase"
-                    size={16}
-                    color={Colors.warning}
-                  />
+                  <Feather name="briefcase" size={16} color={Colors.warning} />
 
-                  <AppText
-                    style={
-                      styles.organizador
-                    }
-                  >
-                    Cadastrar como
-                    Organizador
+                  <AppText style={styles.organizador}>
+                    Cadastrar como Organizador
                   </AppText>
                 </TouchableOpacity>
 
                 {/* FOOTER */}
                 <AppText style={styles.footer}>
-                  Ao continuar você aceita
-                  nossos termos e políticas.
+                  Ao continuar você aceita nossos termos e políticas.
                 </AppText>
               </BlurView>
             </MotiView>
@@ -476,66 +285,30 @@ export default function PerfilLogin({ navigation }) {
       </LinearGradient>
 
       {/* MODAL */}
-      <Modal
-        visible={modalVisible}
-        transparent
-        animationType="fade"
-      >
+      <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <BlurView
-            intensity={40}
-            tint="dark"
-            style={styles.modalCard}
-          >
-            <View
-              style={styles.modalIcon}
-            >
+          <BlurView intensity={40} tint="dark" style={styles.modalCard}>
+            <View style={styles.modalIcon}>
               <Feather
-                name={
-                  modalData.type ===
-                  "success"
-                    ? "check"
-                    : "alert-circle"
-                }
+                name={modalData.type === "success" ? "check" : "alert-circle"}
                 size={32}
                 color="#FFF"
               />
             </View>
 
-            <AppText
-              style={styles.modalTitle}
-            >
-              {modalData.title}
-            </AppText>
+            <AppText style={styles.modalTitle}>{modalData.title}</AppText>
 
-            <AppText
-              style={styles.modalText}
-            >
-              {modalData.message}
-            </AppText>
+            <AppText style={styles.modalText}>{modalData.message}</AppText>
 
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={() =>
-                setModalVisible(false)
-              }
+              onPress={() => setModalVisible(false)}
             >
               <LinearGradient
-                colors={[
-                  Colors.primary,
-                  "#7B5CFF",
-                ]}
-                style={
-                  styles.modalButton
-                }
+                colors={[Colors.primary, "#7B5CFF"]}
+                style={styles.modalButton}
               >
-                <AppText
-                  style={
-                    styles.modalButtonText
-                  }
-                >
-                  Entendi
-                </AppText>
+                <AppText style={styles.modalButtonText}>Entendi</AppText>
               </LinearGradient>
             </TouchableOpacity>
           </BlurView>
@@ -558,7 +331,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 32,
   },
 
   logoContainer: {
@@ -591,11 +364,9 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: 26,
     padding: 18,
-    backgroundColor:
-      "rgba(20,20,20,0.35)",
+    backgroundColor: "rgba(20,20,20,0.35)",
     borderWidth: 1,
-    borderColor:
-      "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.08)",
   },
 
   label: {
@@ -608,14 +379,12 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor:
-      "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderRadius: 16,
     paddingHorizontal: 12,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor:
-      "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.08)",
   },
 
   inputFocused: {
@@ -688,8 +457,7 @@ const styles = StyleSheet.create({
   line: {
     flex: 1,
     height: 1,
-    backgroundColor:
-      "rgba(255,255,255,0.10)",
+    backgroundColor: "rgba(255,255,255,0.10)",
   },
 
   divider: {
@@ -711,8 +479,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor:
-      "rgba(255,255,255,0.07)",
+    backgroundColor: "rgba(255,255,255,0.07)",
   },
 
   organizadorButton: {
@@ -722,11 +489,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 13,
     borderRadius: 16,
-    backgroundColor:
-      "rgba(255,255,255,0.05)",
+    backgroundColor: "rgba(255,255,255,0.05)",
     borderWidth: 1,
-    borderColor:
-      "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.06)",
   },
 
   organizador: {
@@ -746,8 +511,7 @@ const styles = StyleSheet.create({
   /* MODAL */
   modalOverlay: {
     flex: 1,
-    backgroundColor:
-      "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
@@ -758,19 +522,16 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     padding: 24,
     overflow: "hidden",
-    backgroundColor:
-      "rgba(20,20,35,0.92)",
+    backgroundColor: "rgba(20,20,35,0.92)",
     borderWidth: 1,
-    borderColor:
-      "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.08)",
   },
 
   modalIcon: {
     width: 68,
     height: 68,
     borderRadius: 22,
-    backgroundColor:
-      "rgba(124,92,255,0.20)",
+    backgroundColor: "rgba(124,92,255,0.20)",
     justifyContent: "center",
     alignItems: "center",
     alignSelf: "center",
@@ -785,8 +546,7 @@ const styles = StyleSheet.create({
   },
 
   modalText: {
-    color:
-      "rgba(255,255,255,0.7)",
+    color: "rgba(255,255,255,0.7)",
     textAlign: "center",
     marginTop: 10,
     lineHeight: 22,
