@@ -359,7 +359,11 @@ export default function TelaBusca({ navigation }) {
           <Text style={styles.loadingText}>Carregando eventos...</Text>
         </View>
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={true}
+          contentContainerStyle={{ paddingBottom: 120 }}
+        >
 
           {/* ── CATEGORIAS ────────────────────────────────────────────────── */}
           <View style={styles.sectionRow}>
@@ -374,6 +378,7 @@ export default function TelaBusca({ navigation }) {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            nestedScrollEnabled={true}
             contentContainerStyle={styles.chips}
           >
             {CATEGORIAS.map((cat) => {
@@ -419,6 +424,7 @@ export default function TelaBusca({ navigation }) {
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
+                  nestedScrollEnabled={true}
                   contentContainerStyle={styles.cardsRow}
                 >
                   {eventosApp.map((item) => renderCard(item))}
@@ -492,6 +498,7 @@ export default function TelaBusca({ navigation }) {
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
+                  nestedScrollEnabled={true}
                   contentContainerStyle={styles.cardsRow}
                 >
                   {eventosFiltrados.map((item) => renderCard(item))}
@@ -500,7 +507,6 @@ export default function TelaBusca({ navigation }) {
             </>
           )}
 
-          <View style={{ height: 100 }} />
         </ScrollView>
       )}
     </View>

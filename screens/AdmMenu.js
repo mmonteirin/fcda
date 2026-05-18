@@ -1,15 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 
 import {
   View,
   Text,
   Image,
   TouchableOpacity,
-  Alert,
   ScrollView,
   StyleSheet,
   StatusBar,
   ImageBackground,
+  Modal,
+  ActivityIndicator,
+  Pressable,
 } from "react-native";
 
 import { useNavigation } from "@react-navigation/native";
@@ -30,13 +32,37 @@ import { Colors } from "../styles/Colors";
 export default function AdmMenu() {
   const navigation = useNavigation();
 
-  const { logout, nome, foto } =
-    useAuth();
+  const {
+    logout,
+    nome,
+    foto,
+  } = useAuth();
+
+  const [showLogoutModal, setShowLogoutModal] =
+    useState(false);
+
+  const [loadingLogout, setLoadingLogout] =
+    useState(false);
 
   const goToAdmin = (screen) => {
     navigation.navigate("Admin", {
       screen,
     });
+  };
+
+  const handleLogout = async () => {
+    try {
+      setLoadingLogout(true);
+
+      await logout();
+
+    } catch (error) {
+      console.log(error);
+
+    } finally {
+      setLoadingLogout(false);
+      setShowLogoutModal(false);
+    }
   };
 
   return (
@@ -58,10 +84,8 @@ export default function AdmMenu() {
         ]}
         style={styles.overlay}
       >
-
         {/* HEADER */}
         <View style={styles.header}>
-
           <TouchableOpacity
             style={styles.backButton}
             onPress={() =>
@@ -80,7 +104,6 @@ export default function AdmMenu() {
           >
             Área do Organizador
           </Text>
-
         </View>
 
         <ScrollView
@@ -91,7 +114,6 @@ export default function AdmMenu() {
             false
           }
         >
-
           {/* PERFIL */}
           <MotiView
             from={{
@@ -107,103 +129,113 @@ export default function AdmMenu() {
               duration: 700,
             }}
           >
-
             <BlurView
               intensity={60}
               tint="dark"
               style={styles.profileCard}
             >
-
-              {/* FOTO */}
-              <LinearGradient
-                colors={[
-                  Colors.primary,
-                  "#7B5CFF",
-                ]}
-                style={
-                  styles.avatarBorder
-                }
-              >
-
-                <Image
-                  source={{
-                    uri:
-                      foto ||
-                      "https://i.pravatar.cc/150",
-                  }}
-                  style={
-                    styles.avatar
-                  }
-                />
-
-              </LinearGradient>
-
-              {/* NOME */}
-              <Text
-                style={styles.name}
-              >
-                {nome ||
-                  "Organizador"}
-              </Text>
-
-              <Text
-                style={
-                  styles.subtitle
-                }
-              >
-                Gerencie seus eventos,
-                métricas e experiências
-              </Text>
-
-              {/* BADGES */}
+              {/* TOPO */}
               <View
-                style={styles.badges}
+                style={
+                  styles.profileRow
+                }
               >
-
-                <View
+                {/* FOTO */}
+                <LinearGradient
+                  colors={[
+                    Colors.primary,
+                    "#7B5CFF",
+                  ]}
                   style={
-                    styles.badge
+                    styles.avatarBorder
                   }
                 >
-                  <MaterialCommunityIcons
-                    name="shield-check"
-                    size={15}
-                    color="#FFF"
+                  <Image
+                    source={{
+                      uri:
+                        foto ||
+                        "https://i.pravatar.cc/150",
+                    }}
+                    style={
+                      styles.avatar
+                    }
                   />
+                </LinearGradient>
+
+                {/* INFOS */}
+                <View
+                  style={
+                    styles.profileInfo
+                  }
+                >
+                  <Text
+                    style={
+                      styles.name
+                    }
+                    numberOfLines={1}
+                  >
+                    {nome ||
+                      "Organizador"}
+                  </Text>
 
                   <Text
                     style={
-                      styles.badgeText
+                      styles.subtitle
                     }
                   >
-                    Verificado
+                    Gerencie seus eventos
+                    e métricas
                   </Text>
-                </View>
 
-                <View
-                  style={
-                    styles.badge
-                  }
-                >
-                  <MaterialCommunityIcons
-                    name="star"
-                    size={15}
-                    color="#FFF"
-                  />
-
-                  <Text
+                  {/* BADGES */}
+                  <View
                     style={
-                      styles.badgeText
+                      styles.badges
                     }
                   >
-                    Organizador
-                  </Text>
-                </View>
+                    <View
+                      style={
+                        styles.badge
+                      }
+                    >
+                      <MaterialCommunityIcons
+                        name="shield-check"
+                        size={14}
+                        color="#FFF"
+                      />
 
+                      <Text
+                        style={
+                          styles.badgeText
+                        }
+                      >
+                        Verificado
+                      </Text>
+                    </View>
+
+                    <View
+                      style={
+                        styles.badge
+                      }
+                    >
+                      <MaterialCommunityIcons
+                        name="star"
+                        size={14}
+                        color="#FFF"
+                      />
+
+                      <Text
+                        style={
+                          styles.badgeText
+                        }
+                      >
+                        Organizador
+                      </Text>
+                    </View>
+                  </View>
+                </View>
               </View>
-
             </BlurView>
-
           </MotiView>
 
           {/* DASHBOARD */}
@@ -212,7 +244,6 @@ export default function AdmMenu() {
           </Text>
 
           <View style={styles.grid}>
-
             <MenuCard
               icon="plus-circle"
               label="Criar Evento"
@@ -270,39 +301,24 @@ export default function AdmMenu() {
                 goToAdmin("Ajuda")
               }
             />
-
           </View>
 
           {/* SAIR */}
           <TouchableOpacity
             activeOpacity={0.85}
             onPress={() =>
-              Alert.alert(
-                "Sair",
-                "Deseja sair da conta?",
-                [
-                  {
-                    text: "Cancelar",
-                    style: "cancel",
-                  },
-
-                  {
-                    text: "Sair",
-                    onPress: logout,
-                  },
-                ]
-              )
+              setShowLogoutModal(true)
             }
           >
-
             <LinearGradient
               colors={[
                 "#DC2626",
                 "#991B1B",
               ]}
-              style={styles.logoutButton}
+              style={
+                styles.logoutButton
+              }
             >
-
               <MaterialCommunityIcons
                 name="logout"
                 size={22}
@@ -316,15 +332,140 @@ export default function AdmMenu() {
               >
                 Sair da Conta
               </Text>
-
             </LinearGradient>
-
           </TouchableOpacity>
-
         </ScrollView>
 
-      </LinearGradient>
+        {/* MODAL LOGOUT */}
+        <Modal
+          visible={showLogoutModal}
+          transparent
+          animationType="fade"
+          statusBarTranslucent
+        >
+          <View
+            style={
+              styles.modalOverlay
+            }
+          >
+            <BlurView
+              intensity={50}
+              tint="dark"
+              style={styles.modalCard}
+            >
+              <LinearGradient
+                colors={[
+                  "rgba(239,68,68,0.15)",
+                  "rgba(127,29,29,0.04)",
+                ]}
+                style={
+                  styles.modalGradient
+                }
+              >
+                <View
+                  style={
+                    styles.modalIcon
+                  }
+                >
+                  <MaterialCommunityIcons
+                    name="logout"
+                    size={34}
+                    color="#EF4444"
+                  />
+                </View>
 
+                <Text
+                  style={
+                    styles.modalTitle
+                  }
+                >
+                  Sair da conta?
+                </Text>
+
+                <Text
+                  style={
+                    styles.modalText
+                  }
+                >
+                  Deseja realmente
+                  encerrar sua sessão?
+                </Text>
+
+                <View
+                  style={
+                    styles.modalButtons
+                  }
+                >
+                  <Pressable
+                    style={
+                      styles.cancelBtn
+                    }
+                    onPress={() =>
+                      setShowLogoutModal(
+                        false
+                      )
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.cancelText
+                      }
+                    >
+                      Cancelar
+                    </Text>
+                  </Pressable>
+
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    style={
+                      styles.confirmBtn
+                    }
+                    onPress={
+                      handleLogout
+                    }
+                    disabled={
+                      loadingLogout
+                    }
+                  >
+                    <LinearGradient
+                      colors={[
+                        "#EF4444",
+                        "#DC2626",
+                      ]}
+                      style={
+                        styles.confirmGradient
+                      }
+                    >
+                      {loadingLogout ? (
+                        <ActivityIndicator
+                          size="small"
+                          color="#FFF"
+                        />
+                      ) : (
+                        <>
+                          <MaterialCommunityIcons
+                            name="logout"
+                            size={18}
+                            color="#FFF"
+                          />
+
+                          <Text
+                            style={
+                              styles.confirmText
+                            }
+                          >
+                            Sair
+                          </Text>
+                        </>
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
+            </BlurView>
+          </View>
+        </Modal>
+      </LinearGradient>
     </ImageBackground>
   );
 }
@@ -353,17 +494,14 @@ function MenuCard({
       }}
       style={styles.cardWrapper}
     >
-
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={onPress}
       >
-
         <LinearGradient
           colors={gradient}
           style={styles.card}
         >
-
           <View
             style={styles.cardIcon}
           >
@@ -387,11 +525,8 @@ function MenuCard({
           >
             {subtitle}
           </Text>
-
         </LinearGradient>
-
       </TouchableOpacity>
-
     </MotiView>
   );
 }
@@ -451,10 +586,7 @@ const styles = StyleSheet.create({
 
     borderRadius: 30,
 
-    alignItems: "center",
-
-    paddingVertical: 28,
-    paddingHorizontal: 20,
+    padding: 20,
 
     marginBottom: 28,
 
@@ -467,27 +599,36 @@ const styles = StyleSheet.create({
       "rgba(255,255,255,0.04)",
   },
 
+  profileRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
   avatarBorder: {
     padding: 4,
 
     borderRadius: 60,
-
-    marginBottom: 14,
   },
 
   avatar: {
-    width: 95,
-    height: 95,
+    width: 90,
+    height: 90,
 
     borderRadius: 50,
 
     backgroundColor: "#222",
   },
 
+  profileInfo: {
+    flex: 1,
+
+    marginLeft: 16,
+  },
+
   name: {
     color: "#FFF",
 
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
   },
 
@@ -495,22 +636,22 @@ const styles = StyleSheet.create({
     color:
       "rgba(255,255,255,0.65)",
 
-    marginTop: 8,
+    marginTop: 6,
 
-    textAlign: "center",
+    lineHeight: 20,
 
-    lineHeight: 22,
-
-    fontSize: 14,
+    fontSize: 13,
   },
 
   /* BADGES */
   badges: {
     flexDirection: "row",
 
-    gap: 10,
+    flexWrap: "wrap",
 
-    marginTop: 18,
+    gap: 8,
+
+    marginTop: 14,
   },
 
   badge: {
@@ -629,6 +770,127 @@ const styles = StyleSheet.create({
     color: "#FFF",
 
     fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  /* MODAL */
+  modalOverlay: {
+    flex: 1,
+
+    backgroundColor:
+      "rgba(0,0,0,0.65)",
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    paddingHorizontal: 24,
+  },
+
+  modalCard: {
+    width: "100%",
+
+    borderRadius: 30,
+
+    overflow: "hidden",
+
+    borderWidth: 1,
+
+    borderColor:
+      "rgba(255,255,255,0.08)",
+  },
+
+  modalGradient: {
+    padding: 28,
+
+    alignItems: "center",
+  },
+
+  modalIcon: {
+    width: 78,
+    height: 78,
+
+    borderRadius: 30,
+
+    backgroundColor:
+      "rgba(239,68,68,0.12)",
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    marginBottom: 18,
+  },
+
+  modalTitle: {
+    color: "#FFF",
+
+    fontSize: 22,
+
+    fontWeight: "bold",
+  },
+
+  modalText: {
+    color:
+      "rgba(255,255,255,0.65)",
+
+    textAlign: "center",
+
+    marginTop: 10,
+
+    fontSize: 14,
+
+    lineHeight: 22,
+  },
+
+  modalButtons: {
+    flexDirection: "row",
+
+    marginTop: 26,
+
+    width: "100%",
+  },
+
+  cancelBtn: {
+    flex: 1,
+
+    height: 52,
+
+    borderRadius: 18,
+
+    backgroundColor:
+      "rgba(255,255,255,0.06)",
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    marginRight: 10,
+  },
+
+  cancelText: {
+    color: "#FFF",
+
+    fontWeight: "600",
+  },
+
+  confirmBtn: {
+    flex: 1,
+  },
+
+  confirmGradient: {
+    height: 52,
+
+    borderRadius: 18,
+
+    flexDirection: "row",
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    gap: 8,
+  },
+
+  confirmText: {
+    color: "#FFF",
+
     fontWeight: "bold",
   },
 });

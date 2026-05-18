@@ -258,7 +258,7 @@ export default function TelaInicio() {
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 120 }}>
       <View style={styles.header}>
         <View>
           <Text style={styles.saudacao}>Olá,</Text>
@@ -371,7 +371,6 @@ export default function TelaInicio() {
         <Text style={styles.empty}>Nenhum evento encontrado.</Text>
       )}
 
-      <View style={{ height: 100 }} />
     </ScrollView>
   );
 }

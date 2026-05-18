@@ -1,4 +1,5 @@
 import { createDrawerNavigator } from "@react-navigation/drawer";
+
 import {
   Image,
   TouchableOpacity,
@@ -6,15 +7,19 @@ import {
   View,
 } from "react-native";
 
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+
 import { useAuth } from "../context/AuthContext";
 
 import TabNavigator from "./TabNavigator";
 import CustomDrawerContent from "./CustomDrawerNavigator";
 import PerfilStack from "./PerfilStack";
 import AdmStack from "./AdmStack";
-import Suporte from "../screens/TelaSuporte";
 
-import { Colors } from "../styles/Colors"; // ✅ PADRÃO NOVO
+import Suporte from "../screens/TelaSuporte";
+import TelaPainelCidade from "../screens/TelaPainelCidade";
+
+import { Colors } from "../styles/Colors";
 
 const Drawer = createDrawerNavigator();
 
@@ -32,7 +37,10 @@ export default function DrawerNavigator() {
           backgroundColor: Colors.background,
         }}
       >
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <ActivityIndicator
+          size="large"
+          color={Colors.primary}
+        />
       </View>
     );
   }
@@ -41,7 +49,9 @@ export default function DrawerNavigator() {
     <Drawer.Navigator
       key={isAdmin ? "admin" : "user"}
       initialRouteName="HomeTabs"
-      drawerContent={(props) => <CustomDrawerContent {...props} />}
+      drawerContent={(props) => (
+        <CustomDrawerContent {...props} />
+      )}
       screenOptions={({ navigation }) => ({
         drawerType: "slide",
         swipeEnabled: true,
@@ -62,9 +72,11 @@ export default function DrawerNavigator() {
 
         drawerLabelStyle: {
           fontSize: 15,
+          marginLeft: -10,
         },
 
-        drawerActiveBackgroundColor: "rgba(108,92,231,0.15)", // primary com opacidade
+        drawerActiveBackgroundColor:
+          "rgba(108,92,231,0.15)",
 
         /* 🎨 HEADER */
         headerShown: true,
@@ -79,7 +91,10 @@ export default function DrawerNavigator() {
 
         /* 👤 AVATAR */
         headerLeft: () => (
-          <TouchableOpacity onPress={() => navigation.openDrawer()}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => navigation.openDrawer()}
+          >
             <Image
               source={{
                 uri:
@@ -88,9 +103,9 @@ export default function DrawerNavigator() {
                   "https://i.pravatar.cc/100",
               }}
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 20,
+                width: 38,
+                height: 38,
+                borderRadius: 22,
                 marginLeft: 15,
                 borderWidth: 2,
                 borderColor: Colors.primary,
@@ -104,21 +119,65 @@ export default function DrawerNavigator() {
       <Drawer.Screen
         name="HomeTabs"
         component={TabNavigator}
-        options={{ drawerLabel: "Tela Inicial" }}
+        options={{
+          drawerLabel: "Tela Inicial",
+
+          drawerIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="home-variant-outline"
+              color={color}
+              size={size}
+            />
+          ),
+        }}
       />
 
       {/* 👤 PERFIL */}
       <Drawer.Screen
         name="Perfil"
         component={PerfilStack}
-        options={{ drawerLabel: "Meu Perfil" }}
+        options={{
+          drawerLabel: "Meu Perfil",
+
+          drawerIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="account-circle-outline"
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      />
+
+      {/* 🌆 PAINEL DA CIDADE */}
+      <Drawer.Screen
+        name="PainelCidade"
+        component={TelaPainelCidade}
+        options={{
+          drawerLabel: () => null,
+          title: null,
+
+          drawerItemStyle: {
+            display: "none",
+          },
+        }}
       />
 
       {/* 📞 SUPORTE */}
       <Drawer.Screen
         name="Suporte"
         component={Suporte}
-        options={{ drawerLabel: "Suporte" }}
+        options={{
+          drawerLabel: "Suporte",
+
+          drawerIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="lifebuoy"
+              color={color}
+              size={size}
+            />
+          ),
+        }}
       />
 
       {/* 👑 ADMIN */}
@@ -128,7 +187,16 @@ export default function DrawerNavigator() {
           component={AdmStack}
           options={{
             drawerLabel: "Área do Organizador",
+
             unmountOnBlur: true,
+
+            drawerIcon: ({ color, size }) => (
+              <MaterialCommunityIcons
+                name="shield-crown-outline"
+                color={color}
+                size={size}
+              />
+            ),
           }}
         />
       )}

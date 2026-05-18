@@ -290,7 +290,7 @@ export default function EventoDetalhes({ route, navigation }) {
 
 	return (
 		<View style={styles.container}>
-			<ScrollView showsVerticalScrollIndicator={false}>
+			<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
 				{/* ── HERO IMAGE ── */}
 				<View>
 					{/* imagemEvento */}

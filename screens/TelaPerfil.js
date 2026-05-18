@@ -1,164 +1,379 @@
 import React, { useState } from "react";
+
 import {
 	View,
 	TouchableOpacity,
 	Image,
-	Alert,
 	ActivityIndicator,
 	ScrollView,
 	StyleSheet,
-	Platform,
+	Modal,
+	Pressable,
 } from "react-native";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "../context/AuthContext";
+
 import AppText from "../components/AppText";
+
 import { Colors } from "../styles/Colors";
 
 export default function TelaPerfil({ navigation }) {
 	const { foto, nome, user, logout } = useAuth();
+
 	const [loadingLogout, setLoadingLogout] = useState(false);
+
+	const [showLogoutModal, setShowLogoutModal] = useState(false);
+
 	const insets = useSafeAreaInsets();
 
 	const go = (screen) => {
 		navigation.navigate("Perfil", { screen });
 	};
 
-	const handleLogout = () => {
-		const executeLogout = async () => {
-			try {
-				setLoadingLogout(true);
-				await logout();
-			} catch {
-				Alert.alert("Erro", "Não foi possível sair.");
-				setLoadingLogout(false);
-			}
-		};
+	const handleLogout = async () => {
+		try {
+			setLoadingLogout(true);
 
-		if (Platform.OS === "web") {
-			const confirm = window.confirm("Deseja sair da conta?");
-			if (confirm) executeLogout();
-		} else {
-			Alert.alert("Sair", "Deseja sair da conta?", [
-				{ text: "Cancelar", style: "cancel" },
-				{
-					text: "Sair",
-					style: "destructive",
-					onPress: executeLogout,
-				},
-			]);
+			await logout();
+
+		} catch (error) {
+			console.log(error);
+
+		} finally {
+			setLoadingLogout(false);
+			setShowLogoutModal(false);
 		}
 	};
 
 	return (
 		<View style={styles.container}>
-			<ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
+			<ScrollView
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{
+					paddingBottom: 120,
+				}}
+			>
 				{/* 🔥 HEADER */}
 				<LinearGradient
-					colors={[Colors.background, Colors.surface]}
-					style={[styles.header, { paddingTop: insets.top + 10 }]}
+					colors={[
+						"#111827",
+						"#1E1B4B",
+						"#0F172A",
+					]}
+					style={[
+						styles.header,
+						{
+							paddingTop: insets.top + 10,
+						},
+					]}
 				>
 					<View style={styles.profileRow}>
-						<Image
-							source={{
-								uri: foto || user?.photoURL || "https://i.pravatar.cc/150",
-							}}
-							style={styles.avatar}
-						/>
+						<View style={styles.avatarWrapper}>
+							<Image
+								source={{
+									uri:
+										foto ||
+										user?.photoURL ||
+										"https://i.pravatar.cc/150",
+								}}
+								style={styles.avatar}
+							/>
 
-						<View style={{ marginLeft: 12 }}>
+							<View style={styles.onlineDot} />
+						</View>
+
+						<View style={styles.infoContainer}>
 							<AppText style={styles.nome}>
-								{nome || user?.displayName || "Usuário"}
+								{nome ||
+									user?.displayName ||
+									"Usuário"}
 							</AppText>
 
 							<AppText style={styles.email}>
-								{user?.email ?? "Email não disponível"}
+								{user?.email ??
+									"Email não disponível"}
 							</AppText>
+
+							<View style={styles.badge}>
+								<MaterialCommunityIcons
+									name="shield-check"
+									size={14}
+									color="#A78BFA"
+								/>
+
+								<AppText style={styles.badgeText}>
+									Conta ativa
+								</AppText>
+							</View>
 						</View>
 					</View>
 				</LinearGradient>
 
-				{/* 🔥 MENU */}
+				{/* MENU */}
 				<View style={styles.menu}>
-					<AppText style={styles.section}>Conta</AppText>
+					<AppText style={styles.section}>
+						Conta
+					</AppText>
 
 					<TouchableOpacity
+						activeOpacity={0.85}
 						style={styles.card}
-						onPress={() => go("PerfilEditar")}
+						onPress={() =>
+							go("PerfilEditar")
+						}
 					>
+						<View style={styles.iconBox}>
+							<MaterialCommunityIcons
+								name="account-edit-outline"
+								size={22}
+								color={Colors.primary}
+							/>
+						</View>
+
+						<View style={{ flex: 1 }}>
+							<AppText style={styles.texto}>
+								Editar Perfil
+							</AppText>
+
+							<AppText style={styles.subtexto}>
+								Atualize suas informações
+							</AppText>
+						</View>
+
 						<MaterialCommunityIcons
-							name="account-edit-outline"
-							size={22}
-							color={Colors.primary}
+							name="chevron-right"
+							size={24}
+							color="rgba(255,255,255,0.35)"
 						/>
-						<AppText style={styles.texto}>Editar Perfil</AppText>
 					</TouchableOpacity>
 
 					<TouchableOpacity
+						activeOpacity={0.85}
 						style={styles.card}
-						onPress={() => go("ResetPassword")}
+						onPress={() =>
+							go("ResetPassword")
+						}
 					>
+						<View style={styles.iconBox}>
+							<MaterialCommunityIcons
+								name="lock-reset"
+								size={22}
+								color={Colors.primary}
+							/>
+						</View>
+
+						<View style={{ flex: 1 }}>
+							<AppText style={styles.texto}>
+								Alterar Senha
+							</AppText>
+
+							<AppText style={styles.subtexto}>
+								Mantenha sua conta segura
+							</AppText>
+						</View>
+
 						<MaterialCommunityIcons
-							name="lock-reset"
-							size={22}
-							color={Colors.primary}
+							name="chevron-right"
+							size={24}
+							color="rgba(255,255,255,0.35)"
 						/>
-						<AppText style={styles.texto}>Alterar Senha</AppText>
 					</TouchableOpacity>
 
-					<AppText style={styles.section}>Atividade</AppText>
+					<AppText style={styles.section}>
+						Atividade
+					</AppText>
 
 					<TouchableOpacity
+						activeOpacity={0.85}
 						style={styles.card}
-						onPress={() => go("Ocorrencias")}
+						onPress={() =>
+							go("Ocorrencias")
+						}
 					>
+						<View style={styles.iconBox}>
+							<MaterialCommunityIcons
+								name="history"
+								size={22}
+								color={Colors.primary}
+							/>
+						</View>
+
+						<View style={{ flex: 1 }}>
+							<AppText style={styles.texto}>
+								Histórico de Ocorrências
+							</AppText>
+
+							<AppText style={styles.subtexto}>
+								Visualize atividades recentes
+							</AppText>
+						</View>
+
 						<MaterialCommunityIcons
-							name="history"
-							size={22}
-							color={Colors.primary}
+							name="chevron-right"
+							size={24}
+							color="rgba(255,255,255,0.35)"
 						/>
-						<AppText style={styles.texto}>Histórico de Ocorrências</AppText>
 					</TouchableOpacity>
 
 					{/* LOGOUT */}
 					<TouchableOpacity
-						onPress={handleLogout}
-						disabled={loadingLogout}
+						activeOpacity={0.85}
+						onPress={() =>
+							setShowLogoutModal(true)
+						}
 						style={styles.logout}
 					>
-						{loadingLogout ? (
-							<ActivityIndicator size="small" color={Colors.error} />
-						) : (
+						<View
+							style={[
+								styles.iconBox,
+								styles.logoutIcon,
+							]}
+						>
 							<MaterialCommunityIcons
 								name="logout"
 								size={22}
-								color={Colors.error}
+								color="#EF4444"
 							/>
-						)}
+						</View>
 
-						<AppText style={styles.logoutText}>
-							{loadingLogout ? "Saindo..." : "Sair da Conta"}
-						</AppText>
+						<View style={{ flex: 1 }}>
+							<AppText style={styles.logoutText}>
+								Sair da Conta
+							</AppText>
+
+							<AppText style={styles.subtexto}>
+								Encerrar sessão do aplicativo
+							</AppText>
+						</View>
 					</TouchableOpacity>
 				</View>
 			</ScrollView>
+
+			{/* 🔥 MODAL PERSONALIZADO */}
+			<Modal
+				visible={showLogoutModal}
+				transparent
+				animationType="fade"
+				statusBarTranslucent
+			>
+				<View style={styles.modalOverlay}>
+					<BlurView
+						intensity={50}
+						tint="dark"
+						style={styles.modalCard}
+					>
+						<LinearGradient
+							colors={[
+								"rgba(239,68,68,0.15)",
+								"rgba(127,29,29,0.05)",
+							]}
+							style={styles.modalGradient}
+						>
+							<View style={styles.modalIcon}>
+								<MaterialCommunityIcons
+									name="logout"
+									size={34}
+									color="#EF4444"
+								/>
+							</View>
+
+							<AppText style={styles.modalTitle}>
+								Sair da conta?
+							</AppText>
+
+							<AppText style={styles.modalText}>
+								Você realmente deseja encerrar
+								sua sessão?
+							</AppText>
+
+							<View style={styles.modalButtons}>
+								<Pressable
+									style={styles.cancelBtn}
+									onPress={() =>
+										setShowLogoutModal(
+											false
+										)
+									}
+								>
+									<AppText
+										style={
+											styles.cancelText
+										}
+									>
+										Cancelar
+									</AppText>
+								</Pressable>
+
+								<TouchableOpacity
+									activeOpacity={0.85}
+									style={
+										styles.confirmBtn
+									}
+									onPress={handleLogout}
+									disabled={
+										loadingLogout
+									}
+								>
+									<LinearGradient
+										colors={[
+											"#EF4444",
+											"#DC2626",
+										]}
+										style={
+											styles.confirmGradient
+										}
+									>
+										{loadingLogout ? (
+											<ActivityIndicator
+												size="small"
+												color="#FFF"
+											/>
+										) : (
+											<>
+												<MaterialCommunityIcons
+													name="logout"
+													size={18}
+													color="#FFF"
+												/>
+
+												<AppText
+													style={
+														styles.confirmText
+													}
+												>
+													Sair
+												</AppText>
+											</>
+										)}
+									</LinearGradient>
+								</TouchableOpacity>
+							</View>
+						</LinearGradient>
+					</BlurView>
+				</View>
+			</Modal>
 		</View>
 	);
 }
 
-/* 🎨 PADRÃO GLOBAL */
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		backgroundColor: Colors.background,
+		backgroundColor: "#070B14",
 	},
 
+	/* HEADER */
 	header: {
-		paddingHorizontal: 16,
-		paddingBottom: 20,
+		paddingHorizontal: 20,
+		paddingBottom: 24,
+
+		borderBottomLeftRadius: 28,
+		borderBottomRightRadius: 28,
 	},
 
 	profileRow: {
@@ -166,65 +381,260 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 	},
 
+	avatarWrapper: {
+		position: "relative",
+	},
+
 	avatar: {
-		width: 65,
-		height: 65,
-		borderRadius: 40,
+		width: 78,
+		height: 78,
+		borderRadius: 50,
+
+		borderWidth: 3,
+		borderColor: "#7C3AED",
+	},
+
+	onlineDot: {
+		position: "absolute",
+		right: 4,
+		bottom: 4,
+
+		width: 16,
+		height: 16,
+
+		borderRadius: 20,
+
+		backgroundColor: "#22C55E",
+
 		borderWidth: 2,
-		borderColor: Colors.primary,
+		borderColor: "#111827",
+	},
+
+	infoContainer: {
+		marginLeft: 14,
+		flex: 1,
 	},
 
 	nome: {
-		color: Colors.textPrimary,
-		fontSize: 18,
+		color: "#FFF",
+		fontSize: 20,
 		fontWeight: "bold",
 	},
 
 	email: {
-		color: Colors.textSecondary,
+		color: "rgba(255,255,255,0.65)",
 		fontSize: 13,
 		marginTop: 2,
 	},
 
+	badge: {
+		marginTop: 10,
+
+		alignSelf: "flex-start",
+
+		flexDirection: "row",
+		alignItems: "center",
+
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+
+		borderRadius: 30,
+
+		backgroundColor: "rgba(124,58,237,0.16)",
+	},
+
+	badgeText: {
+		color: "#C4B5FD",
+		fontSize: 12,
+		marginLeft: 6,
+	},
+
+	/* MENU */
 	menu: {
-		padding: 16,
+		padding: 18,
 	},
 
 	section: {
-		color: Colors.textSecondary,
-		marginTop: 10,
-		marginBottom: 10,
+		color: "rgba(255,255,255,0.45)",
+		fontSize: 13,
+
+		marginBottom: 12,
+		marginTop: 8,
 	},
 
 	card: {
 		flexDirection: "row",
 		alignItems: "center",
-		backgroundColor: Colors.surface,
+
+		backgroundColor: "rgba(255,255,255,0.04)",
+
 		padding: 16,
-		borderRadius: 16,
-		marginBottom: 12,
+
+		borderRadius: 22,
+
+		marginBottom: 14,
+
 		borderWidth: 1,
-		borderColor: Colors.border,
+		borderColor: "rgba(255,255,255,0.06)",
+	},
+
+	iconBox: {
+		width: 46,
+		height: 46,
+
+		borderRadius: 16,
+
+		backgroundColor: "rgba(124,58,237,0.12)",
+
+		justifyContent: "center",
+		alignItems: "center",
+
+		marginRight: 14,
 	},
 
 	texto: {
-		color: Colors.textPrimary,
-		marginLeft: 12,
+		color: "#FFF",
+		fontSize: 15,
+		fontWeight: "600",
 	},
 
+	subtexto: {
+		color: "rgba(255,255,255,0.5)",
+		fontSize: 12,
+		marginTop: 3,
+	},
+
+	/* LOGOUT */
 	logout: {
-		marginTop: 20,
+		marginTop: 12,
+
 		flexDirection: "row",
 		alignItems: "center",
-		backgroundColor: Colors.surface,
+
+		backgroundColor: "rgba(239,68,68,0.08)",
+
 		padding: 16,
-		borderRadius: 16,
+
+		borderRadius: 22,
+
 		borderWidth: 1,
-		borderColor: Colors.error,
+		borderColor: "rgba(239,68,68,0.22)",
+	},
+
+	logoutIcon: {
+		backgroundColor: "rgba(239,68,68,0.12)",
 	},
 
 	logoutText: {
-		color: Colors.error,
-		marginLeft: 12,
+		color: "#EF4444",
+		fontSize: 15,
+		fontWeight: "bold",
+	},
+
+	/* MODAL */
+	modalOverlay: {
+		flex: 1,
+
+		backgroundColor: "rgba(0,0,0,0.65)",
+
+		justifyContent: "center",
+		alignItems: "center",
+
+		paddingHorizontal: 24,
+	},
+
+	modalCard: {
+		width: "100%",
+		borderRadius: 30,
+		overflow: "hidden",
+
+		borderWidth: 1,
+		borderColor: "rgba(255,255,255,0.08)",
+	},
+
+	modalGradient: {
+		padding: 28,
+		alignItems: "center",
+	},
+
+	modalIcon: {
+		width: 78,
+		height: 78,
+
+		borderRadius: 30,
+
+		backgroundColor: "rgba(239,68,68,0.12)",
+
+		justifyContent: "center",
+		alignItems: "center",
+
+		marginBottom: 18,
+	},
+
+	modalTitle: {
+		color: "#FFF",
+		fontSize: 22,
+		fontWeight: "bold",
+	},
+
+	modalText: {
+		color: "rgba(255,255,255,0.65)",
+
+		textAlign: "center",
+
+		marginTop: 10,
+
+		fontSize: 14,
+		lineHeight: 22,
+	},
+
+	modalButtons: {
+		flexDirection: "row",
+
+		marginTop: 26,
+
+		width: "100%",
+	},
+
+	cancelBtn: {
+		flex: 1,
+
+		height: 52,
+
+		borderRadius: 18,
+
+		backgroundColor: "rgba(255,255,255,0.06)",
+
+		justifyContent: "center",
+		alignItems: "center",
+
+		marginRight: 10,
+	},
+
+	cancelText: {
+		color: "#FFF",
+		fontWeight: "600",
+	},
+
+	confirmBtn: {
+		flex: 1,
+	},
+
+	confirmGradient: {
+		height: 52,
+
+		borderRadius: 18,
+
+		flexDirection: "row",
+
+		justifyContent: "center",
+		alignItems: "center",
+
+		gap: 8,
+	},
+
+	confirmText: {
+		color: "#FFF",
+		fontWeight: "bold",
 	},
 });

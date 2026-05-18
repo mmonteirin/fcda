@@ -18,7 +18,21 @@
     "web": {},
     "plugins": [
       "expo-font",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O MonitoraCult precisa de acesso às suas fotos para adicionar imagens aos eventos.",
+          "cameraPermission": "O MonitoraCult precisa da câmera para tirar fotos dos eventos."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "O MonitoraCult usa sua localização para mostrar eventos próximos.",
+          "locationWhenInUsePermission": "O MonitoraCult usa sua localização para mostrar eventos próximos."
+        }
+      ]
     ]
   }
 }

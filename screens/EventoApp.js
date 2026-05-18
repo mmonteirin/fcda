@@ -57,8 +57,14 @@ import {
 } from "moti";
 
 import {
-  Colors,
-} from "../styles/Colors";
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+
+import {
+  useBottomTabBarHeight,
+} from "@react-navigation/bottom-tabs";
+
+import { Colors } from "../styles/Colors";
 
 export default function EventosApp() {
   const { user, nome, foto } =
@@ -67,6 +73,12 @@ export default function EventosApp() {
   const navigation =
     useNavigation();
 
+  const insets =
+    useSafeAreaInsets();
+
+  const tabBarHeight =
+    useBottomTabBarHeight();
+
   const [eventos, setEventos] =
     useState([]);
 
@@ -74,26 +86,36 @@ export default function EventosApp() {
     useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const q = query(
       collection(db, "inscricoes"),
-
       where("uid", "==", user.uid)
     );
 
     const unsubscribe =
-      onSnapshot(q, (snapshot) => {
-        const lista =
-          snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
+      onSnapshot(
+        q,
+        (snapshot) => {
+          const lista =
+            snapshot.docs.map((doc) => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
 
-        setEventos(lista);
+          setEventos(lista);
 
-        setLoading(false);
-      });
+          setLoading(false);
+        },
+
+        (error) => {
+          console.log(error);
+          setLoading(false);
+        }
+      );
 
     return () => unsubscribe();
   }, [user]);
@@ -116,13 +138,20 @@ export default function EventosApp() {
           style: "destructive",
 
           onPress: async () => {
-            await deleteDoc(
-              doc(
-                db,
-                "inscricoes",
-                id
-              )
-            );
+            try {
+              await deleteDoc(
+                doc(
+                  db,
+                  "inscricoes",
+                  id
+                )
+              );
+            } catch (error) {
+              Alert.alert(
+                "Erro",
+                "Não foi possível cancelar."
+              );
+            }
           },
         },
       ]
@@ -154,21 +183,17 @@ export default function EventosApp() {
           },
         ]}
       >
-
         <TouchableOpacity
           onPress={() =>
             cancelarInscricao(id)
           }
         >
-
           <MaterialCommunityIcons
             name="trash-can"
             size={28}
             color="#FFF"
           />
-
         </TouchableOpacity>
-
       </Animated.View>
     );
   };
@@ -193,7 +218,6 @@ export default function EventosApp() {
           )
         }
       >
-
         <MotiView
           from={{
             opacity: 0,
@@ -209,9 +233,7 @@ export default function EventosApp() {
             delay: index * 80,
           }}
         >
-
           <View style={styles.card}>
-
             {/* IMAGEM */}
             <ImageBackground
               source={{
@@ -221,7 +243,6 @@ export default function EventosApp() {
               }}
               style={styles.image}
             >
-
               <LinearGradient
                 colors={[
                   "transparent",
@@ -231,7 +252,6 @@ export default function EventosApp() {
                   styles.overlay
                 }
               >
-
                 <View
                   style={
                     confirmado
@@ -239,7 +259,6 @@ export default function EventosApp() {
                       : styles.statusPendente
                   }
                 >
-
                   <Text
                     style={
                       styles.statusText
@@ -249,11 +268,8 @@ export default function EventosApp() {
                       ? "Confirmado"
                       : "Pendente"}
                   </Text>
-
                 </View>
-
               </LinearGradient>
-
             </ImageBackground>
 
             {/* CONTENT */}
@@ -262,7 +278,6 @@ export default function EventosApp() {
               tint="dark"
               style={styles.content}
             >
-
               <Text
                 style={styles.titulo}
                 numberOfLines={1}
@@ -276,7 +291,6 @@ export default function EventosApp() {
                   styles.infoRow
                 }
               >
-
                 <MaterialCommunityIcons
                   name="calendar"
                   size={17}
@@ -292,7 +306,6 @@ export default function EventosApp() {
                 >
                   {item.data}
                 </Text>
-
               </View>
 
               {/* LOCAL */}
@@ -301,7 +314,6 @@ export default function EventosApp() {
                   styles.infoRow
                 }
               >
-
                 <MaterialCommunityIcons
                   name="map-marker"
                   size={17}
@@ -318,7 +330,6 @@ export default function EventosApp() {
                 >
                   {item.local}
                 </Text>
-
               </View>
 
               {/* BUTTONS */}
@@ -327,7 +338,6 @@ export default function EventosApp() {
                   styles.actions
                 }
               >
-
                 <TouchableOpacity
                   activeOpacity={0.85}
                   onPress={() =>
@@ -339,7 +349,6 @@ export default function EventosApp() {
                     )
                   }
                 >
-
                   <LinearGradient
                     colors={[
                       "#7C3AED",
@@ -349,7 +358,6 @@ export default function EventosApp() {
                       styles.eventBtn
                     }
                   >
-
                     <MaterialCommunityIcons
                       name="eye"
                       size={18}
@@ -363,9 +371,7 @@ export default function EventosApp() {
                     >
                       Ver Evento
                     </Text>
-
                   </LinearGradient>
-
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -375,7 +381,6 @@ export default function EventosApp() {
                     )
                   }
                 >
-
                   <Text
                     style={
                       styles.cancelar
@@ -383,17 +388,11 @@ export default function EventosApp() {
                   >
                     Cancelar
                   </Text>
-
                 </TouchableOpacity>
-
               </View>
-
             </BlurView>
-
           </View>
-
         </MotiView>
-
       </Swipeable>
     );
   };
@@ -417,7 +416,6 @@ export default function EventosApp() {
 
   return (
     <View style={styles.container}>
-
       <StatusBar
         barStyle="light-content"
       />
@@ -429,28 +427,30 @@ export default function EventosApp() {
           "#111827",
           "#1E1B4B",
         ]}
-        style={styles.header}
+        style={[
+          styles.header,
+          {
+            paddingTop:
+              insets.top + 10,
+          },
+        ]}
       >
-
         <TouchableOpacity
           style={styles.backBtn}
           onPress={() =>
             navigation.goBack()
           }
         >
-
           <MaterialCommunityIcons
             name="arrow-left"
             size={24}
             color="#FFF"
           />
-
         </TouchableOpacity>
 
         <Text style={styles.headerTitle}>
           Meus Eventos
         </Text>
-
       </LinearGradient>
 
       {/* PERFIL */}
@@ -468,42 +468,72 @@ export default function EventosApp() {
           duration: 600,
         }}
       >
-
         <BlurView
           intensity={60}
           tint="dark"
           style={styles.profileCard}
         >
-
-          <LinearGradient
-            colors={[
-              "#7C3AED",
-              "#5B21B6",
-            ]}
-            style={styles.avatarBorder}
+          {/* LEFT */}
+          <View
+            style={styles.profileLeft}
           >
+            <LinearGradient
+              colors={[
+                "#7C3AED",
+                "#5B21B6",
+              ]}
+              style={
+                styles.avatarBorder
+              }
+            >
+              <Image
+                source={{
+                  uri:
+                    foto ||
+                    "https://i.pravatar.cc/150",
+                }}
+                style={styles.avatar}
+              />
+            </LinearGradient>
 
-            <Image
-              source={{
-                uri:
-                  foto ||
-                  "https://i.pravatar.cc/150",
-              }}
-              style={styles.avatar}
+            <View
+              style={
+                styles.profileInfo
+              }
+            >
+              <Text style={styles.nome}>
+                {nome}
+              </Text>
+
+              <Text
+                style={
+                  styles.subtitle
+                }
+              >
+                Eventos inscritos
+              </Text>
+            </View>
+          </View>
+
+          {/* RIGHT */}
+          <View
+            style={styles.profileBadge}
+          >
+            <MaterialCommunityIcons
+              name="ticket-confirmation"
+              size={18}
+              color="#A78BFA"
             />
 
-          </LinearGradient>
-
-          <Text style={styles.nome}>
-            {nome}
-          </Text>
-
-          <Text style={styles.subtitle}>
-            Eventos inscritos
-          </Text>
-
+            <Text
+              style={
+                styles.profileBadgeText
+              }
+            >
+              {eventos.length}
+            </Text>
+          </View>
         </BlurView>
-
       </MotiView>
 
       {/* LISTA */}
@@ -513,20 +543,26 @@ export default function EventosApp() {
           item.id
         }
         renderItem={renderItem}
-        contentContainerStyle={{
-          padding: 20,
-          paddingBottom: 50,
-        }}
         showsVerticalScrollIndicator={
           false
         }
+        contentContainerStyle={{
+          padding: 20,
+          paddingTop: 10,
+          paddingBottom:
+            tabBarHeight + 40,
+          flexGrow: 1,
+        }}
+        ListEmptyComponentStyle={{
+          flex: 1,
+          justifyContent: "center",
+        }}
         ListEmptyComponent={
           <View
             style={
               styles.emptyContainer
             }
           >
-
             <MaterialCommunityIcons
               name="calendar-remove"
               size={70}
@@ -534,14 +570,12 @@ export default function EventosApp() {
             />
 
             <Text style={styles.empty}>
-              Você ainda não se inscreveu
-              em eventos
+              Você ainda não se
+              inscreveu em eventos
             </Text>
-
           </View>
         }
       />
-
     </View>
   );
 }
@@ -554,22 +588,21 @@ const styles = StyleSheet.create({
 
   /* HEADER */
   header: {
-    paddingTop: 58,
     paddingBottom: 24,
     paddingHorizontal: 20,
 
     flexDirection: "row",
     alignItems: "center",
 
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
 
   backBtn: {
-    width: 44,
-    height: 44,
+    width: 46,
+    height: 46,
 
-    borderRadius: 16,
+    borderRadius: 18,
 
     backgroundColor:
       "rgba(255,255,255,0.08)",
@@ -582,7 +615,9 @@ const styles = StyleSheet.create({
     color: "#FFF",
 
     fontSize: 22,
-    fontWeight: "bold",
+
+    fontFamily:
+      "PoppinsBold",
 
     marginLeft: 16,
   },
@@ -595,9 +630,13 @@ const styles = StyleSheet.create({
 
     borderRadius: 28,
 
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent:
+      "space-between",
 
-    paddingVertical: 26,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
 
     overflow: "hidden",
 
@@ -605,35 +644,79 @@ const styles = StyleSheet.create({
 
     borderColor:
       "rgba(255,255,255,0.08)",
+
+    backgroundColor:
+      "rgba(255,255,255,0.04)",
+  },
+
+  profileLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+
+  profileInfo: {
+    marginLeft: 16,
+    flex: 1,
+  },
+
+  profileBadge: {
+    width: 54,
+    height: 54,
+
+    borderRadius: 18,
+
+    backgroundColor:
+      "rgba(124,58,237,0.16)",
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    borderWidth: 1,
+
+    borderColor:
+      "rgba(255,255,255,0.06)",
+  },
+
+  profileBadgeText: {
+    color: "#FFF",
+
+    marginTop: 2,
+
+    fontSize: 12,
+
+    fontFamily:
+      "PoppinsBold",
   },
 
   avatarBorder: {
     padding: 4,
-
     borderRadius: 60,
   },
 
   avatar: {
-    width: 92,
-    height: 92,
-
-    borderRadius: 50,
+    width: 74,
+    height: 74,
+    borderRadius: 40,
   },
 
   nome: {
     color: "#FFF",
 
     fontSize: 22,
-    fontWeight: "bold",
 
-    marginTop: 14,
+    fontFamily:
+      "PoppinsBold",
   },
 
   subtitle: {
     color:
       "rgba(255,255,255,0.65)",
 
-    marginTop: 5,
+    marginTop: 4,
+
+    fontFamily:
+      "PoppinsRegular",
   },
 
   /* CARD */
@@ -655,15 +738,12 @@ const styles = StyleSheet.create({
 
   image: {
     height: 190,
-
     justifyContent: "flex-end",
   },
 
   overlay: {
     flex: 1,
-
     justifyContent: "flex-end",
-
     padding: 16,
   },
 
@@ -675,9 +755,11 @@ const styles = StyleSheet.create({
     color: "#FFF",
 
     fontSize: 20,
-    fontWeight: "bold",
 
     marginBottom: 14,
+
+    fontFamily:
+      "PoppinsBold",
   },
 
   infoRow: {
@@ -696,6 +778,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
 
     flex: 1,
+
+    fontFamily:
+      "PoppinsRegular",
   },
 
   /* STATUS */
@@ -728,7 +813,8 @@ const styles = StyleSheet.create({
 
     fontSize: 12,
 
-    fontWeight: "bold",
+    fontFamily:
+      "PoppinsBold",
   },
 
   /* ACTIONS */
@@ -758,17 +844,19 @@ const styles = StyleSheet.create({
   eventBtnText: {
     color: "#FFF",
 
-    fontWeight: "bold",
-
     fontSize: 13,
+
+    fontFamily:
+      "PoppinsBold",
   },
 
   cancelar: {
     color: "#EF4444",
 
-    fontWeight: "bold",
-
     fontSize: 14,
+
+    fontFamily:
+      "PoppinsBold",
   },
 
   /* SWIPE */
@@ -788,9 +876,13 @@ const styles = StyleSheet.create({
 
   /* EMPTY */
   emptyContainer: {
+    flex: 1,
+
+    justifyContent: "center",
     alignItems: "center",
 
-    marginTop: 90,
+    paddingTop: 40,
+    paddingBottom: 80,
   },
 
   empty: {
@@ -802,6 +894,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
 
     textAlign: "center",
+
+    fontFamily:
+      "PoppinsRegular",
   },
 
   /* LOADING */
@@ -819,5 +914,8 @@ const styles = StyleSheet.create({
       "rgba(255,255,255,0.65)",
 
     marginTop: 14,
+
+    fontFamily:
+      "PoppinsRegular",
   },
 });

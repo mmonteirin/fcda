@@ -355,6 +355,7 @@ export default function PerfilEditar({
         showsVerticalScrollIndicator={
           false
         }
+        contentContainerStyle={{ paddingBottom: 40 }}
       >
         {/* 👤 AVATAR */}
         <View style={styles.avatarArea}>
