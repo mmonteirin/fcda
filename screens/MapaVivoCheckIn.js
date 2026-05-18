@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -13,16 +13,26 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../styles/Colors";
-import { useMap } from "../hooks/useMap";
+import { useMapaVivo } from "../hooks/useMapaVivo";
 import CheckInCard from "../components/CheckInCard";
 
 export default function MapaVivoCheckIn({ route, navigation }) {
   const { eventId, eventTitle } = route.params;
-  const { handleCheckIn, loadEventCheckIns, checkInsList } = useMap();
+  const {
+    localizacao,
+    iniciarLocalizacao,
+    fazerCheckIn,
+    carregarCheckInsEvento,
+  } = useMapaVivo();
 
   const [caption, setCaption] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    iniciarLocalizacao();
+    carregarCheckInsEvento(eventId);
+  }, [eventId, iniciarLocalizacao, carregarCheckInsEvento]);
 
   const handlePickImage = async () => {
     try {
@@ -47,13 +57,21 @@ export default function MapaVivoCheckIn({ route, navigation }) {
       return;
     }
 
+    if (!localizacao) {
+      Alert.alert("Localização", "Aguarde sua localização ser carregada para confirmar o check-in.");
+      return;
+    }
+
     setLoading(true);
     try {
-      await handleCheckIn(eventId);
+      await fazerCheckIn(eventId, {
+        caption: caption.trim(),
+        photoUrl: selectedImage,
+      });
       setCaption("");
       setSelectedImage(null);
       Alert.alert("Sucesso", "Check-in realizado com sucesso!");
-      await loadEventCheckIns(eventId);
+      await carregarCheckInsEvento(eventId);
     } catch (error) {
       Alert.alert("Erro", "Erro ao fazer check-in: " + error.message);
     } finally {
@@ -189,11 +207,11 @@ export default function MapaVivoCheckIn({ route, navigation }) {
         <TouchableOpacity
           style={[
             styles.submitButton,
-            (!caption.trim() || loading) &&
+            (!caption.trim() || loading || !localizacao) &&
               styles.submitButtonDisabled,
           ]}
           onPress={handleSubmitCheckIn}
-          disabled={!caption.trim() || loading}
+          disabled={!caption.trim() || loading || !localizacao}
           activeOpacity={0.8}
         >
           {loading ? (

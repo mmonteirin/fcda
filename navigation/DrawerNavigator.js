@@ -15,6 +15,7 @@ import TabNavigator from "./TabNavigator";
 import CustomDrawerContent from "./CustomDrawerNavigator";
 import PerfilStack from "./PerfilStack";
 import AdmStack from "./AdmStack";
+import MapaStack from "./MapaStack";
 
 import Suporte from "../screens/TelaSuporte";
 import TelaPainelCidade from "../screens/TelaPainelCidade";
@@ -153,6 +154,20 @@ export default function DrawerNavigator() {
       <Drawer.Screen
         name="PainelCidade"
         component={TelaPainelCidade}
+        options={{
+          drawerLabel: () => null,
+          title: null,
+
+          drawerItemStyle: {
+            display: "none",
+          },
+        }}
+      />
+
+      {/* 🗺️ MAPA VIVO DA CULTURA */}
+      <Drawer.Screen
+        name="MapaVivo"
+        component={MapaStack}
         options={{
           drawerLabel: () => null,
           title: null,

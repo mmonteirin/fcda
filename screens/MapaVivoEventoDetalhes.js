@@ -12,8 +12,24 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Colors } from "../styles/Colors";
-import { getMapEventDetails, formatDistance } from "../services/mapService";
+import {
+  getMapEventDetails,
+  formatarDistancia,
+} from "../services/mapaVivoService";
 import CheckInCard from "../components/CheckInCard";
+
+const formatarDataEvento = (date) => {
+  if (!date) return "Data não definida";
+  const value = date?.toDate ? date.toDate() : new Date(date);
+  if (Number.isNaN(value.getTime())) return "Data não definida";
+  return value.toLocaleString("pt-BR", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 export default function MapaVivoEventoDetalhes({ route, navigation }) {
   const { eventId } = route.params;
@@ -165,7 +181,7 @@ export default function MapaVivoEventoDetalhes({ route, navigation }) {
                 {event.address || "Sem endereço"}
               </Text>
               <Text style={styles.distance}>
-                {formatDistance(event.distance || 0)} de você
+                {formatarDistancia(event.distance || 0)} de você
               </Text>
             </View>
           </View>
@@ -180,7 +196,7 @@ export default function MapaVivoEventoDetalhes({ route, navigation }) {
             <View>
               <Text style={styles.timeLabel}>Horário</Text>
               <Text style={styles.timeValue}>
-                {event.date || "Data não definida"}
+                {formatarDataEvento(event.date)}
               </Text>
             </View>
           </View>

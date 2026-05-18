@@ -8,26 +8,23 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
   Dimensions,
   Linking,
   Modal,
+  Image,
+  ScrollView,
 } from "react-native";
 
 import Animated, {
-  FadeIn,
   FadeInDown,
   FadeInRight,
-  Layout,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   interpolate,
   useAnimatedScrollHandler,
 } from "react-native-reanimated";
-
-import SkeletonContent from "react-native-skeleton-content";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -52,12 +49,28 @@ const windowWidth =
 const DEFAULT_IMAGE =
   "https://placehold.co/600x400?text=Evento";
 
+const AnimatedFlashList =
+  Animated.createAnimatedComponent(
+    FlashList
+  );
+
+const categorias = [
+  "Todos",
+  "Shows",
+  "Teatro",
+  "Arte",
+  "Gastronomia",
+  "Festival",
+];
+
 export default function TelaInicio() {
   const navigation = useNavigation();
 
   const { user, nome } = useAuth();
 
-  const [eventos, setEventos] = useState([]);
+  const [eventos, setEventos] =
+    useState([]);
+
   const [loading, setLoading] =
     useState(true);
 
@@ -67,9 +80,6 @@ export default function TelaInicio() {
   const [location, setLocation] =
     useState(null);
 
-  const [likedIds, setLikedIds] =
-    useState([]);
-
   const [showMapErrorModal, setShowMapErrorModal] =
     useState(false);
 
@@ -78,136 +88,147 @@ export default function TelaInicio() {
 
   const scrollX = useSharedValue(0);
 
+  const scrollHandler =
+    useAnimatedScrollHandler({
+      onScroll: (event) => {
+        scrollX.value =
+          event.contentOffset.x;
+      },
+    });
+
   const nomeUsuario =
     nome ||
     user?.displayName ||
     user?.email?.split("@")[0] ||
     "Explorador";
 
+  // SAUDAÇÃO DINÂMICA
+  const saudacaoHorario =
+    useMemo(() => {
+      const hora =
+        new Date().getHours();
+
+      if (hora < 12)
+        return "Bom dia ☀️";
+
+      if (hora < 18)
+        return "Boa tarde 🌤️";
+
+      return "Boa noite 🌙";
+    }, []);
+
   useEffect(() => {
     carregarEventos();
   }, []);
 
-  useEffect(() => {
-    if (user?.uid) {
-      carregarLikes();
-    }
-  }, [user?.uid]);
+  const carregarEventos =
+    async () => {
+      try {
+        const data =
+          await getEventosApp();
 
-  const carregarLikes = async () => {
-    try {
-      const ids = await getUserLikes(user.uid);
+        const tratados = data.map(
+          (item) => ({
+            id: item.id,
 
-      setLikedIds(ids);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+            titulo:
+              item.tituloEvento ||
+              item.name ||
+              "Evento",
 
-  const carregarEventos = async () => {
-    try {
-      const data = await getEventosApp();
+            imagem:
+              item.imagemEvento ||
+              item.files?.header?.url ||
+              DEFAULT_IMAGE,
 
-      const tratados = data.map((item) => ({
-        id: item.id,
+            local:
+              item.localEvento ||
+              item.nomeLocal ||
+              item.location?.name ||
+              "Local",
 
-        titulo:
-          item.tituloEvento ||
-          item.name ||
-          "Evento",
+            categoria:
+              item.categoria ||
+              item.tipoEvento ||
+              "Outros",
 
-        imagem:
-          item.imagemEvento ||
-          item.files?.header?.url ||
-          DEFAULT_IMAGE,
+            latitude:
+              item.latitude ?? null,
 
-        local:
-          item.localEvento ||
-          item.nomeLocal ||
-          item.location?.name ||
-          "Local",
+            longitude:
+              item.longitude ?? null,
 
-        categoria:
-          item.categoria ||
-          item.tipoEvento ||
-          "Outros",
+            score:
+              item.score || 0,
 
-        latitude: item.latitude ?? null,
+            original: item,
+          })
+        );
 
-        longitude: item.longitude ?? null,
+        const usuario =
+          await getUserLocation();
 
-        likes: item.likes || 0,
+        if (usuario) {
+          setLocation(usuario);
+        }
 
-        views: item.views || 0,
+        setEventos(tratados);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-        score: item.score || 0,
+  const eventosComDistancia =
+    useMemo(() => {
+      return eventos.map(
+        (item) => ({
+          ...item,
 
-        original: item,
-      }));
+          distancia:
+            location &&
+            item.latitude != null &&
+            item.longitude != null
+              ? calcularDistancia(
+                  location.latitude,
+                  location.longitude,
+                  item.latitude,
+                  item.longitude
+                )
+              : null,
+        })
+      );
+    }, [eventos, location]);
 
-      const usuario =
-        await getUserLocation();
-
-      if (usuario) {
-        setLocation(usuario);
+  const eventosFiltrados =
+    useMemo(() => {
+      if (
+        categoriaAtiva === "Todos"
+      ) {
+        return eventosComDistancia;
       }
 
-      setEventos(tratados);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const eventosComDistancia = useMemo(() => {
-    return eventos.map((item) => ({
-      ...item,
-
-      distancia:
-        location &&
-        item.latitude != null &&
-        item.longitude != null
-          ? calcularDistancia(
-              location.latitude,
-              location.longitude,
-              item.latitude,
-              item.longitude
+      return eventosComDistancia.filter(
+        (evento) =>
+          evento.categoria
+            ?.toLowerCase()
+            .includes(
+              categoriaAtiva.toLowerCase()
             )
-          : null,
-    }));
-  }, [eventos, location]);
-
-  const categorias = useMemo(() => {
-    const valores = eventos
-      .map((item) => item.categoria || "Outros")
-      .filter(Boolean);
-
-    return ["Todos", ...new Set(valores)];
-  }, [eventos]);
-
-  const eventosFiltrados = useMemo(() => {
-    if (categoriaAtiva === "Todos") {
-      return eventosComDistancia;
-    }
-
-    return eventosComDistancia.filter(
-      (evento) =>
-        evento.categoria
-          .toLowerCase()
-          .includes(
-            categoriaAtiva.toLowerCase()
-          )
-    );
-  }, [
-    categoriaAtiva,
-    eventosComDistancia,
-  ]);
+      );
+    }, [
+      categoriaAtiva,
+      eventosComDistancia,
+    ]);
 
   const destaques = useMemo(() => {
     return eventosFiltrados
       .slice()
-      .sort((a, b) => b.score - a.score)
+      .sort(
+        (a, b) =>
+          b.score - a.score
+      )
       .slice(0, 8);
   }, [eventosFiltrados]);
 
@@ -220,53 +241,17 @@ export default function TelaInicio() {
       )
       .sort(
         (a, b) =>
-          a.distancia - b.distancia
+          a.distancia -
+          b.distancia
       )
       .slice(0, 6);
   }, [eventosFiltrados]);
-
-  const abrirMapa = async () => {
-    try {
-      if (!location) {
-        setMapErrorMessage(
-          "Sua localização ainda não foi carregada."
-        );
-
-        setShowMapErrorModal(true);
-
-        return;
-      }
-
-      const url = `https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}`;
-
-      const supported =
-        await Linking.canOpenURL(url);
-
-      if (!supported) {
-        setMapErrorMessage(
-          "Não foi possível abrir o aplicativo de mapas neste dispositivo."
-        );
-
-        setShowMapErrorModal(true);
-
-        return;
-      }
-
-      await Linking.openURL(url);
-    } catch (error) {
-      setMapErrorMessage(
-        "Verifique sua conexão ou permissões."
-      );
-
-      setShowMapErrorModal(true);
-    }
-  };
 
   const formatarDistancia = (
     distancia
   ) => {
     if (distancia == null)
-      return "Localização indisponível";
+      return "Distância indisponível";
 
     if (distancia < 1) {
       return `${Math.round(
@@ -274,40 +259,57 @@ export default function TelaInicio() {
       )} m`;
     }
 
-    return `${distancia.toFixed(1)} km`;
+    return `${distancia.toFixed(
+      1
+    )} km`;
   };
 
   const HeroCard = ({
     item,
     index,
   }) => {
-    const scale = useSharedValue(1);
+    const scale =
+      useSharedValue(1);
 
     const animatedStyle =
       useAnimatedStyle(() => ({
         transform: [
-          { scale: scale.value },
+          {
+            scale: scale.value,
+          },
         ],
       }));
 
     const imageStyle =
       useAnimatedStyle(() => {
-        const imageScale = interpolate(
-          scrollX.value,
-          [
-            (index - 1) *
-              (windowWidth * 0.78 + 16),
-            index *
-              (windowWidth * 0.78 + 16),
-            (index + 1) *
-              (windowWidth * 0.78 + 16),
-          ],
-          [1, 1.08, 1]
-        );
+        const imageScale =
+          interpolate(
+            scrollX.value,
+            [
+              (index - 1) *
+                (windowWidth *
+                  0.78 +
+                  16),
+
+              index *
+                (windowWidth *
+                  0.78 +
+                  16),
+
+              (index + 1) *
+                (windowWidth *
+                  0.78 +
+                  16),
+            ],
+            [1, 1.08, 1]
+          );
 
         return {
           transform: [
-            { scale: imageScale },
+            {
+              scale:
+                imageScale,
+            },
           ],
         };
       });
@@ -315,9 +317,8 @@ export default function TelaInicio() {
     return (
       <Animated.View
         entering={FadeInRight.delay(
-          index * 120
+          index * 100
         ).springify()}
-        layout={Layout.springify()}
         style={animatedStyle}
       >
         <TouchableOpacity
@@ -335,13 +336,16 @@ export default function TelaInicio() {
             navigation.navigate(
               "Detalhes",
               {
-                evento: item.original,
+                evento:
+                  item.original,
               }
             )
           }
         >
           <Animated.Image
-            source={{ uri: item.imagem }}
+            source={{
+              uri: item.imagem,
+            }}
             style={[
               styles.heroImage,
               imageStyle,
@@ -353,14 +357,20 @@ export default function TelaInicio() {
               "transparent",
               "rgba(0,0,0,0.95)",
             ]}
-            style={styles.heroGradient}
+            style={
+              styles.heroGradient
+            }
           />
 
           <View
-            style={styles.heroContent}
+            style={
+              styles.heroContent
+            }
           >
             <View
-              style={styles.heroBadge}
+              style={
+                styles.heroBadge
+              }
             >
               <Text
                 style={
@@ -372,7 +382,9 @@ export default function TelaInicio() {
             </View>
 
             <Text
-              style={styles.heroTitle}
+              style={
+                styles.heroTitle
+              }
               numberOfLines={2}
             >
               {item.titulo}
@@ -385,46 +397,6 @@ export default function TelaInicio() {
             >
               📍 {item.local}
             </Text>
-
-            <View
-              style={styles.heroFooter}
-            >
-              <View
-                style={styles.metric}
-              >
-                <MaterialCommunityIcons
-                  name="heart"
-                  size={14}
-                  color="#FF4D6D"
-                />
-
-                <Text
-                  style={
-                    styles.metricText
-                  }
-                >
-                  {item.likes}
-                </Text>
-              </View>
-
-              <View
-                style={styles.metric}
-              >
-                <MaterialCommunityIcons
-                  name="eye-outline"
-                  size={15}
-                  color="#FFF"
-                />
-
-                <Text
-                  style={
-                    styles.metricText
-                  }
-                >
-                  {item.views}
-                </Text>
-              </View>
-            </View>
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -435,157 +407,103 @@ export default function TelaInicio() {
     item,
     index,
   }) => {
-    const scale = useSharedValue(1);
-
-    const animatedStyle =
-      useAnimatedStyle(() => ({
-        transform: [
-          { scale: scale.value },
-        ],
-      }));
-
     return (
       <Animated.View
         entering={FadeInDown.delay(
           index * 100
         ).springify()}
-        layout={Layout.springify()}
-        style={animatedStyle}
       >
         <TouchableOpacity
           activeOpacity={0.95}
           style={styles.card}
-          onPressIn={() => {
-            scale.value =
-              withSpring(0.98);
-          }}
-          onPressOut={() => {
-            scale.value =
-              withSpring(1);
-          }}
           onPress={() =>
             navigation.navigate(
               "Detalhes",
               {
-                evento: item.original,
+                evento:
+                  item.original,
               }
             )
           }
         >
-          <Animated.Image
-            source={{ uri: item.imagem }}
+          <Image
+            source={{
+              uri: item.imagem,
+            }}
             style={styles.cardImage}
           />
 
           <LinearGradient
             colors={[
               "transparent",
-              "rgba(0,0,0,0.88)",
+              "rgba(0,0,0,0.95)",
             ]}
-            style={styles.cardGradient}
+            style={
+              styles.cardGradient
+            }
           />
 
-          <View
-            style={styles.cardContent}
+          <BlurView
+            intensity={40}
+            tint="dark"
+            style={
+              styles.glassFooter
+            }
           >
-            <View style={styles.cardTop}>
-              <BlurView
-                intensity={30}
-                tint="dark"
-                style={
-                  styles.categoryMini
-                }
-              >
-                <Text
-                  style={
-                    styles.categoryMiniText
-                  }
-                >
-                  {item.categoria}
-                </Text>
-              </BlurView>
+            <Text
+              style={
+                styles.cardTitle
+              }
+            >
+              {item.titulo}
+            </Text>
 
-              <BlurView
-                intensity={30}
-                tint="dark"
-                style={styles.likeButton}
-              >
-                <MaterialCommunityIcons
-                  name={
-                    likedIds.includes(
-                      item.id
-                    )
-                      ? "heart"
-                      : "heart-outline"
-                  }
-                  size={18}
-                  color={
-                    likedIds.includes(
-                      item.id
-                    )
-                      ? "#FF4D6D"
-                      : "#FFF"
-                  }
-                />
-              </BlurView>
-            </View>
+            <Text
+              style={
+                styles.cardLocation
+              }
+            >
+              📍 {item.local}
+            </Text>
 
-            <View>
-              <Text
-                style={styles.cardTitle}
-              >
-                {item.titulo}
-              </Text>
-
+            <View
+              style={
+                styles.cardFooter
+              }
+            >
               <Text
                 style={
-                  styles.cardLocation
+                  styles.distance
                 }
               >
-                📍 {item.local}
+                {formatarDistancia(
+                  item.distancia
+                )}
               </Text>
 
               <View
                 style={
-                  styles.cardFooter
+                  styles.rating
                 }
               >
+                <MaterialCommunityIcons
+                  name="star"
+                  size={14}
+                  color="#FFD166"
+                />
+
                 <Text
                   style={
-                    styles.distance
+                    styles.ratingText
                   }
                 >
-                  {formatarDistancia(
-                    item.distancia
+                  {Math.round(
+                    item.score
                   )}
                 </Text>
-
-                <BlurView
-                  intensity={20}
-                  tint="dark"
-                  style={
-                    styles.rating
-                  }
-                >
-                  <MaterialCommunityIcons
-                    name="star"
-                    size={14}
-                    color="#FFD166"
-                  />
-
-                  <Text
-                    style={
-                      styles.ratingText
-                    }
-                  >
-                    {Math.round(
-                      item.score
-                    )}
-                  </Text>
-                </BlurView>
               </View>
             </View>
-          </View>
+          </BlurView>
         </TouchableOpacity>
       </Animated.View>
     );
@@ -593,44 +511,43 @@ export default function TelaInicio() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <SkeletonContent
-          containerStyle={{
-            flex: 1,
-            padding: 16,
-            paddingTop: 80,
-          }}
-          isLoading={loading}
-          layout={[
-            {
-              width: "100%",
-              height: 260,
-              borderRadius: 28,
-              marginBottom: 24,
-            },
-            {
-              width: "100%",
-              height: 260,
-              borderRadius: 28,
-              marginBottom: 24,
-            },
-          ]}
+      <View
+        style={
+          styles.loadingContainer
+        }
+      >
+        <MaterialCommunityIcons
+          name="calendar-star"
+          size={60}
+          color={Colors.primary}
         />
+
+        <Text
+          style={
+            styles.loadingText
+          }
+        >
+          Carregando eventos...
+        </Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      {/* GLOW BACKGROUND */}
+      <View style={styles.glow1} />
+      <View style={styles.glow2} />
+
       <Animated.ScrollView
-        entering={FadeIn.duration(600)}
         showsVerticalScrollIndicator={
           false
         }
         contentContainerStyle={{
-          paddingBottom: 140,
+          paddingBottom: 120,
         }}
       >
+        {/* HEADER */}
         <LinearGradient
           colors={[
             "#10131F",
@@ -638,22 +555,34 @@ export default function TelaInicio() {
           ]}
           style={styles.header}
         >
-          <Animated.View
-            entering={FadeInDown.springify()}
-          >
-            <Text style={styles.saudacao}>
-              Olá 👋
+          <View>
+            <Text
+              style={
+                styles.saudacao
+              }
+            >
+              {saudacaoHorario}
             </Text>
 
             <Text style={styles.nome}>
               {nomeUsuario}
             </Text>
-          </Animated.View>
+
+            <Text
+              style={
+                styles.city
+              }
+            >
+              📍 Fortaleza, CE
+            </Text>
+          </View>
 
           <BlurView
             intensity={25}
             tint="dark"
-            style={styles.notificationBtn}
+            style={
+              styles.notificationBtn
+            }
           >
             <MaterialCommunityIcons
               name="bell-outline"
@@ -663,40 +592,187 @@ export default function TelaInicio() {
           </BlurView>
         </LinearGradient>
 
-        <Animated.View
-          entering={FadeInDown.delay(
-            100
-          ).springify()}
+        {/* STORIES */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={
+            false
+          }
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingBottom: 12,
+          }}
         >
+          {eventos
+            .slice(0, 10)
+            .map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={
+                  styles.storyItem
+                }
+              >
+                <LinearGradient
+                  colors={[
+                    "#FF0080",
+                    "#7928CA",
+                  ]}
+                  style={
+                    styles.storyBorder
+                  }
+                >
+                  <Image
+                    source={{
+                      uri: item.imagem,
+                    }}
+                    style={
+                      styles.storyImage
+                    }
+                  />
+                </LinearGradient>
+
+                <Text
+                  numberOfLines={1}
+                  style={
+                    styles.storyText
+                  }
+                >
+                  {item.titulo}
+                </Text>
+              </TouchableOpacity>
+            ))}
+        </ScrollView>
+
+        {/* EVENTO DO MOMENTO */}
+        {destaques[0] && (
           <TouchableOpacity
-            style={styles.searchBox}
-            activeOpacity={0.9}
+            activeOpacity={0.95}
+            style={
+              styles.momentCard
+            }
             onPress={() =>
-              navigation.navigate("Busca")
+              navigation.navigate(
+                "Detalhes",
+                {
+                  evento:
+                    destaques[0]
+                      .original,
+                }
+              )
             }
           >
-            <MaterialCommunityIcons
-              name="magnify"
-              size={22}
-              color={
-                Colors.textSecondary
+            <Image
+              source={{
+                uri: destaques[0]
+                  .imagem,
+              }}
+              style={
+                styles.momentImage
               }
             />
 
-            <Text
-              style={styles.searchText}
-            >
-              Buscar eventos, shows...
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
+            <LinearGradient
+              colors={[
+                "transparent",
+                "rgba(0,0,0,0.95)",
+              ]}
+              style={
+                styles.momentOverlay
+              }
+            />
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
+            <View
+              style={
+                styles.momentContent
+              }
+            >
+              <Text
+                style={
+                  styles.momentLabel
+                }
+              >
+                EVENTO DO MOMENTO
+              </Text>
+
+              <Text
+                style={
+                  styles.momentTitle
+                }
+              >
+                {
+                  destaques[0]
+                    .titulo
+                }
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* CATEGORIAS */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={
+            false
+          }
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            marginTop: 20,
+          }}
+        >
+          {categorias.map((cat) => {
+            const active =
+              categoriaAtiva ===
+              cat;
+
+            return (
+              <TouchableOpacity
+                key={cat}
+                onPress={() =>
+                  setCategoriaAtiva(
+                    cat
+                  )
+                }
+                style={[
+                  styles.categoryPill,
+
+                  active &&
+                    styles.categoryPillActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.categoryText,
+
+                    active &&
+                      styles.categoryTextActive,
+                  ]}
+                >
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* DESTAQUES */}
+        <View
+          style={
+            styles.sectionHeader
+          }
+        >
+          <Text
+            style={
+              styles.sectionTitle
+            }
+          >
             Destaques
           </Text>
 
-          <Text style={styles.sectionSub}>
+          <Text
+            style={
+              styles.sectionSub
+            }
+          >
             Eventos em alta agora
           </Text>
         </View>
@@ -720,79 +796,80 @@ export default function TelaInicio() {
           showsHorizontalScrollIndicator={
             false
           }
-          snapToInterval={
-            windowWidth * 0.78 + 16
-          }
-          decelerationRate="fast"
           contentContainerStyle={{
             paddingHorizontal: 16,
           }}
-          onScroll={useAnimatedScrollHandler(
-            {
-              onScroll: (event) => {
-                scrollX.value =
-                  event.contentOffset.x;
-              },
-            }
-          )}
+          onScroll={
+            scrollHandler
+          }
           scrollEventThrottle={16}
         />
 
-        <FlashList
-          data={categorias}
-          horizontal
-          estimatedItemSize={100}
-          keyExtractor={(item) => item}
-          showsHorizontalScrollIndicator={
-            false
+        {/* MAPA AO VIVO */}
+        <TouchableOpacity
+          style={
+            styles.liveMapCard
           }
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingTop: 24,
-            paddingBottom: 10,
-          }}
-          renderItem={({ item }) => {
-            const ativo =
-              item === categoriaAtiva;
+          onPress={() =>
+            navigation.navigate(
+              "MapaVivo"
+            )
+          }
+        >
+          <LinearGradient
+            colors={[
+              "#111827",
+              "#1F2937",
+            ]}
+            style={
+              styles.liveMapGradient
+            }
+          >
+            <MaterialCommunityIcons
+              name="map-marker-radius"
+              size={28}
+              color="#8B5CF6"
+            />
 
-            return (
-              <Animated.View
-                layout={Layout.springify()}
+            <View>
+              <Text
+                style={
+                  styles.liveMapTitle
+                }
               >
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() =>
-                    setCategoriaAtiva(
-                      item
-                    )
-                  }
-                  style={[
-                    styles.categoryBtn,
-                    ativo &&
-                      styles.categoryBtnActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.categoryText,
-                      ativo &&
-                        styles.categoryTextActive,
-                    ]}
-                  >
-                    {item}
-                  </Text>
-                </TouchableOpacity>
-              </Animated.View>
-            );
-          }}
-        />
+                Mapa Cultural Ao Vivo
+              </Text>
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
+              <Text
+                style={
+                  styles.liveMapSub
+                }
+              >
+                Veja eventos próximos agora
+              </Text>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* PRÓXIMOS */}
+        <View
+          style={
+            styles.sectionHeader
+          }
+        >
+          <Text
+            style={
+              styles.sectionTitle
+            }
+          >
             Próximos de você
           </Text>
 
-          <Text style={styles.sectionSub}>
+          <Text
+            style={
+              styles.sectionSub
+            }
+          >
             Baseado na sua localização
           </Text>
         </View>
@@ -817,221 +894,186 @@ export default function TelaInicio() {
             paddingHorizontal: 16,
           }}
         />
-
-        <Animated.View
-          entering={FadeInDown.delay(
-            400
-          ).springify()}
-        >
-          <TouchableOpacity
-            activeOpacity={0.95}
-            onPress={abrirMapa}
-            style={styles.mapCard}
-          >
-            <Animated.Image
-              source={{
-                uri: "https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1200&auto=format&fit=crop",
-              }}
-              style={styles.mapImage}
-            />
-
-            <LinearGradient
-              colors={[
-                "transparent",
-                "rgba(0,0,0,0.92)",
-              ]}
-              style={styles.mapGradient}
-            />
-
-            <View
-              style={styles.mapContent}
-            >
-              <BlurView
-                intensity={30}
-                tint="dark"
-                style={styles.mapIcon}
-              >
-                <MaterialCommunityIcons
-                  name="map-marker-radius"
-                  size={22}
-                  color="#FFF"
-                />
-              </BlurView>
-
-              <View
-                style={{ flex: 1 }}
-              >
-                <Text
-                  style={
-                    styles.mapTitle
-                  }
-                >
-                  Explorar no mapa
-                </Text>
-
-                <Text
-                  style={styles.mapText}
-                >
-                  Veja eventos próximos
-                  em tempo real
-                </Text>
-              </View>
-
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={26}
-                color="#FFF"
-              />
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
       </Animated.ScrollView>
-
-      <Modal
-        visible={showMapErrorModal}
-        transparent
-        animationType="none"
-      >
-        <Animated.View
-          entering={FadeIn.duration(200)}
-          style={styles.modalOverlay}
-        >
-          <Animated.View
-            entering={FadeInDown.springify()}
-          >
-            <BlurView
-              intensity={70}
-              tint="dark"
-              style={styles.modalCard}
-            >
-              <LinearGradient
-                colors={[
-                  Colors.primary,
-                  "#7B5CFF",
-                ]}
-                style={styles.modalIcon}
-              >
-                <MaterialCommunityIcons
-                  name="map-marker-off"
-                  size={34}
-                  color="#FFF"
-                />
-              </LinearGradient>
-
-              <Text
-                style={styles.modalTitle}
-              >
-                Não foi possível abrir o
-                mapa
-              </Text>
-
-              <Text
-                style={
-                  styles.modalMessage
-                }
-              >
-                {mapErrorMessage}
-              </Text>
-
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={() =>
-                  setShowMapErrorModal(
-                    false
-                  )
-                }
-                style={{
-                  width: "100%",
-                }}
-              >
-                <LinearGradient
-                  colors={[
-                    Colors.primary,
-                    "#7B5CFF",
-                  ]}
-                  style={
-                    styles.modalButton
-                  }
-                >
-                  <Text
-                    style={
-                      styles.modalButtonText
-                    }
-                  >
-                    Entendi
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </BlurView>
-          </Animated.View>
-        </Animated.View>
-      </Modal>
     </View>
   );
 }
 
-const AnimatedFlashList =
-  Animated.createAnimatedComponent(
-    FlashList
-  );
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor:
+      Colors.background,
+  },
+
+  glow1: {
+    position: "absolute",
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor:
+      "#7C3AED",
+    opacity: 0.15,
+    top: -60,
+    left: -40,
+  },
+
+  glow2: {
+    position: "absolute",
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor:
+      "#EC4899",
+    opacity: 0.12,
+    top: 80,
+    right: -50,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor:
+      Colors.background,
+  },
+
+  loadingText: {
+    color: "#FFF",
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: "600",
   },
 
   header: {
     paddingTop: 60,
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingBottom: 20,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "center",
   },
 
   saudacao: {
-    color: Colors.textSecondary,
-    fontSize: 15,
+    color:
+      Colors.textSecondary,
+    fontSize: 16,
   },
 
   nome: {
     color: "#FFF",
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: "bold",
     marginTop: 4,
   },
 
+  city: {
+    color:
+      "rgba(255,255,255,0.6)",
+    marginTop: 6,
+  },
+
   notificationBtn: {
-    width: 48,
-    height: 48,
+    width: 50,
+    height: 50,
     borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
   },
 
-  searchBox: {
-    marginHorizontal: 16,
-    backgroundColor: Colors.surface,
-    borderRadius: 22,
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    flexDirection: "row",
+  storyItem: {
     alignItems: "center",
-    marginBottom: 22,
+    marginRight: 14,
+    width: 74,
   },
 
-  searchText: {
-    color: Colors.textSecondary,
-    marginLeft: 10,
-    fontSize: 14,
+  storyBorder: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  storyImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+  },
+
+  storyText: {
+    color: "#FFF",
+    fontSize: 11,
+    marginTop: 6,
+    textAlign: "center",
+  },
+
+  momentCard: {
+    height: 240,
+    marginHorizontal: 16,
+    borderRadius: 28,
+    overflow: "hidden",
+    marginTop: 12,
+  },
+
+  momentImage: {
+    width: "100%",
+    height: "100%",
+  },
+
+  momentOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+
+  momentContent: {
+    position: "absolute",
+    bottom: 24,
+    left: 24,
+    right: 24,
+  },
+
+  momentLabel: {
+    color: "#A78BFA",
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+
+  momentTitle: {
+    color: "#FFF",
+    fontSize: 28,
+    fontWeight: "bold",
+  },
+
+  categoryPill: {
+    backgroundColor:
+      "rgba(255,255,255,0.08)",
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+
+  categoryPillActive: {
+    backgroundColor:
+      Colors.primary,
+  },
+
+  categoryText: {
+    color:
+      "rgba(255,255,255,0.7)",
+    fontWeight: "600",
+  },
+
+  categoryTextActive: {
+    color: "#FFF",
   },
 
   sectionHeader: {
     paddingHorizontal: 16,
     marginBottom: 14,
-    marginTop: 8,
+    marginTop: 26,
   },
 
   sectionTitle: {
@@ -1041,9 +1083,9 @@ const styles = StyleSheet.create({
   },
 
   sectionSub: {
-    color: Colors.textSecondary,
+    color:
+      Colors.textSecondary,
     marginTop: 4,
-    fontSize: 13,
   },
 
   heroCard: {
@@ -1072,7 +1114,8 @@ const styles = StyleSheet.create({
 
   heroBadge: {
     alignSelf: "flex-start",
-    backgroundColor: Colors.primary,
+    backgroundColor:
+      Colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
@@ -1093,54 +1136,40 @@ const styles = StyleSheet.create({
   },
 
   heroLocation: {
-    color: "rgba(255,255,255,0.75)",
-    marginBottom: 14,
+    color:
+      "rgba(255,255,255,0.75)",
   },
 
-  heroFooter: {
+  liveMapCard: {
+    marginTop: 24,
+    marginHorizontal: 16,
+  },
+
+  liveMapGradient: {
+    borderRadius: 24,
+    padding: 20,
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 14,
   },
 
-  metric: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-
-  metricText: {
+  liveMapTitle: {
     color: "#FFF",
-    fontSize: 12,
+    fontSize: 17,
+    fontWeight: "bold",
   },
 
-  categoryBtn: {
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 22,
-    marginRight: 10,
-  },
-
-  categoryBtnActive: {
-    backgroundColor: Colors.primary,
-  },
-
-  categoryText: {
-    color: Colors.textSecondary,
-    fontWeight: "600",
-  },
-
-  categoryTextActive: {
-    color: "#FFF",
+  liveMapSub: {
+    color:
+      "rgba(255,255,255,0.65)",
+    marginTop: 4,
   },
 
   card: {
-    height: 270,
-    borderRadius: 30,
+    height: 260,
+    borderRadius: 28,
     overflow: "hidden",
-    marginBottom: 20,
-    backgroundColor: Colors.surface,
+    marginBottom: 18,
   },
 
   cardImage: {
@@ -1152,56 +1181,33 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
 
-  cardContent: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "space-between",
-    padding: 18,
-  },
-
-  cardTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-
-  categoryMini: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    overflow: "hidden",
-  },
-
-  categoryMiniText: {
-    color: "#FFF",
-    fontSize: 11,
-    fontWeight: "bold",
-  },
-
-  likeButton: {
-    width: 44,
-    height: 44,
+  glassFooter: {
+    position: "absolute",
+    left: 14,
+    right: 14,
+    bottom: 14,
     borderRadius: 22,
-    justifyContent: "center",
-    alignItems: "center",
+    padding: 16,
     overflow: "hidden",
   },
 
   cardTitle: {
     color: "#FFF",
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 8,
   },
 
   cardLocation: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 13,
-    marginBottom: 14,
+    color:
+      "rgba(255,255,255,0.75)",
+    marginTop: 6,
   },
 
   cardFooter: {
+    marginTop: 14,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "center",
   },
 
@@ -1214,120 +1220,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    backgroundColor:
+      "rgba(255,255,255,0.12)",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 14,
-    overflow: "hidden",
   },
 
   ratingText: {
     color: "#FFF",
     fontWeight: "bold",
-    fontSize: 12,
-  },
-
-  mapCard: {
-    height: 220,
-    marginHorizontal: 16,
-    marginTop: 10,
-    borderRadius: 30,
-    overflow: "hidden",
-  },
-
-  mapImage: {
-    width: "100%",
-    height: "100%",
-  },
-
-  mapGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-
-  mapContent: {
-    position: "absolute",
-    left: 20,
-    right: 20,
-    bottom: 20,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  mapIcon: {
-    width: 54,
-    height: 54,
-    borderRadius: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
-    marginRight: 16,
-  },
-
-  mapTitle: {
-    color: "#FFF",
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-
-  mapText: {
-    color: "rgba(255,255,255,0.72)",
-    fontSize: 13,
-    lineHeight: 20,
-  },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor:
-      "rgba(0,0,0,0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-
-  modalCard: {
-    width: "100%",
-    borderRadius: 30,
-    padding: 24,
-    alignItems: "center",
-    overflow: "hidden",
-    backgroundColor:
-      "rgba(20,20,30,0.85)",
-  },
-
-  modalIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-
-  modalTitle: {
-    color: "#FFF",
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-
-  modalMessage: {
-    color: "rgba(255,255,255,0.72)",
-    textAlign: "center",
-    fontSize: 15,
-    lineHeight: 24,
-    marginBottom: 24,
-  },
-
-  modalButton: {
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-
-  modalButtonText: {
-    color: "#FFF",
-    fontWeight: "bold",
-    fontSize: 15,
   },
 });

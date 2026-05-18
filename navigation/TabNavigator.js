@@ -7,7 +7,16 @@ import {
 	Text,
 	StyleSheet,
 	Platform,
+	TouchableOpacity,
 } from "react-native";
+
+import Animated, {
+	FadeIn,
+	useAnimatedStyle,
+	useSharedValue,
+	withSpring,
+	withTiming,
+} from "react-native-reanimated";
 
 import { BlurView } from "expo-blur";
 
@@ -34,60 +43,151 @@ function CustomTabIcon({
 	focused,
 	icon,
 	label,
+	onPress,
 }) {
+	const scale = useSharedValue(
+		focused ? 1 : 0.95
+	);
+
+	const animatedStyle =
+		useAnimatedStyle(() => ({
+			transform: [
+				{
+					scale: scale.value,
+				},
+			],
+		}));
+
+	React.useEffect(() => {
+		scale.value = withSpring(
+			focused ? 1 : 0.95,
+			{
+				damping: 12,
+				stiffness: 120,
+			}
+		);
+	}, [focused]);
+
 	return (
-		<View style={styles.tabItem}>
-			{/* ACTIVE BACKGROUND */}
-			{focused && (
-				<LinearGradient
-					colors={[
-						colors.primary,
-						colors.primaryLight ||
+		<TouchableOpacity
+			activeOpacity={0.9}
+			onPress={onPress}
+			style={styles.touchable}
+		>
+			<Animated.View
+				style={[
+					styles.tabItem,
+					animatedStyle,
+				]}
+			>
+				{/* ACTIVE GLOW */}
+				{focused && (
+					<Animated.View
+						entering={FadeIn.duration(
+							250
+						)}
+						style={
+							styles.glowWrapper
+						}
+					>
+						<LinearGradient
+							colors={[
+								colors.primary +
+									"55",
+								"transparent",
+							]}
+							start={{
+								x: 0.2,
+								y: 0,
+							}}
+							end={{
+								x: 1,
+								y: 1,
+							}}
+							style={
+								styles.glow
+							}
+						/>
+					</Animated.View>
+				)}
+
+				{/* ACTIVE BACKGROUND */}
+				{focused && (
+					<LinearGradient
+						colors={[
 							colors.primary,
+							colors.primaryLight ||
+								colors.primary,
+						]}
+						start={{
+							x: 0,
+							y: 0,
+						}}
+						end={{
+							x: 1,
+							y: 1,
+						}}
+						style={
+							styles.activeBackground
+						}
+					/>
+				)}
+
+				{/* ICON */}
+				<View
+					style={[
+						styles.iconWrapper,
+
+						focused &&
+							styles.iconWrapperActive,
 					]}
-					start={{ x: 0, y: 0 }}
-					end={{ x: 1, y: 1 }}
-					style={styles.activeBackground}
-				/>
-			)}
+				>
+					<MaterialCommunityIcons
+						name={icon}
+						size={
+							focused ? 24 : 22
+						}
+						color={
+							focused
+								? "#fff"
+								: colors.textMuted
+						}
+					/>
+				</View>
 
-			{/* ICON */}
-			<View
-				style={[
-					styles.iconWrapper,
+				{/* LABEL */}
+				<Text
+					numberOfLines={1}
+					style={[
+						styles.label,
 
-					focused && styles.iconWrapperActive,
-				]}
-			>
-				<MaterialCommunityIcons
-					name={icon}
-					size={22}
-					color={
-						focused
-							? "#fff"
-							: colors.textMuted
-					}
-				/>
-			</View>
+						{
+							color:
+								focused
+									? "#FFF"
+									: colors.textMuted,
 
-			{/* LABEL */}
-			<Text
-				style={[
-					styles.label,
+							opacity:
+								focused
+									? 1
+									: 0.72,
+						},
+					]}
+				>
+					{label}
+				</Text>
 
-					{
-						color: focused
-							? colors.textPrimary
-							: colors.textMuted,
-					},
-				]}
-			>
-				{label}
-			</Text>
-
-			{/* INDICATOR */}
-			{focused && <View style={styles.dot} />}
-		</View>
+				{/* ACTIVE DOT */}
+				{focused && (
+					<Animated.View
+						entering={FadeIn.duration(
+							200
+						)}
+						style={styles.dot}
+					/>
+				)}
+			</Animated.View>
+		</TouchableOpacity>
 	);
 }
 
@@ -103,27 +203,27 @@ export default function TabNavigator() {
 
 				tabBarHideOnKeyboard: true,
 
-				/* TAB BAR */
 				tabBarStyle: {
 					position: "absolute",
 
-					left: 18,
-					right: 18,
+					left: 14,
+					right: 14,
 
 					bottom:
 						Platform.OS === "ios"
-							? insets.bottom + 10
-							: 18,
+							? insets.bottom + 8
+							: 14,
 
-					height: 82,
+					height: 86,
 
-					paddingTop: 10,
+					paddingTop: 8,
 
-					borderRadius: 30,
+					borderRadius: 34,
 
 					borderTopWidth: 0,
 
-					backgroundColor: "transparent",
+					backgroundColor:
+						"transparent",
 
 					elevation: 0,
 
@@ -134,67 +234,106 @@ export default function TabNavigator() {
 						height: 10,
 					},
 
-					shadowOpacity: 0.2,
+					shadowOpacity: 0.18,
 
-					shadowRadius: 25,
+					shadowRadius: 20,
 				},
 
-				/* GLASS EFFECT */
+				/* GLASS BACKGROUND */
 				tabBarBackground: () => (
-					<BlurView
-						intensity={80}
-						tint="dark"
-						style={styles.blurContainer}
+					<View
+						style={
+							StyleSheet.absoluteFill
+						}
 					>
-						<View style={styles.overlay} />
-					</BlurView>
+						<BlurView
+							intensity={90}
+							tint="dark"
+							style={
+								styles.blurContainer
+							}
+						>
+							<LinearGradient
+								colors={[
+									"rgba(255,255,255,0.04)",
+									"rgba(255,255,255,0.01)",
+								]}
+								style={
+									StyleSheet.absoluteFill
+								}
+							/>
+
+							<View
+								style={
+									styles.overlay
+								}
+							/>
+						</BlurView>
+					</View>
 				),
 
-				/* ICON */
-				tabBarIcon: ({ focused }) => {
+				/* TAB BUTTON */
+				tabBarButton: (
+					props
+				) => {
+					const {
+						accessibilityState,
+						onPress,
+					} = props;
+
+					const focused =
+						accessibilityState?.selected;
+
 					let iconName;
 					let label;
 
 					switch (route.name) {
 						case "Inicio":
-							iconName = focused
-								? "home"
-								: "home-outline";
+							iconName =
+								focused
+									? "home"
+									: "home-outline";
 							label = "Início";
 							break;
 
 						case "Busca":
-							iconName = focused
-								? "magnify"
-								: "magnify";
+							iconName =
+								focused
+									? "magnify"
+									: "magnify";
 							label = "Busca";
 							break;
 
 						case "Feed":
-							iconName = focused
-								? "compass"
-								: "compass-outline";
+							iconName =
+								focused
+									? "compass"
+									: "compass-outline";
 							label = "Feed";
 							break;
 
 						case "Ingressos":
-							iconName = focused
-								? "ticket-confirmation"
-								: "ticket-confirmation-outline";
+							iconName =
+								focused
+									? "ticket-confirmation"
+									: "ticket-confirmation-outline";
 							label = "Tickets";
 							break;
 
 						case "Comunidade":
-							iconName = focused
-								? "people"
-								: "people-outline";
-							label = "Comunidade";
+							iconName =
+								focused
+									? "account-group"
+									: "account-group-outline";
+							label =
+								"Comunidade";
 							break;
 
 						case "Conta":
-							iconName = focused
-								? "account"
-								: "account-outline";
+							iconName =
+								focused
+									? "account"
+									: "account-outline";
 							label = "Perfil";
 							break;
 					}
@@ -204,6 +343,7 @@ export default function TabNavigator() {
 							focused={focused}
 							icon={iconName}
 							label={label}
+							onPress={onPress}
 						/>
 					);
 				},
@@ -231,7 +371,9 @@ export default function TabNavigator() {
 
 			<Tab.Screen
 				name="Comunidade"
-				component={ComunidadeStack}
+				component={
+					ComunidadeStack
+				}
 			/>
 
 			<Tab.Screen
@@ -247,27 +389,35 @@ const styles = StyleSheet.create({
 	blurContainer: {
 		flex: 1,
 
-		borderRadius: 30,
+		borderRadius: 34,
 
 		overflow: "hidden",
 
 		borderWidth: 1,
 
 		borderColor:
-			colors.glassBorder ||
-			"rgba(255,255,255,0.06)",
+			"rgba(255,255,255,0.08)",
 
-		backgroundColor: "rgba(15,15,20,0.82)",
+		backgroundColor:
+			"rgba(12,12,18,0.88)",
 	},
 
 	overlay: {
 		flex: 1,
 
 		backgroundColor:
-			colors.surface + "CC",
+			"rgba(18,18,28,0.45)",
 	},
 
-	/* TAB ITEM */
+	/* TAB BUTTON */
+	touchable: {
+		flex: 1,
+
+		alignItems: "center",
+
+		justifyContent: "center",
+	},
+
 	tabItem: {
 		width: 68,
 
@@ -275,7 +425,21 @@ const styles = StyleSheet.create({
 
 		justifyContent: "center",
 
-		paddingTop: 6,
+		paddingTop: 4,
+	},
+
+	/* GLOW */
+	glowWrapper: {
+		position: "absolute",
+
+		top: -4,
+	},
+
+	glow: {
+		width: 72,
+		height: 72,
+
+		borderRadius: 999,
 	},
 
 	/* ACTIVE BG */
@@ -284,22 +448,23 @@ const styles = StyleSheet.create({
 
 		top: -2,
 
-		width: 58,
-		height: 58,
+		width: 56,
+		height: 56,
 
 		borderRadius: 20,
 
-		opacity: 0.18,
+		opacity: 0.22,
 	},
 
 	/* ICON */
 	iconWrapper: {
-		width: 46,
-		height: 46,
+		width: 48,
+		height: 48,
 
-		borderRadius: 16,
+		borderRadius: 18,
 
 		alignItems: "center",
+
 		justifyContent: "center",
 	},
 
@@ -314,14 +479,14 @@ const styles = StyleSheet.create({
 
 		shadowOffset: {
 			width: 0,
-			height: 6,
+			height: 8,
 		},
 
-		shadowOpacity: 0.35,
+		shadowOpacity: 0.4,
 
-		shadowRadius: 12,
+		shadowRadius: 16,
 
-		elevation: 8,
+		elevation: 10,
 	},
 
 	/* LABEL */

@@ -7,7 +7,7 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Colors } from "../styles/Colors";
-import { formatDistance } from "../services/mapService";
+import { formatarDistancia } from "../services/mapaVivoService";
 
 export default function MapEventMarker({
   id,
@@ -57,7 +57,7 @@ export default function MapEventMarker({
                 color={Colors.textSecondary}
               />
               <Text style={styles.statText}>
-                {formatDistance(distance)}
+                {formatarDistancia(distance)}
               </Text>
             </View>
             <View style={styles.stat}>
