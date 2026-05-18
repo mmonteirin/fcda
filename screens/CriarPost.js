@@ -1,262 +1,1042 @@
 import React, { useState } from "react";
 import {
-  View,
-  TouchableOpacity,
-  Image,
-  TextInput,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
+	View,
+	TouchableOpacity,
+	Image,
+	TextInput,
+	StyleSheet,
+	ActivityIndicator,
+	Modal,
 } from "react-native";
 
 import * as ImagePicker from "expo-image-picker";
+
 import { LinearGradient } from "expo-linear-gradient";
+
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+
+import { BlurView } from "expo-blur";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+import {
+	collection,
+	addDoc,
+	serverTimestamp,
+} from "firebase/firestore";
+
+import { MotiView } from "moti";
 
 import { useAuth } from "../context/AuthContext";
+
 import AppText from "../components/AppText";
+
 import { Colors } from "../styles/Colors";
+
 import { db } from "../firebaseConfig";
 
-// ✅ Usa ImgBB em vez de Firebase Storage
 import { uploadImagem } from "../services/uploadService";
 
-// Tela ignorada/não usada, substituida por AdmCadastroEvento, ou seja, so adm criam post, usuários só vao ver o feed e detalhes do evento(para avaliar e declarar ocorrencia), sem criar posts
-export default function CriarPost({ navigation }) {
-  const { user, profile } = useAuth();
-  const insets = useSafeAreaInsets();
+export default function CriarPost({
+	navigation,
+}) {
+	const { user, profile } =
+		useAuth();
 
-  const [imagem, setImagem] = useState(null); // URI local (preview)
-  const [descricao, setDescricao] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+	const insets =
+		useSafeAreaInsets();
 
-  /* 📷 Escolher imagem */
-  const escolherImagem = async () => {
-    try {
-      const permission =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+	const [imagem, setImagem] =
+		useState(null);
 
-      if (!permission.granted) {
-        Alert.alert("Permissão necessária", "Permita acesso à galeria.");
-        return;
-      }
+	const [descricao, setDescricao] =
+		useState("");
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.5,
-        allowsEditing: true,
-        aspect: [4, 3],
-      });
+	const [loading, setLoading] =
+		useState(false);
 
-      if (!result.canceled) {
-        setImagem(result.assets[0].uri);
-      }
-    } catch (e) {
-      console.log(e);
-      Alert.alert("Erro ao abrir galeria");
-    }
-  };
+	const [
+		uploadProgress,
+		setUploadProgress,
+	] = useState(0);
 
-  /* 🚀 PUBLICAR */
-  const publicar = async () => {
-    if (!imagem) {
-      Alert.alert("Atenção", "Selecione uma imagem");
-      return;
-    }
+	/* MODAL */
+	const [modalVisible, setModalVisible] =
+		useState(false);
 
-    if (!descricao.trim()) {
-      Alert.alert("Atenção", "Digite uma descrição");
-      return;
-    }
+	const [modalData, setModalData] =
+		useState({
+			title: "",
+			message: "",
+			type: "success",
+		});
 
-    try {
-      setLoading(true);
+	const showModal = (
+		title,
+		message,
+		type = "success"
+	) => {
+		setModalData({
+			title,
+			message,
+			type,
+		});
 
-      // 1. Faz upload da imagem para ImgBB e obtém URL pública
-      const imageUrl = await uploadImagem(imagem, user?.uid, (p) =>
-        setUploadProgress(p)
-      );
+		setModalVisible(true);
+	};
 
-      // 2. Salva post no Firestore com a URL (string) da imagem
-      await addDoc(collection(db, "posts"), {
-        userId: user?.uid,
-        nome: profile?.nome || user?.displayName || "Usuário",
-        foto: profile?.foto || user?.photoURL || "https://i.pravatar.cc/100",
-        imagemUrl: imageUrl,   // URL pública do ImgBB
-        descricao: descricao.trim(),
-        createdAt: serverTimestamp(),
-      });
+	/* 📷 ESCOLHER IMAGEM */
+	const escolherImagem =
+		async () => {
+			try {
+				const permission =
+					await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-      Alert.alert("Sucesso", "Post publicado!");
-      navigation.goBack();
-    } catch (e) {
-      console.log(e);
-      Alert.alert("Erro", "Não foi possível publicar. Tente novamente.");
-    } finally {
-      setLoading(false);
-      setUploadProgress(0);
-    }
-  };
+				if (
+					!permission.granted
+				) {
+					showModal(
+						"Permissão necessária",
+						"Permita acesso à galeria.",
+						"error"
+					);
 
-  const podePublicar = imagem && descricao.trim();
+					return;
+				}
 
-  return (
-    <View style={styles.container}>
-      {/* HEADER */}
-      <LinearGradient
-        colors={[Colors.background, Colors.surface]}
-        style={[styles.header, { paddingTop: insets.top + 10 }]}
-      >
-        <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <MaterialCommunityIcons
-              name="arrow-left"
-              size={26}
-              color={Colors.primary}
-            />
-          </TouchableOpacity>
+				const result =
+					await ImagePicker.launchImageLibraryAsync(
+						{
+							mediaTypes:
+								ImagePicker.MediaTypeOptions.Images,
 
-          <AppText style={styles.title}>Novo Post</AppText>
+							quality: 0.7,
 
-          <TouchableOpacity
-            onPress={publicar}
-            disabled={!podePublicar || loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={Colors.primary} />
-            ) : (
-              <AppText
-                style={[
-                  styles.publicar,
-                  !podePublicar && { opacity: 0.4 },
-                ]}
-              >
-                Publicar
-              </AppText>
-            )}
-          </TouchableOpacity>
-        </View>
+							allowsEditing: true,
 
-        {/* Barra de progresso do upload */}
-        {loading && uploadProgress > 0 && uploadProgress < 1 && (
-          <AppText style={styles.progressText}>
-            Enviando imagem: {Math.round(uploadProgress * 100)}%
-          </AppText>
-        )}
-      </LinearGradient>
+							aspect: [4, 3],
+						}
+					);
 
-      {/* IMAGEM */}
-      <TouchableOpacity style={styles.imageBox} onPress={escolherImagem}>
-        {imagem ? (
-          <Image source={{ uri: imagem }} style={styles.image} />
-        ) : (
-          <View style={styles.placeholder}>
-            <MaterialCommunityIcons
-              name="image-plus"
-              size={40}
-              color={Colors.primary}
-            />
-            <AppText style={styles.placeholderText}>
-              Adicionar imagem
-            </AppText>
-          </View>
-        )}
-      </TouchableOpacity>
+				if (
+					!result.canceled
+				) {
+					setImagem(
+						result.assets[0].uri
+					);
+				}
+			} catch (e) {
+				console.log(e);
 
-      {/* DESCRIÇÃO */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          placeholder="Escreva algo sobre esse momento..."
-          placeholderTextColor={Colors.textMuted}
-          value={descricao}
-          onChangeText={setDescricao}
-          multiline
-          style={styles.input}
-        />
-      </View>
-    </View>
-  );
+				showModal(
+					"Erro",
+					"Não foi possível abrir a galeria.",
+					"error"
+				);
+			}
+		};
+
+	/* 🚀 PUBLICAR */
+	const publicar =
+		async () => {
+			if (!imagem) {
+				showModal(
+					"Atenção",
+					"Selecione uma imagem.",
+					"error"
+				);
+
+				return;
+			}
+
+			if (
+				!descricao.trim()
+			) {
+				showModal(
+					"Atenção",
+					"Digite uma descrição.",
+					"error"
+				);
+
+				return;
+			}
+
+			try {
+				setLoading(true);
+
+				const imageUrl =
+					await uploadImagem(
+						imagem,
+						user?.uid,
+						(p) =>
+							setUploadProgress(
+								p
+							)
+					);
+
+				await addDoc(
+					collection(
+						db,
+						"posts"
+					),
+					{
+						userId:
+							user?.uid,
+
+						nome:
+							profile?.nome ||
+							user?.displayName ||
+							"Usuário",
+
+						foto:
+							profile?.foto ||
+							user?.photoURL ||
+							"https://i.pravatar.cc/100",
+
+						imagemUrl:
+							imageUrl,
+
+						descricao:
+							descricao.trim(),
+
+						createdAt:
+							serverTimestamp(),
+					}
+				);
+
+				showModal(
+					"Sucesso 🎉",
+					"Post publicado com sucesso!"
+				);
+
+				setTimeout(() => {
+					setModalVisible(
+						false
+					);
+
+					navigation.goBack();
+				}, 1500);
+			} catch (e) {
+				console.log(e);
+
+				showModal(
+					"Erro",
+					"Não foi possível publicar o post.",
+					"error"
+				);
+			} finally {
+				setLoading(false);
+
+				setUploadProgress(0);
+			}
+		};
+
+	const podePublicar =
+		imagem &&
+		descricao.trim();
+
+	return (
+		<View style={styles.container}>
+			{/* STATUS */}
+			<View
+				style={{
+					height:
+						insets.top,
+					backgroundColor:
+						"#070B14",
+				}}
+			/>
+
+			{/* HEADER */}
+			<LinearGradient
+				colors={[
+					"#070B14",
+					"#111827",
+				]}
+				style={
+					styles.header
+				}
+			>
+				<View
+					style={
+						styles.headerRow
+					}
+				>
+					<TouchableOpacity
+						onPress={() =>
+							navigation.goBack()
+						}
+					>
+						<BlurView
+							intensity={
+								60
+							}
+							tint="dark"
+							style={
+								styles.backBtn
+							}
+						>
+							<MaterialCommunityIcons
+								name="arrow-left"
+								size={
+									24
+								}
+								color="#FFF"
+							/>
+						</BlurView>
+					</TouchableOpacity>
+
+					<AppText
+						style={
+							styles.title
+						}
+					>
+						Novo Post
+					</AppText>
+
+					<TouchableOpacity
+						disabled={
+							!podePublicar ||
+							loading
+						}
+						onPress={
+							publicar
+						}
+					>
+						<LinearGradient
+							colors={
+								podePublicar
+									? [
+											"#7C3AED",
+											"#5B21B6",
+									  ]
+									: [
+											"#333",
+											"#333",
+									  ]
+							}
+							style={
+								styles.publishBtn
+							}
+						>
+							{loading ? (
+								<ActivityIndicator
+									color="#FFF"
+									size="small"
+								/>
+							) : (
+								<AppText
+									style={
+										styles.publishText
+									}
+								>
+									Publicar
+								</AppText>
+							)}
+						</LinearGradient>
+					</TouchableOpacity>
+				</View>
+
+				{/* PROGRESS */}
+				{loading &&
+					uploadProgress >
+						0 &&
+					uploadProgress <
+						1 && (
+						<View
+							style={
+								styles.progressContainer
+							}
+						>
+							<View
+								style={
+									styles.progressBarBg
+								}
+							>
+								<View
+									style={[
+										styles.progressBar,
+										{
+											width: `${
+												uploadProgress *
+												100
+											}%`,
+										},
+									]}
+								/>
+							</View>
+
+							<AppText
+								style={
+									styles.progressText
+								}
+							>
+								Enviando imagem{" "}
+								{Math.round(
+									uploadProgress *
+										100
+								)}
+								%
+							</AppText>
+						</View>
+					)}
+			</LinearGradient>
+
+			{/* CONTEÚDO */}
+			<MotiView
+				from={{
+					opacity: 0,
+					translateY: 30,
+				}}
+				animate={{
+					opacity: 1,
+					translateY: 0,
+				}}
+				transition={{
+					type: "timing",
+					duration: 600,
+				}}
+				style={{
+					flex: 1,
+				}}
+			>
+				{/* IMAGEM */}
+				<TouchableOpacity
+					activeOpacity={
+						0.9
+					}
+					style={
+						styles.imageBox
+					}
+					onPress={
+						escolherImagem
+					}
+				>
+					{imagem ? (
+						<>
+							<Image
+								source={{
+									uri: imagem,
+								}}
+								style={
+									styles.image
+								}
+							/>
+
+							<LinearGradient
+								colors={[
+									"transparent",
+									"rgba(0,0,0,0.85)",
+								]}
+								style={
+									styles.imageOverlay
+								}
+							>
+								<View
+									style={
+										styles.changePhoto
+									}
+								>
+									<MaterialCommunityIcons
+										name="camera"
+										size={
+											18
+										}
+										color="#FFF"
+									/>
+
+									<AppText
+										style={
+											styles.changePhotoText
+										}
+									>
+										Alterar foto
+									</AppText>
+								</View>
+							</LinearGradient>
+						</>
+					) : (
+						<View
+							style={
+								styles.placeholder
+							}
+						>
+							<LinearGradient
+								colors={[
+									"#7C3AED",
+									"#5B21B6",
+								]}
+								style={
+									styles.placeholderIcon
+								}
+							>
+								<MaterialCommunityIcons
+									name="image-plus"
+									size={
+										42
+									}
+									color="#FFF"
+								/>
+							</LinearGradient>
+
+							<AppText
+								style={
+									styles.placeholderTitle
+								}
+							>
+								Adicionar imagem
+							</AppText>
+
+							<AppText
+								style={
+									styles.placeholderText
+								}
+							>
+								Escolha uma imagem incrível para o seu post
+							</AppText>
+						</View>
+					)}
+				</TouchableOpacity>
+
+				{/* INPUT */}
+				<View
+					style={
+						styles.inputContainer
+					}
+				>
+					<View
+						style={
+							styles.inputHeader
+						}
+					>
+						<MaterialCommunityIcons
+							name="text-box-outline"
+							size={20}
+							color={
+								Colors.primary
+							}
+						/>
+
+						<AppText
+							style={
+								styles.inputLabel
+							}
+						>
+							Descrição
+						</AppText>
+					</View>
+
+					<TextInput
+						placeholder="Escreva algo sobre esse momento..."
+						placeholderTextColor={
+							Colors.textMuted
+						}
+						value={
+							descricao
+						}
+						onChangeText={
+							setDescricao
+						}
+						multiline
+						style={
+							styles.input
+						}
+					/>
+
+					<View
+						style={
+							styles.counterRow
+						}
+					>
+						<AppText
+							style={
+								styles.counter
+							}
+						>
+							{
+								descricao.length
+							}
+							/500
+						</AppText>
+					</View>
+				</View>
+			</MotiView>
+
+			{/* MODAL */}
+			<Modal
+				transparent
+				animationType="fade"
+				visible={
+					modalVisible
+				}
+				onRequestClose={() =>
+					setModalVisible(
+						false
+					)
+				}
+			>
+				<View
+					style={
+						styles.modalOverlay
+					}
+				>
+					<View
+						style={
+							styles.modalBox
+						}
+					>
+						<View
+							style={[
+								styles.modalIcon,
+								{
+									backgroundColor:
+										modalData.type ===
+										"success"
+											? "rgba(34,197,94,0.18)"
+											: "rgba(239,68,68,0.18)",
+								},
+							]}
+						>
+							<MaterialCommunityIcons
+								name={
+									modalData.type ===
+									"success"
+										? "check-circle"
+										: "alert-circle"
+								}
+								size={
+									42
+								}
+								color={
+									modalData.type ===
+									"success"
+										? "#22C55E"
+										: "#EF4444"
+								}
+							/>
+						</View>
+
+						<AppText
+							style={
+								styles.modalTitle
+							}
+						>
+							{
+								modalData.title
+							}
+						</AppText>
+
+						<AppText
+							style={
+								styles.modalMessage
+							}
+						>
+							{
+								modalData.message
+							}
+						</AppText>
+
+						<TouchableOpacity
+							onPress={() =>
+								setModalVisible(
+									false
+								)
+							}
+						>
+							<LinearGradient
+								colors={[
+									"#7C3AED",
+									"#5B21B6",
+								]}
+								style={
+									styles.modalBtn
+								}
+							>
+								<AppText
+									style={
+										styles.modalBtnText
+									}
+								>
+									OK
+								</AppText>
+							</LinearGradient>
+						</TouchableOpacity>
+					</View>
+				</View>
+			</Modal>
+		</View>
+	);
 }
 
-/* STYLES */
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+const styles =
+	StyleSheet.create({
+		container: {
+			flex: 1,
+			backgroundColor:
+				"#070B14",
+		},
 
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 15,
-  },
+		header: {
+			paddingHorizontal: 18,
+			paddingBottom: 18,
+		},
 
-  headerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+		headerRow: {
+			flexDirection:
+				"row",
 
-  title: {
-    color: Colors.textPrimary,
-    fontSize: 18,
-    fontWeight: "bold",
-  },
+			alignItems:
+				"center",
 
-  publicar: {
-    color: Colors.primary,
-    fontWeight: "bold",
-    fontSize: 14,
-  },
+			justifyContent:
+				"space-between",
+		},
 
-  progressText: {
-    color: Colors.textSecondary,
-    fontSize: 12,
-    textAlign: "center",
-    marginTop: 6,
-  },
+		backBtn: {
+			width: 48,
+			height: 48,
 
-  imageBox: {
-    height: 260,
-    backgroundColor: Colors.surface,
-    margin: 16,
-    borderRadius: 16,
-    overflow: "hidden",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
+			borderRadius: 18,
 
-  image: {
-    width: "100%",
-    height: "100%",
-  },
+			justifyContent:
+				"center",
 
-  placeholder: {
-    alignItems: "center",
-  },
+			alignItems:
+				"center",
 
-  placeholderText: {
-    color: Colors.textSecondary,
-    marginTop: 8,
-  },
+			overflow: "hidden",
 
-  inputContainer: {
-    marginHorizontal: 16,
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
+			borderWidth: 1,
 
-  input: {
-    color: Colors.textPrimary,
-    minHeight: 120,
-    textAlignVertical: "top",
-    fontSize: 14,
-  },
-});
+			borderColor:
+				"rgba(255,255,255,0.08)",
+		},
+
+		title: {
+			color: "#FFF",
+
+			fontSize: 20,
+
+			fontWeight: "800",
+		},
+
+		publishBtn: {
+			paddingHorizontal: 18,
+
+			paddingVertical: 12,
+
+			borderRadius: 16,
+
+			minWidth: 110,
+
+			alignItems:
+				"center",
+		},
+
+		publishText: {
+			color: "#FFF",
+
+			fontWeight: "800",
+
+			fontSize: 14,
+		},
+
+		progressContainer: {
+			marginTop: 16,
+		},
+
+		progressBarBg: {
+			height: 8,
+
+			backgroundColor:
+				"rgba(255,255,255,0.08)",
+
+			borderRadius: 20,
+
+			overflow: "hidden",
+		},
+
+		progressBar: {
+			height: "100%",
+
+			backgroundColor:
+				"#7C3AED",
+
+			borderRadius: 20,
+		},
+
+		progressText: {
+			color:
+				"rgba(255,255,255,0.72)",
+
+			fontSize: 12,
+
+			marginTop: 8,
+
+			textAlign: "center",
+		},
+
+		imageBox: {
+			height: 320,
+
+			marginHorizontal: 18,
+
+			marginTop: 24,
+
+			borderRadius: 30,
+
+			backgroundColor:
+				"#111827",
+
+			overflow: "hidden",
+
+			borderWidth: 1,
+
+			borderColor:
+				"rgba(255,255,255,0.08)",
+		},
+
+		image: {
+			width: "100%",
+			height: "100%",
+		},
+
+		imageOverlay: {
+			position: "absolute",
+
+			bottom: 0,
+
+			width: "100%",
+
+			padding: 20,
+		},
+
+		changePhoto: {
+			flexDirection:
+				"row",
+
+			alignItems:
+				"center",
+
+			alignSelf:
+				"flex-start",
+
+			backgroundColor:
+				"rgba(255,255,255,0.14)",
+
+			paddingHorizontal: 14,
+
+			paddingVertical: 10,
+
+			borderRadius: 18,
+
+			gap: 8,
+		},
+
+		changePhotoText: {
+			color: "#FFF",
+
+			fontWeight: "700",
+		},
+
+		placeholder: {
+			flex: 1,
+
+			justifyContent:
+				"center",
+
+			alignItems:
+				"center",
+
+			paddingHorizontal: 30,
+		},
+
+		placeholderIcon: {
+			width: 90,
+			height: 90,
+
+			borderRadius: 28,
+
+			justifyContent:
+				"center",
+
+			alignItems:
+				"center",
+
+			marginBottom: 20,
+		},
+
+		placeholderTitle: {
+			color: "#FFF",
+
+			fontSize: 20,
+
+			fontWeight: "800",
+		},
+
+		placeholderText: {
+			color:
+				"rgba(255,255,255,0.65)",
+
+			fontSize: 14,
+
+			textAlign: "center",
+
+			lineHeight: 22,
+
+			marginTop: 10,
+		},
+
+		inputContainer: {
+			marginTop: 24,
+
+			marginHorizontal: 18,
+
+			backgroundColor:
+				"#111827",
+
+			borderRadius: 26,
+
+			padding: 20,
+
+			borderWidth: 1,
+
+			borderColor:
+				"rgba(255,255,255,0.08)",
+		},
+
+		inputHeader: {
+			flexDirection:
+				"row",
+
+			alignItems:
+				"center",
+
+			gap: 8,
+
+			marginBottom: 14,
+		},
+
+		inputLabel: {
+			color: "#FFF",
+
+			fontWeight: "700",
+
+			fontSize: 15,
+		},
+
+		input: {
+			color: "#FFF",
+
+			fontSize: 15,
+
+			lineHeight: 24,
+
+			minHeight: 140,
+
+			textAlignVertical:
+				"top",
+		},
+
+		counterRow: {
+			alignItems:
+				"flex-end",
+
+			marginTop: 10,
+		},
+
+		counter: {
+			color:
+				"rgba(255,255,255,0.45)",
+
+			fontSize: 12,
+		},
+
+		modalOverlay: {
+			flex: 1,
+
+			backgroundColor:
+				"rgba(0,0,0,0.7)",
+
+			justifyContent:
+				"center",
+
+			alignItems:
+				"center",
+
+			padding: 24,
+		},
+
+		modalBox: {
+			width: "100%",
+
+			backgroundColor:
+				"#111827",
+
+			borderRadius: 30,
+
+			padding: 28,
+
+			alignItems:
+				"center",
+
+			borderWidth: 1,
+
+			borderColor:
+				"rgba(255,255,255,0.08)",
+		},
+
+		modalIcon: {
+			width: 84,
+			height: 84,
+
+			borderRadius: 30,
+
+			justifyContent:
+				"center",
+
+			alignItems:
+				"center",
+
+			marginBottom: 18,
+		},
+
+		modalTitle: {
+			color: "#FFF",
+
+			fontSize: 22,
+
+			fontWeight: "800",
+
+			marginBottom: 10,
+		},
+
+		modalMessage: {
+			color:
+				"rgba(255,255,255,0.72)",
+
+			fontSize: 15,
+
+			lineHeight: 24,
+
+			textAlign: "center",
+
+			marginBottom: 24,
+		},
+
+		modalBtn: {
+			paddingHorizontal: 40,
+
+			paddingVertical: 14,
+
+			borderRadius: 18,
+		},
+
+		modalBtnText: {
+			color: "#FFF",
+
+			fontWeight: "800",
+
+			fontSize: 15,
+		},
+	});

@@ -1,226 +1,673 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+
 import {
   View,
-  TextInput,
   Text,
+  TextInput,
   TouchableOpacity,
+  ImageBackground,
+  StatusBar,
+  ActivityIndicator,
+  Modal,
+  StyleSheet,
+  Platform,
   ScrollView,
   KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 
 import { Feather } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
+import { MotiView } from "moti";
+
 import { useCadastro } from "../context/CadastroContext";
 import GlobalStyles from "../styles/GlobalStyles";
 
 const { colors } = GlobalStyles;
 
+const FIELD_ORDER = [
+  "nome",
+  "email",
+  "verificationCode",
+  "password",
+  "confirmPassword",
+];
+
 export default function PerfilCadastro({ navigation }) {
-  const { registerUser } = useCadastro();
+  const { registerUser, sendVerificationCode, verifyCode } = useCadastro();
+
+  const scrollRef = useRef(null);
+
+  const inputRefs = useRef({});
+  const fieldYPositions = useRef({});
 
   const [form, setForm] = useState({
     nome: "",
     email: "",
     password: "",
     confirmPassword: "",
+    verificationCode: "",
   });
 
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const [showPassword, setShowPassword] = useState(false);
 
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
   const handleChange = (field, value) => {
-    let newValue = value;
-
-    if (field === "email") {
-      newValue = value.trim().toLowerCase();
-    }
-
-    setForm({ ...form, [field]: newValue });
+    setForm((prev) => ({
+      ...prev,
+      [field]:
+        field === "email"
+          ? value.trim().toLowerCase()
+          : value,
+    }));
   };
 
-  const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
+  const focusNext = (field) => {
+    const index = FIELD_ORDER.indexOf(field);
+    const next = FIELD_ORDER[index + 1];
 
-  const handleSubmit = async () => {
+    if (next && inputRefs.current[next]) {
+      setTimeout(() => {
+        inputRefs.current[next].focus();
+      }, 80);
+    }
+  };
+
+  const handleFieldFocus = (field) => {
+    setTimeout(() => {
+      const y = fieldYPositions.current[field];
+
+      if (y !== undefined && scrollRef.current) {
+        scrollRef.current.scrollTo({
+          y: Math.max(0, y - 120),
+          animated: true,
+        });
+      }
+    }, 150);
+  };
+
+  const handleSendCode = async () => {
     setError("");
 
-    const { nome, email, password, confirmPassword } = form;
+    const {
+      nome,
+      email,
+      password,
+      confirmPassword,
+    } = form;
 
-    if (!nome || !email || !password || !confirmPassword) {
+    if (
+      !nome ||
+      !email ||
+      !password ||
+      !confirmPassword
+    ) {
       setError("Preencha todos os campos");
       return;
     }
 
-    if (!isValidEmail(email)) {
+    if (!/\S+@\S+\.\S+/.test(email)) {
       setError("Email inválido");
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError("As senhas não coincidem");
+    if (password.length < 6) {
+      setError("Senha muito curta");
       return;
     }
 
-    const response = await registerUser({
-      nome,
-      email,
-      password,
-    });
+    if (password !== confirmPassword) {
+      setError("Senhas não coincidem");
+      return;
+    }
 
-    if (response.success) {
-      alert("Conta criada com sucesso!");
-      navigation.navigate("Login");
+    setLoading(true);
+
+    const result = await sendVerificationCode(email);
+
+    setLoading(false);
+
+    if (result.success) {
+      setShowCodeModal(true);
+      setError("");
     } else {
-      setError(response.message);
+      setError(result.message);
     }
   };
 
-  // 🔥 estilos padronizados
-  const input = {
-    backgroundColor: colors.surfaceAlt,
-    color: colors.text,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
+  const handleSubmit = async () => {
+    setError("");
+
+    const {
+      nome,
+      email,
+      password,
+      confirmPassword,
+      verificationCode,
+    } = form;
+
+    if (
+      !nome ||
+      !email ||
+      !password ||
+      !confirmPassword ||
+      !verificationCode
+    ) {
+      setError("Preencha todos os campos");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Senhas não coincidem");
+      return;
+    }
+
+    setLoading(true);
+
+    const codeResult = await verifyCode(
+      email,
+      verificationCode
+    );
+
+    if (!codeResult.success) {
+      setError(codeResult.message);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await registerUser({
+        nome,
+        email,
+        password,
+      });
+
+      if (response.success) {
+        setShowSuccessModal(true);
+      } else {
+        setError(response.message);
+      }
+    } catch {
+      setError("Erro ao criar conta");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const label = {
-    color: colors.primary,
-    marginBottom: 3,
-    fontSize: 13,
+  const renderInput = (
+    field,
+    label,
+    icon,
+    options = {}
+  ) => {
+    const isLast =
+      FIELD_ORDER[FIELD_ORDER.length - 1] === field;
+
+    return (
+      <View
+        key={field}
+        onLayout={(e) => {
+          fieldYPositions.current[field] =
+            e.nativeEvent.layout.y;
+        }}
+        style={{ marginBottom: 14 }}
+      >
+        <Text style={styles.label}>{label}</Text>
+
+        <View style={styles.inputBox}>
+          <Feather
+            name={icon}
+            size={16}
+            color="rgba(255,255,255,0.6)"
+          />
+
+          <TextInput
+            ref={(r) => {
+              if (r) inputRefs.current[field] = r;
+            }}
+            value={form[field]}
+            onChangeText={(t) =>
+              handleChange(field, t)
+            }
+            placeholder={label}
+            placeholderTextColor="rgba(255,255,255,0.3)"
+            style={styles.input}
+            secureTextEntry={
+              options.secure && !showPassword
+            }
+            onFocus={() =>
+              handleFieldFocus(field)
+            }
+            returnKeyType={
+              isLast ? "done" : "next"
+            }
+            onSubmitEditing={() =>
+              isLast
+                ? handleSubmit()
+                : focusNext(field)
+            }
+          />
+
+          {options.secure && (
+            <TouchableOpacity
+              onPress={() =>
+                setShowPassword((p) => !p)
+              }
+            >
+              <Feather
+                name={
+                  showPassword
+                    ? "eye"
+                    : "eye-off"
+                }
+                size={18}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.primaryDark }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    <ImageBackground
+      source={require("../assets/fundoTelaLogin.png")}
+      style={{ flex: 1 }}
     >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          padding: 18,
-          paddingBottom: 40,
-        }}
+      <StatusBar barStyle="light-content" />
+
+      <LinearGradient
+        colors={[
+          "rgba(0,0,0,0.9)",
+          "rgba(10,10,25,0.7)",
+          "rgba(0,0,0,0.95)",
+        ]}
+        style={{ flex: 1 }}
       >
-        {/* 🔙 VOLTAR */}
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Feather
-            name="chevron-left"
-            size={24}
-            color={colors.primary}
-          />
-        </TouchableOpacity>
-
-        {/* 🧾 TÍTULO */}
-        <Text
-          style={{
-            fontSize: 22,
-            fontWeight: "bold",
-            color: colors.text,
-            marginVertical: 12,
-          }}
-        >
-          Criar Conta
-        </Text>
-
-        {/* 👤 NOME */}
-        <View style={{ marginBottom: 10 }}>
-          <Text style={label}>Nome</Text>
-          <TextInput
-            style={input}
-            value={form.nome}
-            onChangeText={(t) => handleChange("nome", t)}
-            placeholder="Seu nome"
-            placeholderTextColor={colors.textLight}
-          />
-        </View>
-
-        {/* 📧 EMAIL */}
-        <View style={{ marginBottom: 10 }}>
-          <Text style={label}>Email</Text>
-          <TextInput
-            style={input}
-            value={form.email}
-            onChangeText={(t) => handleChange("email", t)}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholder="email@email.com"
-            placeholderTextColor={colors.textLight}
-          />
-        </View>
-
-        {/* 🔐 SENHA */}
-        <Text style={label}>Senha</Text>
-        <View style={{ position: "relative", marginBottom: 10 }}>
-          <TextInput
-            style={input}
-            value={form.password}
-            onChangeText={(t) => handleChange("password", t)}
-            secureTextEntry={!showPassword}
-            placeholder="••••••••"
-            placeholderTextColor={colors.textLight}
-          />
-
-          <TouchableOpacity
-            style={{ position: "absolute", right: 12, top: 12 }}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <Feather
-              name={showPassword ? "eye" : "eye-off"}
-              size={16}
-              color={colors.primary}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* 🔐 CONFIRMAR SENHA */}
-        <Text style={label}>Confirmar Senha</Text>
-        <TextInput
-          style={input}
-          value={form.confirmPassword}
-          onChangeText={(t) =>
-            handleChange("confirmPassword", t)
-          }
-          secureTextEntry={!showPassword}
-          placeholder="••••••••"
-          placeholderTextColor={colors.textLight}
-        />
-
-        {/* ❌ ERRO */}
-        {error !== "" && (
-          <Text
-            style={{
-              color: colors.danger,
-              textAlign: "center",
-              marginTop: 10,
-            }}
-          >
-            {error}
-          </Text>
-        )}
-
-        {/* 🚀 BOTÃO */}
         <TouchableOpacity
-          onPress={handleSubmit}
-          style={{
-            backgroundColor: colors.primary,
-            padding: 12,
-            borderRadius: 10,
-            alignItems: "center",
-            marginTop: 15,
-          }}
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
         >
-          <Text
-            style={{
-              color: colors.primaryDark,
-              fontWeight: "bold",
-            }}
-          >
-            Criar Conta
-          </Text>
+          <Feather
+            name="arrow-left"
+            size={22}
+            color="#fff"
+          />
         </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={
+            Platform.OS === "ios"
+              ? "padding"
+              : "height"
+          }
+          keyboardVerticalOffset={
+            Platform.OS === "ios" ? 60 : 20
+          }
+        >
+          <ScrollView
+            ref={scrollRef}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={styles.container}
+          >
+            <MotiView style={styles.header}>
+              <LinearGradient
+                colors={[
+                  colors.primary,
+                  "#7B5CFF",
+                ]}
+                style={styles.logo}
+              >
+                <Feather
+                  name="user-plus"
+                  size={28}
+                  color="#fff"
+                />
+              </LinearGradient>
+
+              <View>
+                <Text style={styles.title}>
+                  Criar Conta
+                </Text>
+
+                <Text style={styles.subtitle}>
+                  Cadastro protegido por validação
+                </Text>
+              </View>
+            </MotiView>
+
+            <BlurView
+              intensity={60}
+              tint="dark"
+              style={styles.card}
+            >
+              {renderInput("nome", "Nome", "user")}
+
+              {renderInput(
+                "email",
+                "Email",
+                "mail"
+              )}
+
+              <View style={styles.row}>
+                <TouchableOpacity
+                  style={styles.codeBtn}
+                  onPress={handleSendCode}
+                >
+                  <LinearGradient
+                    colors={[
+                      colors.primary,
+                      "#2563EB",
+                    ]}
+                    style={styles.codeGrad}
+                  >
+                    <Feather
+                      name="send"
+                      color="#fff"
+                    />
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <View style={{ flex: 1 }}>
+                  {renderInput(
+                    "verificationCode",
+                    "Código",
+                    "shield"
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  {renderInput(
+                    "password",
+                    "Senha",
+                    "lock",
+                    { secure: true }
+                  )}
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  {renderInput(
+                    "confirmPassword",
+                    "Confirmar",
+                    "check-circle",
+                    { secure: true }
+                  )}
+                </View>
+              </View>
+
+              {error ? (
+                <Text style={styles.error}>
+                  {error}
+                </Text>
+              ) : null}
+
+              <TouchableOpacity
+                onPress={handleSubmit}
+                disabled={loading}
+              >
+                <LinearGradient
+                  colors={[
+                    colors.primary,
+                    "#7B5CFF",
+                  ]}
+                  style={styles.submit}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text
+                      style={{
+                        color: "#fff",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Criar Conta
+                    </Text>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            </BlurView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+
+      {/* MODAL EMAIL */}
+      <Modal
+        visible={showCodeModal}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modal}>
+          <BlurView
+            intensity={80}
+            tint="dark"
+            style={styles.modalCard}
+          >
+            <Text style={styles.modalTitle}>
+              Código enviado!
+            </Text>
+
+            <Text style={styles.modalSubtitle}>
+              Verifique sua caixa de entrada
+              em{"\n"}
+
+              <Text
+                style={{
+                  color: "#fff",
+                  fontWeight: "bold",
+                }}
+              >
+                {form.email}
+              </Text>
+            </Text>
+
+            <TouchableOpacity
+              onPress={() =>
+                setShowCodeModal(false)
+              }
+            >
+              <LinearGradient
+                colors={[
+                  colors.primary,
+                  "#7B5CFF",
+                ]}
+                style={styles.modalBtn}
+              >
+                <Text style={{ color: "#fff" }}>
+                  Entendido
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </BlurView>
+        </View>
+      </Modal>
+
+      {/* MODAL SUCESSO */}
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modal}>
+          <BlurView
+            intensity={80}
+            tint="dark"
+            style={styles.modalCard}
+          >
+            <Text style={styles.modalTitle}>
+              Conta criada!
+            </Text>
+
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("Login")
+              }
+            >
+              <LinearGradient
+                colors={[
+                  colors.primary,
+                  "#7B5CFF",
+                ]}
+                style={styles.modalBtn}
+              >
+                <Text style={{ color: "#fff" }}>
+                  Ir para Login
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </BlurView>
+        </View>
+      </Modal>
+    </ImageBackground>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    paddingBottom: 60,
+    flexGrow: 1,
+  },
+
+  backButton: {
+    marginLeft: 16,
+    marginTop: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 18,
+    gap: 12,
+  },
+
+  logo: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  title: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+
+  subtitle: {
+    color: "rgba(255,255,255,0.6)",
+  },
+
+  card: {
+    padding: 18,
+    borderRadius: 20,
+    backgroundColor: "rgba(20,20,20,0.35)",
+    overflow: "hidden",
+  },
+
+  inputBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 10,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.06)",
+  },
+
+  input: {
+    flex: 1,
+    color: "#fff",
+    marginLeft: 8,
+    paddingVertical: 4,
+  },
+
+  label: {
+    color: "rgba(255,255,255,0.7)",
+    marginBottom: 4,
+  },
+
+  row: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+
+  codeBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginTop: 22,
+  },
+
+  codeGrad: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  submit: {
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+
+  error: {
+    color: "#ff6b6b",
+    marginTop: 10,
+    textAlign: "center",
+  },
+
+  modal: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+
+  modalCard: {
+    padding: 20,
+    borderRadius: 20,
+    width: "85%",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+
+  modalTitle: {
+    color: "#fff",
+    fontSize: 18,
+    marginBottom: 10,
+    fontWeight: "bold",
+  },
+
+  modalSubtitle: {
+    color: "rgba(255,255,255,0.65)",
+    textAlign: "center",
+    lineHeight: 22,
+    marginBottom: 16,
+  },
+
+  modalBtn: {
+    padding: 12,
+    borderRadius: 12,
+    width: 160,
+    alignItems: "center",
+  },
+});

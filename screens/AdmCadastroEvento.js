@@ -1,468 +1,1247 @@
 import React, { useState } from "react";
+
 import {
-	View,
-	Text,
-	TextInput,
-	TouchableOpacity,
-	Image,
-	Alert,
-	ScrollView,
-	Modal,
-	ActivityIndicator,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  Modal,
+  ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+
+import {
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
+
 import * as ImagePicker from "expo-image-picker";
 
-import { db, auth } from "../firebaseConfig";
 import {
-	collection,
-	addDoc,
-	serverTimestamp,
-	doc,
-	setDoc,
+  collection,
+  addDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 
-// ✅ Usa ImgBB em vez de Firebase Storage
-import { uploadImagem } from "../services/uploadService";
+import {
+  db,
+  auth,
+} from "../firebaseConfig";
+
+import {
+  uploadImagem,
+} from "../services/uploadService";
+
+import {
+  geocodeAddress,
+} from "../services/geocodingService";
 
 import { Colors } from "../styles/Colors";
 
-/* 🔥 MÁSCARAS */
+import { BlurView } from "expo-blur";
+
+/* 🔥 MASKS */
 const maskCEP = (t) =>
-	t
-		.replace(/\D/g, "")
-		.replace(/^(\d{5})(\d)/, "$1-$2")
-		.slice(0, 9);
+  t
+    .replace(/\D/g, "")
+    .replace(
+      /^(\d{5})(\d)/,
+      "$1-$2"
+    )
+    .slice(0, 9);
 
 const maskData = (t) =>
-	t
-		.replace(/\D/g, "")
-		.replace(/^(\d{2})(\d)/, "$1/$2")
-		.replace(/^(\d{2})\/(\d{2})(\d)/, "$1/$2/$3")
-		.slice(0, 10);
+  t
+    .replace(/\D/g, "")
+    .replace(
+      /^(\d{2})(\d)/,
+      "$1/$2"
+    )
+    .replace(
+      /^(\d{2})\/(\d{2})(\d)/,
+      "$1/$2/$3"
+    )
+    .slice(0, 10);
 
 const maskHora = (t) =>
-	t
-		.replace(/\D/g, "")
-		.replace(/^(\d{2})(\d)/, "$1:$2")
-		.slice(0, 5);
+  t
+    .replace(/\D/g, "")
+    .replace(
+      /^(\d{2})(\d)/,
+      "$1:$2"
+    )
+    .slice(0, 5);
 
-/* 🔥 SELECT MODAL */
-const SelectModal = ({ label, value, options, onSelect }) => {
-	const [visible, setVisible] = useState(false);
+/* 🔥 MODAL */
+function AppModal({
+  visible,
+  title,
+  message,
+  type = "info",
+  onConfirm,
+}) {
+  const getIcon = () => {
+    switch (type) {
+      case "success":
+        return {
+          name: "check-circle",
+          color: "#22C55E",
+        };
 
-	return (
-		<>
-			<Text style={{ color: Colors.textPrimary, marginBottom: 8 }}>
-				{label}
-			</Text>
-			<TouchableOpacity onPress={() => setVisible(true)} style={selectStyle}>
-				<Text style={{ color: value ? Colors.textPrimary : Colors.textMuted }}>
-					{value || "Selecione..."}
-				</Text>
-				<MaterialCommunityIcons
-					name="chevron-down"
-					size={22}
-					color={Colors.primary}
-				/>
-			</TouchableOpacity>
+      case "error":
+        return {
+          name: "close-circle",
+          color: "#EF4444",
+        };
 
-			<Modal visible={visible} transparent animationType="fade">
-				<View style={modalOverlay}>
-					<View style={modalBox}>
-						{options.map((item) => {
-							const ativo = value === item;
-							return (
-								<TouchableOpacity
-									key={item}
-									onPress={() => {
-										onSelect(item);
-										setVisible(false);
-									}}
-									style={[
-										modalItem,
-										{ backgroundColor: ativo ? Colors.primary : "transparent" },
-									]}
-								>
-									<Text
-										style={{
-											color: ativo ? Colors.background : Colors.textPrimary,
-										}}
-									>
-										{item}
-									</Text>
-								</TouchableOpacity>
-							);
-						})}
-						<TouchableOpacity onPress={() => setVisible(false)}>
-							<Text
-								style={{ color: Colors.textSecondary, textAlign: "center" }}
-							>
-								Cancelar
-							</Text>
-						</TouchableOpacity>
-					</View>
-				</View>
-			</Modal>
-		</>
-	);
-};
+      default:
+        return {
+          name: "information",
+          color: Colors.primary,
+        };
+    }
+  };
 
-export default function AdmCadastroEvento({ navigation }) {
-	const [form, setForm] = useState({});
-	const [imagem, setImagem] = useState(null); // URI local (preview)
-	const [loading, setLoading] = useState(false);
-	const [uploadProgress, setUploadProgress] = useState(0);
+  const icon = getIcon();
 
-	const setField = (key, value) =>
-		setForm((prev) => ({ ...prev, [key]: value }));
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+    >
+      <View style={styles.modalOverlay}>
+        <BlurView
+          intensity={50}
+          tint="dark"
+          style={
+            StyleSheet.absoluteFill
+          }
+        />
 
-	/* 📸 ESCOLHER IMAGEM */
-	const pickImage = async () => {
-		const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-		if (!permission.granted) {
-			Alert.alert("Permissão necessária", "Permita acesso à galeria.");
-			return;
-		}
-		const result = await ImagePicker.launchImageLibraryAsync({
-			quality: 0.4,
-			allowsEditing: true,
-			aspect: [16, 9],
-		});
-		if (!result.canceled) setImagem(result.assets[0].uri);
-	};
+        <View style={styles.modalBox}>
+          <LinearGradient
+            colors={[
+              "#111827",
+              "#0F172A",
+            ]}
+            style={styles.modalContent}
+          >
+            <View
+              style={[
+                styles.modalIcon,
+                {
+                  backgroundColor:
+                    icon.color + "20",
+                },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name={icon.name}
+                size={40}
+                color={icon.color}
+              />
+            </View>
 
-	/* 🔍 BUSCAR CEP */
-	const buscarCEP = async () => {
-		const cepLimpo = form.cep?.replace(/\D/g, "");
-		if (!cepLimpo || cepLimpo.length !== 8) {
-			Alert.alert("Digite um CEP válido");
-			return;
-		}
-		try {
-			const res = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
-			const data = await res.json(); // desnecessario? res ja é json?
-			if (data.erro) {
-				Alert.alert("CEP não encontrado");
-				return;
-			}
-			setForm((prev) => ({
-				...prev,
-				rua: data.logradouro || "",
-				bairro: data.bairro || "",
-				cidade: data.localidade || "",
-				uf: data.uf || "",
-				localEvento: data.logradouro || prev.localEvento || "",
-			}));
-		} catch {
-			Alert.alert("Erro ao buscar CEP");
-		}
-	};
+            <Text
+              style={styles.modalTitle}
+            >
+              {title}
+            </Text>
 
-	/* 🚀 SUBMIT */
-	const handleSubmit = async () => {
-		if (!form.tituloEvento) {
-			Alert.alert("Preencha o nome do evento");
-			return;
-		}
+            <Text
+              style={
+                styles.modalMessage
+              }
+            >
+              {message}
+            </Text>
 
-		try {
-			setLoading(true);
-			const user = auth.currentUser;
-
-			// ✅ Upload via ImgBB (não usa Firebase Storage)
-			let imageUrl = "";
-			if (imagem) {
-				imageUrl = await uploadImagem(imagem, user?.uid, (p) =>
-					setUploadProgress(p)
-				);
-			}
-
-			// 1️⃣ Salva em /eventos
-			const eventoRef = await addDoc(collection(db, "eventos"), {
-				tituloEvento: form.tituloEvento,
-				dataEvento: form.dataEvento || "",
-				imagemEvento: imageUrl, // URL pública do ImgBB
-				localEvento: form.localEvento || form.rua || "",
-				userId: user?.uid || "", // campo para as Firestore rules
-				uidEvento: user?.uid || "",
-				nomeLocal: form.nomeLocal || "",
-				horaInicio: form.horaInicio || "",
-				horaFim: form.horaFim || "",
-				categoria: form.categoria || "",
-				tipoEvento: form.tipoEvento || "",
-				descricao: form.descricao || "",
-				cep: form.cep || "",
-				bairro: form.bairro || "",
-				cidade: form.cidade || "",
-				uf: form.uf || "",
-				adminNome: user?.displayName || "Organizador",
-				createdAt: serverTimestamp(),
-			});
-
-			// 2️⃣ Publica no feed
-			await addDoc(collection(db, "feedEventos"), {
-				eventoId: eventoRef.id,
-				tituloEvento: form.tituloEvento,
-				descricao: form.descricao || "",
-				imagemEvento: imageUrl,
-				dataEvento: form.dataEvento || "",
-				localEvento: form.localEvento || form.rua || form.cidade || "",
-				tipoEvento: form.tipoEvento || "",
-				categoria: form.categoria || "",
-				userId: user?.uid || "",
-				uidEvento: user?.uid || "",
-				adminNome: user?.displayName || "Organizador",
-				createdAt: serverTimestamp(),
-			});
-
-			console.log("Evento criado");
-			Alert.alert("Sucesso", "Evento criado e publicado no feed!");
-			navigation.goBack();
-		} catch (e) {
-			console.log("Erro:", e);
-			Alert.alert("Erro ao salvar", e.message || "Tente novamente.");
-		} finally {
-			setLoading(false);
-			setUploadProgress(0);
-		}
-	};
-
-	return (
-		<View style={{ flex: 1, backgroundColor: Colors.background }}>
-			{/* HEADER */}
-			<LinearGradient
-				colors={[Colors.background, Colors.surface]}
-				style={header}
-			>
-				<TouchableOpacity onPress={() => navigation.goBack()}>
-					<MaterialCommunityIcons
-						name="arrow-left"
-						size={26}
-						color={Colors.primary}
-					/>
-				</TouchableOpacity>
-				<Text style={title}>Criar Evento</Text>
-			</LinearGradient>
-
-			<ScrollView contentContainerStyle={{ padding: 20 }}>
-				{/* IMAGEM + SELECTS */}
-				<View style={{ flexDirection: "row" }}>
-					<TouchableOpacity
-						onPress={pickImage}
-						style={{ flex: 1, marginRight: 10 }}
-					>
-						{imagem ? (
-							<Image source={{ uri: imagem }} style={image} />
-						) : (
-							<View style={imagePlaceholder}>
-								<MaterialCommunityIcons
-									name="image-plus"
-									size={40}
-									color={Colors.primary}
-								/>
-								<Text style={{ color: Colors.textSecondary }}>
-									Adicionar imagem
-								</Text>
-							</View>
-						)}
-					</TouchableOpacity>
-
-					<View style={{ flex: 1 }}>
-						<SelectModal
-							label="Categoria"
-							value={form.categoria}
-							options={["Teatro", "Shows", "Cinema", "Dança", "Arte", "Música"]}
-							onSelect={(v) => setField("categoria", v)}
-						/>
-						<View style={{ marginTop: 10 }}>
-							<SelectModal
-								label="Tipo"
-								value={form.tipoEvento}
-								options={["gratuito", "pago"]}
-								onSelect={(v) => setField("tipoEvento", v)}
-							/>
-						</View>
-					</View>
-				</View>
-
-				{/* tituloEvento */}
-				<TextInput
-					placeholder="Nome do evento"
-					placeholderTextColor={Colors.textMuted}
-					value={form.tituloEvento || ""}
-					onChangeText={(v) => setField("tituloEvento", v)}
-					style={input}
-				/>
-
-				{/* descricao */}
-				<TextInput
-					placeholder="Descrição do evento"
-					placeholderTextColor={Colors.textMuted}
-					value={form.descricao || ""}
-					onChangeText={(v) => setField("descricao", v)}
-					multiline
-					numberOfLines={3}
-					style={[input, { height: 80, textAlignVertical: "top" }]}
-				/>
-
-				{/* dataEvento */}
-				<TextInput
-					placeholder="Data (DD/MM/AAAA)"
-					placeholderTextColor={Colors.textMuted}
-					keyboardType="numeric"
-					value={form.dataEvento || ""}
-					onChangeText={(v) => setField("dataEvento", maskData(v))}
-					style={input}
-				/>
-
-				{/* horaInicio / horaFim */}
-				<View style={{ flexDirection: "row" }}>
-					<TextInput
-						placeholder="Início"
-						placeholderTextColor={Colors.textMuted}
-						keyboardType="numeric"
-						value={form.horaInicio || ""}
-						onChangeText={(v) => setField("horaInicio", maskHora(v))}
-						style={[input, { flex: 1, marginRight: 10 }]}
-					/>
-					<TextInput
-						placeholder="Término"
-						placeholderTextColor={Colors.textMuted}
-						keyboardType="numeric"
-						value={form.horaFim || ""}
-						onChangeText={(v) => setField("horaFim", maskHora(v))}
-						style={[input, { flex: 1 }]}
-					/>
-				</View>
-
-				{/* CEP */}
-				<View style={{ flexDirection: "row", marginTop: 10 }}>
-					<TextInput
-						value={form.cep || ""}
-						placeholder="CEP"
-						placeholderTextColor={Colors.textMuted}
-						keyboardType="numeric"
-						onChangeText={(v) => setField("cep", maskCEP(v))}
-						style={[input, { flex: 1, marginRight: 10 }]}
-					/>
-					<TextInput
-						value={form.rua || ""}
-						placeholder="Rua"
-						placeholderTextColor={Colors.textMuted}
-						onChangeText={(v) => {
-							setField("rua", v);
-							setField("localEvento", v);
-						}}
-						style={[input, { flex: 2 }]}
-					/>
-					<TouchableOpacity onPress={buscarCEP} style={btnCep}>
-						<MaterialCommunityIcons
-							name="magnify"
-							size={22}
-							color={Colors.textPrimary}
-						/>
-					</TouchableOpacity>
-				</View>
-
-				{/* nomeLocal */}
-				<TextInput
-					value={form.nomeLocal || ""}
-					placeholder="Nome do local (ex: Teatro Carlos Gomes)"
-					placeholderTextColor={Colors.textMuted}
-					onChangeText={(v) => setField("nomeLocal", v)}
-					style={input}
-				/>
-
-				{/* Progresso de upload */}
-				{loading && uploadProgress > 0 && uploadProgress < 1 && (
-					<Text
-						style={{
-							color: Colors.textSecondary,
-							marginTop: 8,
-							textAlign: "center",
-						}}
-					>
-						Enviando imagem: {Math.round(uploadProgress * 100)}%
-					</Text>
-				)}
-
-				{/* BOTÃO */}
-				<TouchableOpacity
-					onPress={handleSubmit}
-					style={[btn, loading && { opacity: 0.6 }]}
-					disabled={loading}
-				>
-					{loading ? (
-						<ActivityIndicator color={Colors.background} />
-					) : (
-						<Text style={{ fontWeight: "bold", color: Colors.background }}>
-							Cadastrar
-						</Text>
-					)}
-				</TouchableOpacity>
-			</ScrollView>
-		</View>
-	);
+            <TouchableOpacity
+              onPress={onConfirm}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={[
+                  "#7C3AED",
+                  "#5B21B6",
+                ]}
+                style={
+                  styles.modalButton
+                }
+              >
+                <Text
+                  style={
+                    styles.modalButtonText
+                  }
+                >
+                  OK
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+      </View>
+    </Modal>
+  );
 }
 
-/* 🎨 STYLES */
-const header = {
-	paddingTop: 50,
-	padding: 20,
-	borderBottomLeftRadius: 20,
-	borderBottomRightRadius: 20,
+/* 🔥 SELECT */
+const SelectModal = ({
+  label,
+  value,
+  options,
+  onSelect,
+}) => {
+  const [visible, setVisible] =
+    useState(false);
+
+  return (
+    <>
+      <Text style={styles.label}>
+        {label}
+      </Text>
+
+      <TouchableOpacity
+        onPress={() =>
+          setVisible(true)
+        }
+        style={styles.select}
+      >
+        <Text
+          style={{
+            color: value
+              ? Colors.textPrimary
+              : Colors.textMuted,
+          }}
+        >
+          {value ||
+            "Selecione..."}
+        </Text>
+
+        <MaterialCommunityIcons
+          name="chevron-down"
+          size={22}
+          color={Colors.primary}
+        />
+      </TouchableOpacity>
+
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+      >
+        <View
+          style={styles.selectOverlay}
+        >
+          <View
+            style={styles.selectBox}
+          >
+            {options.map((item) => {
+              const ativo =
+                value === item;
+
+              return (
+                <TouchableOpacity
+                  key={item}
+                  onPress={() => {
+                    onSelect(item);
+
+                    setVisible(
+                      false
+                    );
+                  }}
+                  style={[
+                    styles.selectItem,
+                    {
+                      backgroundColor:
+                        ativo
+                          ? Colors.primary
+                          : "transparent",
+                    },
+                  ]}
+                >
+                  <Text
+                    style={{
+                      color: ativo
+                        ? Colors.background
+                        : Colors.textPrimary,
+                    }}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+
+            <TouchableOpacity
+              onPress={() =>
+                setVisible(false)
+              }
+            >
+              <Text
+                style={{
+                  textAlign:
+                    "center",
+
+                  color:
+                    Colors.textSecondary,
+                }}
+              >
+                Cancelar
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
 };
-const title = { color: Colors.textPrimary, fontSize: 24, marginTop: 10 };
-const input = {
-	backgroundColor: Colors.surface,
-	color: Colors.textPrimary,
-	padding: 14,
-	borderRadius: 14,
-	marginTop: 10,
-};
-const selectStyle = {
-	backgroundColor: Colors.surface,
-	padding: 16,
-	borderRadius: 16,
-	borderWidth: 1,
-	borderColor: Colors.border,
-	flexDirection: "row",
-	justifyContent: "space-between",
-};
-const btnCep = {
-	backgroundColor: Colors.primary,
-	padding: 14,
-	marginLeft: 10,
-	borderRadius: 14,
-	justifyContent: "center",
-};
-const btn = {
-	backgroundColor: Colors.primary,
-	padding: 16,
-	borderRadius: 14,
-	marginTop: 20,
-	alignItems: "center",
-};
-const image = { height: 180, borderRadius: 16 };
-const imagePlaceholder = {
-	height: 180,
-	borderRadius: 16,
-	backgroundColor: Colors.surface,
-	justifyContent: "center",
-	alignItems: "center",
-};
-const modalOverlay = {
-	flex: 1,
-	backgroundColor: "rgba(0,0,0,0.6)",
-	justifyContent: "center",
-	padding: 20,
-};
-const modalBox = {
-	backgroundColor: Colors.surface,
-	borderRadius: 20,
-	padding: 15,
-};
-const modalItem = { padding: 15, borderRadius: 12, marginBottom: 8 };
+
+export default function AdmCadastroEvento({
+  navigation,
+}) {
+  const [form, setForm] =
+    useState({});
+
+  const [imagem, setImagem] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [uploadProgress, setUploadProgress] =
+    useState(0);
+
+  const [modal, setModal] =
+    useState({
+      visible: false,
+      title: "",
+      message: "",
+      type: "info",
+    });
+
+  const setField = (
+    key,
+    value
+  ) =>
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+
+  /* 📸 PICK IMAGE */
+  const pickImage =
+    async () => {
+      const permission =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (
+        !permission.granted
+      ) {
+        setModal({
+          visible: true,
+          title:
+            "Permissão necessária",
+          message:
+            "Permita acesso à galeria.",
+          type: "error",
+        });
+
+        return;
+      }
+
+      const result =
+        await ImagePicker.launchImageLibraryAsync(
+          {
+            quality: 0.5,
+            allowsEditing: true,
+            aspect: [16, 9],
+          }
+        );
+
+      if (
+        !result.canceled
+      ) {
+        setImagem(
+          result.assets[0].uri
+        );
+      }
+    };
+
+  /* 🔍 CEP */
+  const buscarCEP =
+    async () => {
+      const cep =
+        form.cep?.replace(
+          /\D/g,
+          ""
+        );
+
+      if (
+        !cep ||
+        cep.length !== 8
+      ) {
+        setModal({
+          visible: true,
+          title:
+            "CEP inválido",
+          message:
+            "Digite um CEP válido.",
+          type: "error",
+        });
+
+        return;
+      }
+
+      try {
+        const res =
+          await fetch(
+            `https://viacep.com.br/ws/${cep}/json/`
+          );
+
+        const data =
+          await res.json();
+
+        if (data.erro) {
+          setModal({
+            visible: true,
+            title:
+              "CEP não encontrado",
+            message:
+              "Não foi possível localizar este CEP.",
+            type: "error",
+          });
+
+          return;
+        }
+
+        setForm((prev) => ({
+          ...prev,
+
+          rua:
+            data.logradouro ||
+            "",
+
+          bairro:
+            data.bairro || "",
+
+          cidade:
+            data.localidade ||
+            "",
+
+          uf: data.uf || "",
+
+          localEvento:
+            data.logradouro ||
+            "",
+        }));
+      } catch {
+        setModal({
+          visible: true,
+          title: "Erro",
+          message:
+            "Erro ao buscar CEP.",
+          type: "error",
+        });
+      }
+    };
+
+  /* 🚀 SUBMIT */
+  const handleSubmit =
+    async () => {
+      if (
+        !form.tituloEvento
+      ) {
+        setModal({
+          visible: true,
+          title:
+            "Campo obrigatório",
+          message:
+            "Preencha o nome do evento.",
+          type: "error",
+        });
+
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        const user =
+          auth.currentUser;
+
+        let imageUrl = "";
+
+        if (imagem) {
+          imageUrl =
+            await uploadImagem(
+              imagem,
+              user?.uid,
+              (p) =>
+                setUploadProgress(
+                  p
+                )
+            );
+        }
+
+        const endereco =
+          form.localEvento ||
+          form.rua;
+
+        let coords =
+          null;
+
+        if (endereco) {
+          coords =
+            await geocodeAddress(
+              endereco
+            );
+        }
+
+        await addDoc(
+          collection(
+            db,
+            "eventos"
+          ),
+          {
+            tituloEvento:
+              form.tituloEvento,
+
+            descricao:
+              form.descricao ||
+              "",
+
+            imagemEvento:
+              imageUrl,
+
+            dataEvento:
+              form.dataEvento ||
+              "",
+
+            horaInicio:
+              form.horaInicio ||
+              "",
+
+            horaFim:
+              form.horaFim ||
+              "",
+
+            localEvento:
+              endereco ||
+              "",
+
+            categoria:
+              form.categoria ||
+              "",
+
+            tipoEvento:
+              form.tipoEvento ||
+              "",
+
+            cep:
+              form.cep || "",
+
+            bairro:
+              form.bairro ||
+              "",
+
+            cidade:
+              form.cidade ||
+              "",
+
+            uf:
+              form.uf || "",
+
+            latitude:
+              coords?.latitude ||
+              null,
+
+            longitude:
+              coords?.longitude ||
+              null,
+
+            userId:
+              user?.uid ||
+              "",
+
+            uidEvento:
+              user?.uid ||
+              "",
+
+            createdAt:
+              serverTimestamp(),
+          }
+        );
+
+        setModal({
+          visible: true,
+          title:
+            "Evento criado",
+          message:
+            "Seu evento foi publicado com sucesso.",
+          type: "success",
+        });
+      } catch (e) {
+        setModal({
+          visible: true,
+          title: "Erro",
+          message:
+            e.message ||
+            "Erro ao salvar evento.",
+          type: "error",
+        });
+      } finally {
+        setLoading(false);
+
+        setUploadProgress(0);
+      }
+    };
+
+  return (
+    <View
+      style={styles.container}
+    >
+      {/* HEADER */}
+      <LinearGradient
+        colors={[
+          Colors.background,
+          Colors.surface,
+        ]}
+        style={styles.header}
+      >
+        <TouchableOpacity
+          onPress={() =>
+            navigation.goBack()
+          }
+        >
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={26}
+            color={Colors.primary}
+          />
+        </TouchableOpacity>
+
+        <Text style={styles.title}>
+          Criar Evento
+        </Text>
+      </LinearGradient>
+
+      <ScrollView
+        contentContainerStyle={{
+          padding: 20,
+          paddingBottom: 120,
+        }}
+      >
+        {/* IMAGE */}
+        <TouchableOpacity
+          onPress={pickImage}
+        >
+          {imagem ? (
+            <Image
+              source={{
+                uri: imagem,
+              }}
+              style={styles.image}
+            />
+          ) : (
+            <View
+              style={
+                styles.imagePlaceholder
+              }
+            >
+              <MaterialCommunityIcons
+                name="image-plus"
+                size={42}
+                color={
+                  Colors.primary
+                }
+              />
+
+              <Text
+                style={{
+                  color:
+                    Colors.textSecondary,
+
+                  marginTop: 8,
+                }}
+              >
+                Adicionar imagem
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* SELECTS */}
+        <View
+          style={{
+            marginTop: 16,
+          }}
+        >
+          <SelectModal
+            label="Categoria"
+            value={
+              form.categoria
+            }
+            options={[
+              "Shows",
+              "Cinema",
+              "Teatro",
+              "Arte",
+              "Música",
+            ]}
+            onSelect={(v) =>
+              setField(
+                "categoria",
+                v
+              )
+            }
+          />
+
+          <View
+            style={{
+              marginTop: 14,
+            }}
+          >
+            <SelectModal
+              label="Tipo"
+              value={
+                form.tipoEvento
+              }
+              options={[
+                "gratuito",
+                "pago",
+              ]}
+              onSelect={(v) =>
+                setField(
+                  "tipoEvento",
+                  v
+                )
+              }
+            />
+          </View>
+        </View>
+
+        {/* INPUTS */}
+        <TextInput
+          placeholder="Nome do evento"
+          placeholderTextColor={
+            Colors.textMuted
+          }
+          value={
+            form.tituloEvento ||
+            ""
+          }
+          onChangeText={(v) =>
+            setField(
+              "tituloEvento",
+              v
+            )
+          }
+          style={styles.input}
+        />
+
+        <TextInput
+          placeholder="Descrição"
+          placeholderTextColor={
+            Colors.textMuted
+          }
+          multiline
+          value={
+            form.descricao ||
+            ""
+          }
+          onChangeText={(v) =>
+            setField(
+              "descricao",
+              v
+            )
+          }
+          style={[
+            styles.input,
+            {
+              height: 110,
+              textAlignVertical:
+                "top",
+            },
+          ]}
+        />
+
+        <TextInput
+          placeholder="Data"
+          placeholderTextColor={
+            Colors.textMuted
+          }
+          keyboardType="numeric"
+          value={
+            form.dataEvento ||
+            ""
+          }
+          onChangeText={(v) =>
+            setField(
+              "dataEvento",
+              maskData(v)
+            )
+          }
+          style={styles.input}
+        />
+
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 10,
+          }}
+        >
+          <TextInput
+            placeholder="Início"
+            placeholderTextColor={
+              Colors.textMuted
+            }
+            keyboardType="numeric"
+            value={
+              form.horaInicio ||
+              ""
+            }
+            onChangeText={(v) =>
+              setField(
+                "horaInicio",
+                maskHora(v)
+              )
+            }
+            style={[
+              styles.input,
+              { flex: 1 },
+            ]}
+          />
+
+          <TextInput
+            placeholder="Fim"
+            placeholderTextColor={
+              Colors.textMuted
+            }
+            keyboardType="numeric"
+            value={
+              form.horaFim ||
+              ""
+            }
+            onChangeText={(v) =>
+              setField(
+                "horaFim",
+                maskHora(v)
+              )
+            }
+            style={[
+              styles.input,
+              { flex: 1 },
+            ]}
+          />
+        </View>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems:
+              "center",
+          }}
+        >
+          <TextInput
+            placeholder="CEP"
+            placeholderTextColor={
+              Colors.textMuted
+            }
+            keyboardType="numeric"
+            value={
+              form.cep || ""
+            }
+            onChangeText={(v) =>
+              setField(
+                "cep",
+                maskCEP(v)
+              )
+            }
+            style={[
+              styles.input,
+              {
+                flex: 1,
+                marginRight: 10,
+              },
+            ]}
+          />
+
+          <TouchableOpacity
+            onPress={buscarCEP}
+            style={styles.btnCep}
+          >
+            <MaterialCommunityIcons
+              name="magnify"
+              size={22}
+              color="#FFF"
+            />
+          </TouchableOpacity>
+        </View>
+
+        <TextInput
+          placeholder="Rua / Local"
+          placeholderTextColor={
+            Colors.textMuted
+          }
+          value={
+            form.localEvento ||
+            ""
+          }
+          onChangeText={(v) =>
+            setField(
+              "localEvento",
+              v
+            )
+          }
+          style={styles.input}
+        />
+
+        {/* UPLOAD */}
+        {loading &&
+          uploadProgress >
+            0 && (
+            <Text
+              style={
+                styles.uploadText
+              }
+            >
+              Upload:{" "}
+              {Math.round(
+                uploadProgress *
+                  100
+              )}
+              %
+            </Text>
+          )}
+
+        {/* BUTTON */}
+        <TouchableOpacity
+          disabled={loading}
+          onPress={handleSubmit}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={[
+              "#7C3AED",
+              "#5B21B6",
+            ]}
+            style={styles.button}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <>
+                <MaterialCommunityIcons
+                  name="check"
+                  size={20}
+                  color="#FFF"
+                />
+
+                <Text
+                  style={
+                    styles.buttonText
+                  }
+                >
+                  Criar Evento
+                </Text>
+              </>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* MODAL */}
+      <AppModal
+        visible={modal.visible}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+        onConfirm={() => {
+          setModal({
+            ...modal,
+            visible: false,
+          });
+
+          if (
+            modal.type ===
+            "success"
+          ) {
+            navigation.goBack();
+          }
+        }}
+      />
+    </View>
+  );
+}
+
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+
+      backgroundColor:
+        Colors.background,
+    },
+
+    header: {
+      paddingTop: 55,
+
+      paddingHorizontal: 20,
+
+      paddingBottom: 22,
+
+      borderBottomLeftRadius: 28,
+
+      borderBottomRightRadius: 28,
+    },
+
+    title: {
+      color:
+        Colors.textPrimary,
+
+      fontSize: 28,
+
+      fontWeight: "bold",
+
+      marginTop: 14,
+    },
+
+    image: {
+      height: 220,
+
+      borderRadius: 24,
+    },
+
+    imagePlaceholder: {
+      height: 220,
+
+      borderRadius: 24,
+
+      backgroundColor:
+        Colors.surface,
+
+      justifyContent:
+        "center",
+
+      alignItems: "center",
+
+      borderWidth: 1,
+
+      borderColor:
+        "rgba(255,255,255,0.06)",
+    },
+
+    label: {
+      color:
+        Colors.textPrimary,
+
+      marginBottom: 8,
+    },
+
+    select: {
+      backgroundColor:
+        Colors.surface,
+
+      padding: 16,
+
+      borderRadius: 18,
+
+      borderWidth: 1,
+
+      borderColor:
+        "rgba(255,255,255,0.06)",
+
+      flexDirection: "row",
+
+      justifyContent:
+        "space-between",
+    },
+
+    input: {
+      backgroundColor:
+        Colors.surface,
+
+      color:
+        Colors.textPrimary,
+
+      padding: 16,
+
+      borderRadius: 18,
+
+      marginTop: 14,
+
+      borderWidth: 1,
+
+      borderColor:
+        "rgba(255,255,255,0.05)",
+    },
+
+    btnCep: {
+      width: 56,
+      height: 56,
+
+      borderRadius: 18,
+
+      backgroundColor:
+        Colors.primary,
+
+      justifyContent:
+        "center",
+
+      alignItems: "center",
+
+      marginTop: 14,
+    },
+
+    button: {
+      height: 58,
+
+      borderRadius: 20,
+
+      marginTop: 24,
+
+      flexDirection: "row",
+
+      justifyContent:
+        "center",
+
+      alignItems: "center",
+
+      gap: 10,
+    },
+
+    buttonText: {
+      color: "#FFF",
+
+      fontWeight: "bold",
+
+      fontSize: 16,
+    },
+
+    uploadText: {
+      color:
+        Colors.textSecondary,
+
+      textAlign: "center",
+
+      marginTop: 14,
+    },
+
+    /* MODAL */
+    modalOverlay: {
+      flex: 1,
+
+      backgroundColor:
+        "rgba(0,0,0,0.55)",
+
+      justifyContent:
+        "center",
+
+      alignItems: "center",
+
+      padding: 24,
+    },
+
+    modalBox: {
+      width: "100%",
+    },
+
+    modalContent: {
+      borderRadius: 30,
+
+      padding: 24,
+    },
+
+    modalIcon: {
+      width: 82,
+      height: 82,
+
+      borderRadius: 24,
+
+      justifyContent:
+        "center",
+
+      alignItems: "center",
+
+      alignSelf: "center",
+
+      marginBottom: 18,
+    },
+
+    modalTitle: {
+      color: "#FFF",
+
+      fontSize: 22,
+
+      fontWeight: "bold",
+
+      textAlign: "center",
+    },
+
+    modalMessage: {
+      color:
+        "rgba(255,255,255,0.7)",
+
+      textAlign: "center",
+
+      lineHeight: 24,
+
+      marginTop: 12,
+    },
+
+    modalButton: {
+      height: 56,
+
+      borderRadius: 18,
+
+      justifyContent:
+        "center",
+
+      alignItems: "center",
+
+      marginTop: 24,
+    },
+
+    modalButtonText: {
+      color: "#FFF",
+
+      fontWeight: "bold",
+
+      fontSize: 15,
+    },
+
+    /* SELECT */
+    selectOverlay: {
+      flex: 1,
+
+      backgroundColor:
+        "rgba(0,0,0,0.6)",
+
+      justifyContent:
+        "center",
+
+      padding: 20,
+    },
+
+    selectBox: {
+      backgroundColor:
+        Colors.surface,
+
+      borderRadius: 24,
+
+      padding: 18,
+    },
+
+    selectItem: {
+      padding: 16,
+
+      borderRadius: 14,
+
+      marginBottom: 8,
+    },
+  });

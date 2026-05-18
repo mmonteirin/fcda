@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
 	View,
 	Text,
@@ -8,87 +8,201 @@ import {
 	Alert,
 	ActivityIndicator,
 	Platform,
+	StyleSheet,
+	StatusBar,
 } from "react-native";
 
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import {
 	collection,
 	query,
 	where,
-	onSnapshot,
 	deleteDoc,
 	doc,
 	orderBy,
+	limit,
+	startAfter,
+	getDocs,
 } from "firebase/firestore";
 
 import { db } from "../firebaseConfig";
 import { useAuth } from "../context/AuthContext";
 import { Colors } from "../styles/Colors";
+import { getUserFeedLikes, toggleEventoLike } from "../services/feedService";
+
+const PAGE_SIZE = 10;
 
 export default function TelaFeed({ navigation }) {
-	const { user, nome, foto, isAdmin } = useAuth();
+	const insets = useSafeAreaInsets();
+
+	const { user, isAdmin } = useAuth();
+
 	const [eventos, setEventos] = useState([]);
 	const [loading, setLoading] = useState(true);
+	const [loadingMore, setLoadingMore] = useState(false);
+	const [hasMore, setHasMore] = useState(true);
+	const [likedIds, setLikedIds] = useState([]);
 
-	const goToAdmin = (screen) => {
-		navigation.navigate("Admin", { screen });
-	};
+	const lastDocRef = useRef(null);
 
-	// 🔥 Filtra por uidEvento (campo real do banco)
+	/* =========================
+	 * ❤️ Likes
+	 * ========================= */
+	useEffect(() => {
+		const carregarLikes = async () => {
+			if (!user?.uid) return;
+
+			try {
+				const likes = await getUserFeedLikes(user.uid);
+				setLikedIds(likes);
+			} catch (e) {
+				console.log(e);
+			}
+		};
+
+		carregarLikes();
+	}, [user?.uid]);
+
+	/* =========================
+	 * 📦 Feed
+	 * ========================= */
 	useEffect(() => {
 		if (!user?.uid) return;
 
-		let q;
+		setEventos([]);
+		lastDocRef.current = null;
+		setHasMore(true);
 
-		// ✅ ADMIN -> apenas eventos dele
-		if (isAdmin) {
-			q = query(
-				collection(db, "eventos"),
-				where("uidEvento", "==", user.uid),
-				orderBy("createdAt", "desc")
-			);
-		}
-
-		// ✅ USER -> todos os eventos
-		else {
-			q = query(collection(db, "eventos"), orderBy("createdAt", "desc"));
-		}
-
-		const unsub = onSnapshot(
-			q,
-			(snapshot) => {
-				const lista = snapshot.docs
-					.map((d) => ({
-						id: d.id,
-						...d.data(),
-					}))
-					.filter((item) => item.id !== "_init");
-
-				setEventos(lista);
-				setLoading(false);
-			},
-			(err) => {
-				console.log("Erro ao carregar eventos:", err);
-				setLoading(false);
-			}
-		);
-
-		return () => unsub();
+		carregarPagina(true);
 	}, [user?.uid, isAdmin]);
 
-	const deletarEvento = async (id) => {
-		try {
-			let confirmado = false;
+	const carregarPagina = async (isFirst = false) => {
+		if (!user?.uid) return;
 
-			// 🔥 WEB
-			if (Platform.OS === "web") {
-				confirmado = window.confirm("Deseja excluir este evento?");
+		isFirst ? setLoading(true) : setLoadingMore(true);
+
+		try {
+			let q;
+
+			if (isAdmin) {
+				q =
+					isFirst || !lastDocRef.current
+						? query(
+								collection(db, "eventos"),
+								where("uidEvento", "==", user.uid),
+								orderBy("createdAt", "desc"),
+								limit(PAGE_SIZE)
+						  )
+						: query(
+								collection(db, "eventos"),
+								where("uidEvento", "==", user.uid),
+								orderBy("createdAt", "desc"),
+								startAfter(lastDocRef.current),
+								limit(PAGE_SIZE)
+						  );
+			} else {
+				q =
+					isFirst || !lastDocRef.current
+						? query(
+								collection(db, "eventos"),
+								orderBy("createdAt", "desc"),
+								limit(PAGE_SIZE)
+						  )
+						: query(
+								collection(db, "eventos"),
+								orderBy("createdAt", "desc"),
+								startAfter(lastDocRef.current),
+								limit(PAGE_SIZE)
+						  );
 			}
 
-			// 🔥 MOBILE
-			else {
-				return Alert.alert("Excluir", "Deseja excluir este evento?", [
+			const snapshot = await getDocs(q);
+
+			const novos = snapshot.docs
+				.map((d) => ({
+					id: d.id,
+					...d.data(),
+				}))
+				.filter((item) => item.id !== "_init");
+
+			if (snapshot.docs.length > 0) {
+				lastDocRef.current =
+					snapshot.docs[snapshot.docs.length - 1];
+			}
+
+			if (snapshot.docs.length < PAGE_SIZE) {
+				setHasMore(false);
+			}
+
+			setEventos((prev) =>
+				isFirst ? novos : [...prev, ...novos]
+			);
+		} catch (e) {
+			console.log("Erro ao carregar feed:", e);
+		} finally {
+			setLoading(false);
+			setLoadingMore(false);
+		}
+	};
+
+	const handleEndReached = () => {
+		if (!loadingMore && hasMore) {
+			carregarPagina(false);
+		}
+	};
+
+	/* =========================
+	 * ❤️ Like
+	 * ========================= */
+	const toggleLike = async (eventoId) => {
+		if (!user?.uid) return;
+
+		try {
+			const liked = await toggleEventoLike(
+				eventoId,
+				user.uid
+			);
+
+			if (liked) {
+				setLikedIds((prev) => [...prev, eventoId]);
+			} else {
+				setLikedIds((prev) =>
+					prev.filter((id) => id !== eventoId)
+				);
+			}
+		} catch (e) {
+			console.log(e);
+		}
+	};
+
+	/* =========================
+	 * 🗑️ Excluir
+	 * ========================= */
+	const deletarEvento = async (id) => {
+		try {
+			if (Platform.OS === "web") {
+				const confirmado = window.confirm(
+					"Deseja excluir este evento?"
+				);
+
+				if (!confirmado) return;
+
+				await deleteDoc(doc(db, "eventos", id));
+
+				setEventos((prev) =>
+					prev.filter((e) => e.id !== id)
+				);
+
+				return;
+			}
+
+			Alert.alert(
+				"Excluir evento",
+				"Tem certeza que deseja excluir?",
+				[
 					{
 						text: "Cancelar",
 						style: "cancel",
@@ -98,203 +212,643 @@ export default function TelaFeed({ navigation }) {
 						style: "destructive",
 						onPress: async () => {
 							try {
-								await deleteDoc(doc(db, "eventos", id));
-							} catch (error) {
-								console.log(error);
-								Alert.alert("Erro ao excluir");
+								await deleteDoc(
+									doc(db, "eventos", id)
+								);
+
+								setEventos((prev) =>
+									prev.filter(
+										(e) => e.id !== id
+									)
+								);
+							} catch (e) {
+								console.log(e);
+								Alert.alert(
+									"Erro",
+									"Não foi possível excluir."
+								);
 							}
 						},
 					},
-				]);
-			}
-
-			// 🔥 WEB DELETE
-			if (confirmado) {
-				await deleteDoc(doc(db, "eventos", id));
-			}
-		} catch (error) {
-			console.log(error);
-
-			if (Platform.OS === "web") {
-				window.alert("Erro ao excluir");
-			} else {
-				Alert.alert("Erro ao excluir");
-			}
+				]
+			);
+		} catch (e) {
+			console.log(e);
 		}
 	};
 
-	const renderItem = ({ item }) => (
-		<TouchableOpacity
-			style={styles.card}
-			activeOpacity={0.9}
-			onPress={() =>
-				navigation.navigate("Detalhes", {
-					evento: item,
-				})
-			}
-		>
-			<Image
-				source={{
-					uri:
-						item.imagemEvento ||
-						"https://placehold.co/400x200/1a0533/ffffff?text=Evento",
-				}}
-				style={styles.image}
-			/>
-			<View style={{ padding: 14 }}>
-				{/* tituloEvento */}
-				<Text style={styles.titulo}>{item.tituloEvento || "Sem título"}</Text>
+	/* =========================
+	 * 📅 Helpers
+	 * ========================= */
+	const formatarNumero = (num) => {
+		if (!num) return "0";
 
-				{/* localEvento */}
-				<Text style={styles.local}>
-					📍 {item.localEvento || item.nomeLocal || "Local não informado"}
-				</Text>
+		if (num >= 1000000)
+			return (num / 1000000).toFixed(1) + "M";
 
-				{/* dataEvento */}
-				<Text style={styles.data}>
-					📅 {item.dataEvento || "Data não informada"}
-				</Text>
+		if (num >= 1000)
+			return (num / 1000).toFixed(1) + "K";
 
-				{isAdmin && (
-					<View style={styles.actions}>
-						<TouchableOpacity onPress={() => deletarEvento(item.id)}>
+		return num.toString();
+	};
+
+	const formatarData = (timestamp) => {
+		if (!timestamp) return "Agora";
+
+		const data = timestamp.toDate?.() || new Date(timestamp);
+
+		const agora = new Date();
+
+		const diff = agora - data;
+
+		const minutos = Math.floor(diff / 60000);
+		const horas = Math.floor(diff / 3600000);
+		const dias = Math.floor(diff / 86400000);
+
+		if (minutos < 1) return "Agora";
+		if (minutos < 60) return `${minutos}m`;
+		if (horas < 24) return `${horas}h`;
+		if (dias < 7) return `${dias}d`;
+
+		return data.toLocaleDateString("pt-BR");
+	};
+
+	/* =========================
+	 * 📸 CARD
+	 * ========================= */
+	const renderItem = ({ item }) => {
+		const isLiked = likedIds.includes(item.id);
+
+		return (
+			<View style={styles.card}>
+				{/* HEADER */}
+				<View style={styles.cardHeader}>
+					<View style={styles.userInfo}>
+						<Image
+							source={{
+								uri:
+									item.userPhoto ||
+									"https://i.pravatar.cc/150",
+							}}
+							style={styles.avatar}
+						/>
+
+						<View style={{ flex: 1 }}>
+							<Text
+								numberOfLines={1}
+								style={styles.userName}
+							>
+								{item.adminNome || "Organizador"}
+							</Text>
+
+							<View style={styles.locationRow}>
+								<MaterialCommunityIcons
+									name="map-marker"
+									size={12}
+									color={Colors.textMuted}
+								/>
+
+								<Text
+									numberOfLines={1}
+									style={styles.locationText}
+								>
+									{item.localEvento ||
+										item.nomeLocal ||
+										"Local"}
+								</Text>
+							</View>
+						</View>
+					</View>
+
+					<View style={styles.headerActions}>
+						<Text style={styles.dateText}>
+							{formatarData(item.createdAt)}
+						</Text>
+
+						{isAdmin &&
+							item.uidEvento === user?.uid && (
+								<TouchableOpacity
+									style={styles.deleteBtn}
+									onPress={() =>
+										deletarEvento(item.id)
+									}
+								>
+									<MaterialCommunityIcons
+										name="trash-can-outline"
+										size={20}
+										color={Colors.error}
+									/>
+								</TouchableOpacity>
+							)}
+					</View>
+				</View>
+
+				{/* IMAGE */}
+				<TouchableOpacity
+					activeOpacity={0.9}
+					onPress={() =>
+						navigation.navigate("Detalhes", {
+							evento: item,
+						})
+					}
+					style={styles.imageWrapper}
+				>
+					<Image
+						source={{
+							uri:
+								item.imagemEvento ||
+								"https://placehold.co/600x600",
+						}}
+						style={styles.mainImage}
+					/>
+
+					<LinearGradient
+						colors={[
+							"transparent",
+							"rgba(0,0,0,0.88)",
+						]}
+						style={styles.overlay}
+					>
+						<View style={styles.badge}>
 							<MaterialCommunityIcons
-								name="delete-outline"
-								size={22}
-								color={Colors.error}
+								name="calendar"
+								size={13}
+								color="#fff"
+							/>
+
+							<Text style={styles.badgeText}>
+								{item.dataEvento || "Evento"}
+							</Text>
+						</View>
+
+						<Text
+							numberOfLines={2}
+							style={styles.eventTitle}
+						>
+							{item.tituloEvento ||
+								"Evento sem título"}
+						</Text>
+
+						{item.horaInicio && (
+							<Text style={styles.eventTime}>
+								🕐 {item.horaInicio}
+								{item.horaFim
+									? ` às ${item.horaFim}`
+									: ""}
+							</Text>
+						)}
+					</LinearGradient>
+				</TouchableOpacity>
+
+				{/* ACTIONS */}
+				<View style={styles.actions}>
+					<View style={styles.leftActions}>
+						<TouchableOpacity
+							style={styles.actionBtn}
+							onPress={() =>
+								toggleLike(item.id)
+							}
+						>
+							<MaterialCommunityIcons
+								name={
+									isLiked
+										? "heart"
+										: "heart-outline"
+								}
+								size={25}
+								color={
+									isLiked
+										? Colors.error
+										: Colors.textPrimary
+								}
 							/>
 						</TouchableOpacity>
 
 						<TouchableOpacity
-							style={styles.dashboardBtn}
+							style={styles.actionBtn}
 							onPress={() =>
-								navigation.navigate("Metricas", { eventoId: item.id })
+								navigation.navigate(
+									"Detalhes",
+									{
+										evento: item,
+									}
+								)
 							}
 						>
-							<Text style={styles.dashboardText}>Dashboard</Text>
+							<MaterialCommunityIcons
+								name="comment-outline"
+								size={24}
+								color={
+									Colors.textPrimary
+								}
+							/>
 						</TouchableOpacity>
+
+						<TouchableOpacity
+							style={styles.actionBtn}
+						>
+							<MaterialCommunityIcons
+								name="share-variant-outline"
+								size={23}
+								color={
+									Colors.textPrimary
+								}
+							/>
+						</TouchableOpacity>
+					</View>
+
+					<TouchableOpacity
+						style={styles.actionBtn}
+					>
+						<MaterialCommunityIcons
+							name="bookmark-outline"
+							size={24}
+							color={Colors.textPrimary}
+						/>
+					</TouchableOpacity>
+				</View>
+
+				{/* METRICS */}
+				<View style={styles.metricsContainer}>
+					<Text style={styles.likesText}>
+						{formatarNumero(item.likes || 0)} curtidas
+					</Text>
+
+					<Text style={styles.viewsText}>
+						{formatarNumero(
+							item.views || 0
+						)}{" "}
+						visualizações
+					</Text>
+				</View>
+
+				{/* DESCRIPTION */}
+				{!!item.descricao && (
+					<View style={styles.descriptionContainer}>
+						<Text
+							numberOfLines={3}
+							style={styles.description}
+						>
+							<Text style={styles.descriptionUser}>
+								{item.adminNome || "Organizador"}{" "}
+							</Text>
+
+							{item.descricao}
+						</Text>
 					</View>
 				)}
 			</View>
-		</TouchableOpacity>
-	);
+		);
+	};
 
+	/* =========================
+	 * ⏳ Loading
+	 * ========================= */
 	if (loading) {
 		return (
-			<View style={styles.loading}>
-				<ActivityIndicator size="large" color={Colors.primary} />
+			<View style={styles.loadingContainer}>
+				<ActivityIndicator
+					size="large"
+					color={Colors.primary}
+				/>
 			</View>
 		);
 	}
 
 	return (
-		<View style={{ flex: 1, backgroundColor: Colors.background }}>
-			<LinearGradient
-				colors={[Colors.background, Colors.surface]}
-				style={styles.header}
-			>
-				<TouchableOpacity
-					onPress={() => navigation.goBack()}
-					style={{ marginBottom: 10 }}
-				>
-					<MaterialCommunityIcons
-						name="arrow-left"
-						size={24}
-						color={Colors.textPrimary}
-					/>
-				</TouchableOpacity>
-
-				<View style={styles.headerContent}>
-					<Image
-						source={{ uri: foto || "https://i.pravatar.cc/100" }}
-						style={styles.avatar}
-					/>
-					<View>
-						<Text style={styles.nome}>{nome || "Usuário"}</Text>
-						{isAdmin && <Text style={styles.sub}>Organizador</Text>}
-					</View>
-				</View>
-
-				<Text style={styles.title}>Meus Eventos</Text>
-			</LinearGradient>
-
-			<FlatList
-				data={eventos}
-				keyExtractor={(item) => item.id}
-				renderItem={renderItem}
-				showsVerticalScrollIndicator={false}
-				contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-				ListEmptyComponent={
-					<Text style={styles.empty}>Nenhum evento cadastrado 😢</Text>
-				}
+		<View style={styles.container}>
+			<StatusBar
+				barStyle="light-content"
+				backgroundColor={Colors.background}
 			/>
 
-			{/* FAB */}
-			{isAdmin && (
+			{/* HEADER */}
+			<LinearGradient
+				colors={[Colors.background, Colors.surface]}
+				style={[
+					styles.header,
+					{
+						paddingTop: insets.top + 8,
+					},
+				]}
+			>
+				<View>
+					<Text style={styles.feedTitle}>Explorar</Text>
+					<Text style={styles.feedSubtitle}>
+						Eventos acontecendo agora
+					</Text>
+				</View>
+
 				<TouchableOpacity
-					style={styles.fab}
-					onPress={() => goToAdmin("CriarEvento")}
+					style={styles.createButton}
+					onPress={() =>
+						navigation.navigate("CriarPost")
+					}
 				>
-					<MaterialCommunityIcons name="plus" size={26} color="#fff" />
+					<MaterialCommunityIcons
+						name="plus"
+						size={24}
+						color="#fff"
+					/>
 				</TouchableOpacity>
-			)}
+			</LinearGradient>
+
+			{/* FEED */}
+			<FlatList
+				data={eventos}
+				renderItem={renderItem}
+				keyExtractor={(item) => item.id}
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{
+					paddingBottom: 40,
+				}}
+				initialNumToRender={4}
+				maxToRenderPerBatch={5}
+				windowSize={7}
+				onEndReached={handleEndReached}
+				onEndReachedThreshold={0.3}
+				ListFooterComponent={
+					loadingMore ? (
+						<View style={styles.footerLoader}>
+							<ActivityIndicator
+								color={Colors.primary}
+							/>
+						</View>
+					) : null
+				}
+				ListEmptyComponent={
+					<View style={styles.emptyState}>
+						<MaterialCommunityIcons
+							name="calendar-blank-outline"
+							size={70}
+							color={Colors.textMuted}
+						/>
+
+						<Text style={styles.emptyTitle}>
+							Nenhum evento encontrado
+						</Text>
+
+						<Text style={styles.emptySubtitle}>
+							Novos eventos aparecerão aqui
+						</Text>
+					</View>
+				}
+			/>
 		</View>
 	);
 }
 
-const styles = {
-	header: { paddingTop: 50, paddingBottom: 20, paddingHorizontal: 16 },
-	headerContent: {
-		flexDirection: "row",
-		alignItems: "center",
-		marginBottom: 15,
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: Colors.background,
 	},
-	avatar: { width: 50, height: 50, borderRadius: 25, marginRight: 12 },
-	nome: { color: Colors.textPrimary, fontSize: 16, fontWeight: "bold" },
-	sub: { color: Colors.textSecondary, fontSize: 12 },
-	title: { color: Colors.textPrimary, fontSize: 20, fontWeight: "bold" },
-	card: {
-		backgroundColor: Colors.card,
-		borderRadius: 16,
-		marginBottom: 16,
-		overflow: "hidden",
-		borderWidth: 1,
-		borderColor: Colors.border,
-	},
-	image: { width: "100%", height: 160 },
-	titulo: { color: Colors.textPrimary, fontSize: 15, fontWeight: "bold" },
-	local: { color: Colors.textSecondary, fontSize: 13, marginTop: 4 },
-	data: { color: Colors.primary, fontSize: 12, marginTop: 4 },
-	actions: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		marginTop: 12,
-		alignItems: "center",
-	},
-	dashboardBtn: {
-		backgroundColor: Colors.primary,
-		paddingVertical: 8,
-		paddingHorizontal: 14,
-		borderRadius: 10,
-	},
-	dashboardText: { color: "#fff", fontWeight: "bold", fontSize: 12 },
-	fab: {
-		position: "absolute",
-		bottom: 125,
-		right: 20,
-		backgroundColor: Colors.primary,
-		width: 60,
-		height: 60,
-		borderRadius: 30,
-		justifyContent: "center",
-		alignItems: "center",
-		elevation: 5,
-	},
-	empty: { color: Colors.textMuted, textAlign: "center", marginTop: 40 },
-	loading: {
+
+	loadingContainer: {
 		flex: 1,
 		justifyContent: "center",
 		alignItems: "center",
 		backgroundColor: Colors.background,
 	},
-};
+
+	/* HEADER */
+	header: {
+		paddingHorizontal: 18,
+		paddingBottom: 16,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+	},
+
+	feedTitle: {
+		color: Colors.textPrimary,
+		fontSize: 30,
+		fontWeight: "800",
+	},
+
+	feedSubtitle: {
+		color: Colors.textMuted,
+		fontSize: 13,
+		marginTop: 2,
+	},
+
+	createButton: {
+		width: 46,
+		height: 46,
+		borderRadius: 23,
+		backgroundColor: Colors.primary,
+		justifyContent: "center",
+		alignItems: "center",
+		elevation: 4,
+	},
+
+	/* CARD */
+	card: {
+		backgroundColor: Colors.surface,
+		marginHorizontal: 14,
+		marginBottom: 20,
+		borderRadius: 24,
+		overflow: "hidden",
+
+		borderWidth: 1,
+		borderColor: Colors.border,
+
+		shadowColor: "#000",
+		shadowOffset: {
+			width: 0,
+			height: 4,
+		},
+		shadowOpacity: 0.15,
+		shadowRadius: 10,
+
+		elevation: 5,
+	},
+
+	/* HEADER CARD */
+	cardHeader: {
+		paddingHorizontal: 14,
+		paddingVertical: 14,
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+	},
+
+	userInfo: {
+		flexDirection: "row",
+		alignItems: "center",
+		flex: 1,
+	},
+
+	avatar: {
+		width: 48,
+		height: 48,
+		borderRadius: 24,
+		marginRight: 12,
+		backgroundColor: Colors.border,
+	},
+
+	userName: {
+		color: Colors.textPrimary,
+		fontSize: 14,
+		fontWeight: "700",
+	},
+
+	locationRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		marginTop: 4,
+	},
+
+	locationText: {
+		color: Colors.textMuted,
+		fontSize: 12,
+		marginLeft: 3,
+		flex: 1,
+	},
+
+	headerActions: {
+		alignItems: "flex-end",
+	},
+
+	dateText: {
+		color: Colors.textMuted,
+		fontSize: 11,
+	},
+
+	deleteBtn: {
+		marginTop: 6,
+		padding: 4,
+	},
+
+	/* IMAGE */
+	imageWrapper: {
+		position: "relative",
+	},
+
+	mainImage: {
+		width: "100%",
+		height: 420,
+		backgroundColor: Colors.border,
+	},
+
+	overlay: {
+		position: "absolute",
+		left: 0,
+		right: 0,
+		bottom: 0,
+		paddingHorizontal: 16,
+		paddingBottom: 16,
+		paddingTop: 40,
+	},
+
+	badge: {
+		alignSelf: "flex-start",
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: "rgba(255,255,255,0.18)",
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+		borderRadius: 50,
+		marginBottom: 10,
+	},
+
+	badgeText: {
+		color: "#fff",
+		fontSize: 11,
+		fontWeight: "600",
+		marginLeft: 5,
+	},
+
+	eventTitle: {
+		color: "#fff",
+		fontSize: 22,
+		fontWeight: "800",
+		lineHeight: 28,
+	},
+
+	eventTime: {
+		color: "#fff",
+		fontSize: 13,
+		marginTop: 6,
+	},
+
+	/* ACTIONS */
+	actions: {
+		paddingHorizontal: 10,
+		paddingTop: 10,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+	},
+
+	leftActions: {
+		flexDirection: "row",
+		alignItems: "center",
+	},
+
+	actionBtn: {
+		padding: 8,
+	},
+
+	/* METRICS */
+	metricsContainer: {
+		paddingHorizontal: 16,
+		paddingTop: 4,
+	},
+
+	likesText: {
+		color: Colors.textPrimary,
+		fontWeight: "700",
+		fontSize: 13,
+	},
+
+	viewsText: {
+		color: Colors.textMuted,
+		fontSize: 12,
+		marginTop: 3,
+	},
+
+	/* DESCRIPTION */
+	descriptionContainer: {
+		paddingHorizontal: 16,
+		paddingTop: 10,
+		paddingBottom: 18,
+	},
+
+	description: {
+		color: Colors.textSecondary,
+		fontSize: 13,
+		lineHeight: 20,
+	},
+
+	descriptionUser: {
+		color: Colors.textPrimary,
+		fontWeight: "700",
+	},
+
+	/* EMPTY */
+	emptyState: {
+		alignItems: "center",
+		paddingTop: 100,
+		paddingHorizontal: 30,
+	},
+
+	emptyTitle: {
+		color: Colors.textPrimary,
+		fontSize: 18,
+		fontWeight: "700",
+		marginTop: 18,
+	},
+
+	emptySubtitle: {
+		color: Colors.textMuted,
+		fontSize: 13,
+		marginTop: 6,
+		textAlign: "center",
+	},
+
+	footerLoader: {
+		paddingVertical: 30,
+		alignItems: "center",
+	},
+});

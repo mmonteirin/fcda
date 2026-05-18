@@ -1,4 +1,17 @@
+// ✅ AdmEventoMetricas.jsx COMPLETO
+// 🔥 Agora conectado com TODOS os eventos do administrador
+// 🔥 Mostra:
+// - Total de Eventos
+// - Total de Avaliações
+// - Média Geral
+// - Total de Likes
+// - Total de Views
+// - Total de Participantes
+// - Gráfico de avaliações
+// - Sentimento geral
+
 import React, { useEffect, useState } from "react";
+
 import {
   View,
   Text,
@@ -6,117 +19,192 @@ import {
   ActivityIndicator,
   Dimensions,
   TouchableOpacity,
+  StyleSheet,
+  StatusBar,
 } from "react-native";
 
 import {
   collection,
-  onSnapshot,
   query,
-  orderBy,
+  where,
+  onSnapshot,
+  getDocs,
 } from "firebase/firestore";
 
 import { db } from "../firebaseConfig";
-import GlobalStyles from "../styles/GlobalStyles";
+
+import {
+  BarChart,
+  PieChart,
+} from "react-native-chart-kit";
+
+import {
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
+
+import { LinearGradient } from "expo-linear-gradient";
+
+import { BlurView } from "expo-blur";
+
+import { MotiView } from "moti";
+
 import { Colors } from "../styles/Colors";
 
-import { BarChart, PieChart } from "react-native-chart-kit";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAuth } from "../context/AuthContext";
 
-const styles = GlobalStyles;
-const screenWidth = Dimensions.get("window").width;
+const screenWidth =
+  Dimensions.get("window").width;
 
-export default function AdmEventoMetrica({ route, navigation }) {
-  const eventoId = route?.params?.eventoId;
+export default function AdmEventoMetricas({
+  navigation,
+}) {
+  const { user } = useAuth();
 
-  const [avaliacoes, setAvaliacoes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
 
-  if (!eventoId) {
-    return (
-      <Fallback
-        icon="alert-circle-outline"
-        message="Evento não encontrado"
-        navigation={navigation}
-      />
-    );
-  }
+  const [eventos, setEventos] =
+    useState([]);
+
+  const [avaliacoes, setAvaliacoes] =
+    useState([]);
+
+  const [metricas, setMetricas] =
+    useState({
+      totalEventos: 0,
+      totalLikes: 0,
+      totalViews: 0,
+      totalParticipantes: 0,
+    });
 
   useEffect(() => {
+    if (!user?.uid) return;
+
+    carregarDados();
+  }, [user?.uid]);
+
+  const carregarDados = async () => {
     try {
-      const q = query(
-        collection(db, "eventos", eventoId, "avaliacoes"),
-        orderBy("createdAt", "desc")
+      setLoading(true);
+
+      // 🔥 BUSCAR EVENTOS DO ADM
+      const eventosQuery = query(
+        collection(db, "eventos"),
+        where(
+          "uidEvento",
+          "==",
+          user.uid
+        )
       );
 
-      const unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          const lista = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
+      const eventosSnap =
+        await getDocs(eventosQuery);
 
-          setAvaliacoes(lista);
-          setLoading(false);
-        },
-        (err) => {
-          console.error("Erro Firestore:", err);
-          setError(true);
-          setLoading(false);
-        }
-      );
+      const listaEventos =
+        eventosSnap.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-      return () => unsubscribe();
+      setEventos(listaEventos);
+
+      // 🔥 MÉTRICAS
+      let totalLikes = 0;
+      let totalViews = 0;
+      let totalParticipantes = 0;
+
+      listaEventos.forEach((evento) => {
+        totalLikes +=
+          evento.likes || 0;
+
+        totalViews +=
+          evento.views || 0;
+
+        totalParticipantes +=
+          evento.participantes || 0;
+      });
+
+      // 🔥 BUSCAR TODAS AVALIAÇÕES
+      let todasAvaliacoes = [];
+
+      for (const evento of listaEventos) {
+        const avaliacoesSnap =
+          await getDocs(
+            collection(
+              db,
+              "eventos",
+              evento.id,
+              "avaliacoes"
+            )
+          );
+
+        const lista =
+          avaliacoesSnap.docs.map(
+            (doc) => ({
+              id: doc.id,
+              eventoId: evento.id,
+              ...doc.data(),
+            })
+          );
+
+        todasAvaliacoes.push(...lista);
+      }
+
+      setAvaliacoes(todasAvaliacoes);
+
+      setMetricas({
+        totalEventos:
+          listaEventos.length,
+
+        totalLikes,
+
+        totalViews,
+
+        totalParticipantes,
+      });
+
+      setLoading(false);
     } catch (err) {
-      console.error("Erro geral:", err);
-      setError(true);
+      console.log(err);
+
       setLoading(false);
     }
-  }, [eventoId]);
+  };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingSpinner}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
-  }
+  /* 🔥 ESTATÍSTICAS */
 
-  if (error) {
-    return (
-      <Fallback
-        icon="alert-outline"
-        message="Erro ao carregar dados"
-        navigation={navigation}
-      />
-    );
-  }
-
-  if (!avaliacoes || avaliacoes.length === 0) {
-    return (
-      <Fallback
-        icon="chart-bar-off"
-        message="Sem dados para mostrar"
-        navigation={navigation}
-      />
-    );
-  }
-
-  const total = avaliacoes.length;
+  const totalAvaliacoes =
+    avaliacoes.length;
 
   const media =
-    total > 0
+    totalAvaliacoes > 0
       ? (
-          avaliacoes.reduce((a, b) => a + (b?.nota || 0), 0) / total
+          avaliacoes.reduce(
+            (acc, item) =>
+              acc +
+              (item?.nota || 0),
+            0
+          ) / totalAvaliacoes
         ).toFixed(1)
       : 0;
 
-  const contar = (n) =>
-    avaliacoes.filter((a) => (a?.nota || 0) === n).length;
+  const contar = (nota) =>
+    avaliacoes.filter(
+      (a) =>
+        (a?.nota || 0) === nota
+    ).length;
+
+  /* 🔥 CHARTS */
 
   const chartDataBar = {
-    labels: ["5★", "4★", "3★", "2★", "1★"],
+    labels: [
+      "5★",
+      "4★",
+      "3★",
+      "2★",
+      "1★",
+    ],
+
     datasets: [
       {
         data: [
@@ -133,142 +221,408 @@ export default function AdmEventoMetrica({ route, navigation }) {
   const pieData = [
     {
       name: "Positivo",
-      population: contar(5) + contar(4),
-      color: Colors.primary,
-      legendFontColor: Colors.textPrimary,
+      population:
+        contar(5) + contar(4),
+      color: "#22C55E",
+      legendFontColor: "#FFF",
       legendFontSize: 12,
     },
+
     {
       name: "Neutro",
       population: contar(3),
-      color: Colors.warning,
-      legendFontColor: Colors.textPrimary,
+      color: "#F59E0B",
+      legendFontColor: "#FFF",
       legendFontSize: 12,
     },
+
     {
       name: "Negativo",
-      population: contar(2) + contar(1),
-      color: Colors.error,
-      legendFontColor: Colors.textPrimary,
+      population:
+        contar(2) + contar(1),
+      color: "#EF4444",
+      legendFontColor: "#FFF",
       legendFontSize: 12,
     },
   ];
 
-  const hasBarData = chartDataBar.datasets[0].data.some((v) => v > 0);
-  const hasPieData = pieData.some((p) => p.population > 0);
+  if (loading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator
+          size="large"
+          color={Colors.primary}
+        />
+
+        <Text style={styles.loadingText}>
+          Carregando métricas...
+        </Text>
+      </View>
+    );
+  }
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <Header navigation={navigation} />
+    <View style={styles.container}>
+      <StatusBar
+        barStyle="light-content"
+      />
 
-      <ScrollView contentContainerStyle={{ padding: 20 }}>
+      {/* HEADER */}
+      <LinearGradient
+        colors={[
+          "#0F172A",
+          "#111827",
+          "#1E1B4B",
+        ]}
+        style={styles.header}
+      >
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() =>
+            navigation.goBack()
+          }
+        >
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={24}
+            color="#FFF"
+          />
+        </TouchableOpacity>
+
+        <View>
+          <Text style={styles.headerTitle}>
+            Dashboard Geral
+          </Text>
+
+          <Text
+            style={styles.headerSubtitle}
+          >
+            Todos os eventos
+          </Text>
+        </View>
+      </LinearGradient>
+
+      <ScrollView
+        showsVerticalScrollIndicator={
+          false
+        }
+        contentContainerStyle={
+          styles.content
+        }
+      >
+        {/* CARDS */}
         <View style={styles.grid}>
-          <Card title="Total Avaliações" value={total} />
-          <Card title="Média Geral" value={`${media} ★`} />
-          <Card title="Notas 5★" value={contar(5)} />
-          <Card title="Notas 1★" value={contar(1)} />
+          <MetricCard
+            title="Eventos"
+            value={
+              metricas.totalEventos
+            }
+            icon="calendar"
+            color="#8B5CF6"
+          />
+
+          <MetricCard
+            title="Avaliações"
+            value={totalAvaliacoes}
+            icon="star"
+            color="#F59E0B"
+          />
+
+          <MetricCard
+            title="Média"
+            value={`${media} ★`}
+            icon="chart-line"
+            color="#06B6D4"
+          />
+
+          <MetricCard
+            title="Likes"
+            value={
+              metricas.totalLikes
+            }
+            icon="heart"
+            color="#EF4444"
+          />
+
+          <MetricCard
+            title="Views"
+            value={
+              metricas.totalViews
+            }
+            icon="eye"
+            color="#22C55E"
+          />
+
+          <MetricCard
+            title="Participantes"
+            value={
+              metricas.totalParticipantes
+            }
+            icon="account-group"
+            color="#6366F1"
+          />
         </View>
 
-        {hasBarData && (
-          <>
-            <Text style={styles.sectionTitle}>Distribuição de Notas</Text>
-            <View style={styles.eventCard}>
-              <BarChart
-                data={chartDataBar}
-                width={screenWidth - 40}
-                height={220}
-                fromZero
-                chartConfig={chartConfig}
-              />
-            </View>
-          </>
-        )}
+        {/* BAR */}
+        <Text style={styles.section}>
+          Distribuição de Notas
+        </Text>
 
-        {hasPieData && (
-          <>
-            <Text style={styles.sectionTitle}>Sentimento Geral</Text>
-            <View style={styles.eventCard}>
-              <PieChart
-                data={pieData}
-                width={screenWidth - 40}
-                height={220}
-                accessor="population"
-                backgroundColor="transparent"
-                chartConfig={chartConfig}
-              />
-            </View>
-          </>
-        )}
+        <BlurView
+          intensity={50}
+          tint="dark"
+          style={styles.chartCard}
+        >
+          <BarChart
+            data={chartDataBar}
+            width={screenWidth - 50}
+            height={240}
+            fromZero
+            showValuesOnTopOfBars
+            withInnerLines={false}
+            chartConfig={chartConfig}
+          />
+        </BlurView>
+
+        {/* PIE */}
+        <Text style={styles.section}>
+          Sentimento Geral
+        </Text>
+
+        <BlurView
+          intensity={50}
+          tint="dark"
+          style={styles.chartCard}
+        >
+          <PieChart
+            data={pieData}
+            width={screenWidth - 50}
+            height={230}
+            accessor="population"
+            backgroundColor="transparent"
+            chartConfig={chartConfig}
+            absolute
+          />
+        </BlurView>
       </ScrollView>
     </View>
   );
 }
 
-/* COMPONENTES */
-
-function Header({ navigation }) {
+/* 🔥 CARD */
+function MetricCard({
+  title,
+  value,
+  icon,
+  color,
+}) {
   return (
-    <View style={{ flexDirection: "row", padding: 20, marginTop: 30 }}>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <MaterialCommunityIcons
-          name="arrow-left"
-          size={26}
-          color={Colors.primary}
-        />
-      </TouchableOpacity>
-
-      <Text style={{ color: Colors.textPrimary, fontSize: 18, marginLeft: 15 }}>
-        Dashboard do Evento
-      </Text>
-    </View>
-  );
-}
-
-function Card({ title, value }) {
-  return (
-    <View style={styles.cardCategory}>
-      <Text style={{ color: Colors.textSecondary, fontSize: 12 }}>
-        {title}
-      </Text>
-      <Text
-        style={{
-          color: Colors.primary,
-          fontSize: 20,
-          fontWeight: "bold",
-        }}
+    <MotiView
+      from={{
+        opacity: 0,
+        scale: 0.9,
+      }}
+      animate={{
+        opacity: 1,
+        scale: 1,
+      }}
+      transition={{
+        type: "timing",
+        duration: 500,
+      }}
+      style={styles.metricCard}
+    >
+      <LinearGradient
+        colors={[
+          "rgba(255,255,255,0.08)",
+          "rgba(255,255,255,0.03)",
+        ]}
+        style={styles.metricGradient}
       >
-        {value}
-      </Text>
-    </View>
-  );
-}
+        <View
+          style={[
+            styles.iconBox,
+            {
+              backgroundColor: color,
+            },
+          ]}
+        >
+          <MaterialCommunityIcons
+            name={icon}
+            size={22}
+            color="#FFF"
+          />
+        </View>
 
-function Fallback({ icon, message, navigation }) {
-  return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <Header navigation={navigation} />
-
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <MaterialCommunityIcons
-          name={icon}
-          size={60}
-          color={Colors.textMuted}
-        />
-        <Text style={{ color: Colors.textSecondary, marginTop: 10 }}>
-          {message}
+        <Text style={styles.metricTitle}>
+          {title}
         </Text>
-      </View>
-    </View>
+
+        <Text style={styles.metricValue}>
+          {value}
+        </Text>
+      </LinearGradient>
+    </MotiView>
   );
 }
 
-/* CONFIG */
+/* CHART CONFIG */
 const chartConfig = {
-  backgroundColor: Colors.surface,
-  backgroundGradientFrom: Colors.surface,
-  backgroundGradientTo: Colors.surface,
+  backgroundGradientFrom:
+    "transparent",
+
+  backgroundGradientTo:
+    "transparent",
+
   decimalPlaces: 0,
+
   color: (opacity = 1) =>
-    `rgba(108,92,231, ${opacity})`, // baseado no primary
-  labelColor: () => Colors.textPrimary,
+    `rgba(139,92,246, ${opacity})`,
+
+  labelColor: () =>
+    "rgba(255,255,255,0.7)",
+
+  propsForBackgroundLines: {
+    stroke:
+      "rgba(255,255,255,0.08)",
+  },
+
+  barPercentage: 0.7,
 };
+
+/* STYLES */
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#070B14",
+  },
+
+  loading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#070B14",
+  },
+
+  loadingText: {
+    color: "#FFF",
+    marginTop: 14,
+  },
+
+  header: {
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+
+    flexDirection: "row",
+    alignItems: "center",
+
+    gap: 16,
+  },
+
+  backButton: {
+    width: 46,
+    height: 46,
+
+    borderRadius: 16,
+
+    backgroundColor:
+      "rgba(255,255,255,0.08)",
+
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  headerTitle: {
+    color: "#FFF",
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+
+  headerSubtitle: {
+    color:
+      "rgba(255,255,255,0.6)",
+
+    marginTop: 4,
+  },
+
+  content: {
+    padding: 20,
+    paddingBottom: 100,
+  },
+
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent:
+      "space-between",
+  },
+
+  metricCard: {
+    width: "48%",
+    marginBottom: 16,
+  },
+
+  metricGradient: {
+    borderRadius: 24,
+    padding: 18,
+
+    borderWidth: 1,
+
+    borderColor:
+      "rgba(255,255,255,0.05)",
+  },
+
+  iconBox: {
+    width: 48,
+    height: 48,
+
+    borderRadius: 16,
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    marginBottom: 14,
+  },
+
+  metricTitle: {
+    color:
+      "rgba(255,255,255,0.65)",
+
+    fontSize: 13,
+
+    marginBottom: 6,
+  },
+
+  metricValue: {
+    color: "#FFF",
+
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+
+  section: {
+    color: "#FFF",
+
+    fontSize: 18,
+    fontWeight: "bold",
+
+    marginTop: 20,
+    marginBottom: 14,
+  },
+
+  chartCard: {
+    borderRadius: 26,
+
+    overflow: "hidden",
+
+    paddingVertical: 20,
+
+    marginBottom: 24,
+
+    borderWidth: 1,
+
+    borderColor:
+      "rgba(255,255,255,0.06)",
+  },
+});

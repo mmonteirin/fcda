@@ -1,336 +1,712 @@
-import React, { useState, useEffect } from "react";
+import React, {
+  useEffect,
+  useState,
+} from "react";
+
 import {
-	View,
-	TextInput,
-	TouchableOpacity,
-	Image,
-	Alert,
-	ActivityIndicator,
-	StyleSheet,
+  View,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  Alert,
+  ActivityIndicator,
+  StyleSheet,
+  ScrollView,
 } from "react-native";
+
 import * as ImagePicker from "expo-image-picker";
-import { uploadImagem } from "../services/uploadService";
 
-import { updateProfile } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  MaterialCommunityIcons,
+  FontAwesome5,
+} from "@expo/vector-icons";
 
-import { auth, db } from "../firebaseConfig";
-import { useAuth } from "../context/AuthContext";
-
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import {
+  updateProfile,
+} from "firebase/auth";
+
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+
+import {
+  auth,
+  db,
+} from "../firebaseConfig";
+
+import { uploadImagem } from "../services/uploadService";
+
+import { useAuth } from "../context/AuthContext";
+
 import AppText from "../components/AppText";
+
 import { Colors } from "../styles/Colors";
 
-export default function PerfilEditar({ navigation }) {
-	const insets = useSafeAreaInsets();
-	const { user, nome: nomeContext, foto: fotoContext } = useAuth();
+export default function PerfilEditar({
+  navigation,
+}) {
+  const insets = useSafeAreaInsets();
 
-	const [nome, setNome] = useState(nomeContext || "");
-	const [foto, setFoto] = useState(fotoContext || "");
-	const [telefone, setTelefone] = useState("");
-	const [cpf, setCpf] = useState("");
-	const [loading, setLoading] = useState(false);
+  const {
+    user,
+    nome: nomeContext,
+    foto: fotoContext,
+  } = useAuth();
 
-	const formatarTelefone = (text) => {
-    // Remove tudo que não for número
-    const numbers = text.replace(/\D/g, '');
-    
-    // Limita a 11 dígitos (DDD + 9 dígitos)
-    if (numbers.length > 11) return;
+  const [loading, setLoading] =
+    useState(false);
 
-    // Formatação manual: (99) 9 9999-9999
-    if (numbers.length <= 2) {
-      return `(${numbers}`;
-    } else if (numbers.length <= 3) {
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-    } else if (numbers.length <= 11) {
-      const ddd = numbers.slice(0, 2);
-      const nono = numbers.slice(2, 3);
-      const resto = numbers.slice(3);
-      
-      if (resto.length <= 4) {
-        return `(${ddd}) ${nono} ${resto}`;
-      } else {
-        const parte1 = resto.slice(0, 4);
-        const parte2 = resto.slice(4, 8);
-        return `(${ddd}) ${nono} ${parte1}-${parte2}`;
+  /* 👤 PERFIL */
+  const [nome, setNome] = useState(
+    nomeContext || ""
+  );
+
+  const [username, setUsername] =
+    useState("");
+
+  const [bio, setBio] = useState("");
+
+  const [cidade, setCidade] =
+    useState("");
+
+  const [foto, setFoto] = useState(
+    fotoContext || ""
+  );
+
+  const [telefone, setTelefone] =
+    useState("");
+
+  const [cpf, setCpf] = useState("");
+
+  /* 🌐 REDES */
+  const [instagram, setInstagram] =
+    useState("");
+
+  const [facebook, setFacebook] =
+    useState("");
+
+  const [threads, setThreads] =
+    useState("");
+
+  const [x, setX] = useState("");
+
+  const [spotify, setSpotify] =
+    useState("");
+
+  const [tiktok, setTiktok] =
+    useState("");
+
+  const [website, setWebsite] =
+    useState("");
+
+  /* 🔄 LOAD */
+  useEffect(() => {
+    async function carregar() {
+      try {
+        const ref = doc(
+          db,
+          "users",
+          user.uid
+        );
+
+        const snap = await getDoc(ref);
+
+        if (snap.exists()) {
+          const data = snap.data();
+
+          setTelefone(
+            data.telefone || ""
+          );
+
+          setCpf(data.cpf || "");
+
+          setUsername(
+            data.username || ""
+          );
+
+          setBio(data.bio || "");
+
+          setCidade(
+            data.cidade || ""
+          );
+
+          setInstagram(
+            data.instagram || ""
+          );
+
+          setFacebook(
+            data.facebook || ""
+          );
+
+          setThreads(
+            data.threads || ""
+          );
+
+          setX(data.x || "");
+
+          setSpotify(
+            data.spotify || ""
+          );
+
+          setTiktok(
+            data.tiktok || ""
+          );
+
+          setWebsite(
+            data.website || ""
+          );
+        }
+      } catch (error) {
+        console.log(error);
       }
     }
-    return numbers;
-  };
 
-  const handleTelChange = (text) => {
-    const formatted = formatarTelefone(text);
-    setTelefone(formatted);
-  };
+    if (user) carregar();
+  }, []);
 
-	/* 🔄 carregar dados */
-	useEffect(() => {
-		const carregarDados = async () => {
-			try {
-				const docRef = doc(db, "users", user.uid);
-				const snap = await getDoc(docRef);
+  /* 📸 FOTO */
+  async function escolherFoto() {
+    const permissao =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-				if (snap.exists()) {
-					const data = snap.data();
-					setTelefone(data.telefone || "");
-					setCpf(data.cpf || "");
-				}
-			} catch (error) {
-				console.log(error);
-			}
-		};
+    if (!permissao.granted) {
+      Alert.alert(
+        "Permissão necessária"
+      );
 
-		if (user) carregarDados();
-	}, [user]);
+      return;
+    }
 
-	/* 📸 escolher foto */
-	const escolherFoto = async () => {
-		const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const result =
+      await ImagePicker.launchImageLibraryAsync(
+        {
+          mediaTypes:
+            ImagePicker.MediaTypeOptions
+              .Images,
 
-		if (!permissao.granted) {
-			Alert.alert("Permissão necessária!");
-			return;
-		}
+          quality: 0.5,
 
-		const result = await ImagePicker.launchImageLibraryAsync({
-			mediaTypes: ImagePicker.Images,
-			quality: 0.4,
-		});
+          allowsEditing: true,
 
-		if (!result.canceled) {
-			setFoto(result.assets[0].uri);
-		}
-	};
+          aspect: [1, 1],
+        }
+      );
 
-	/* 💾 salvar */
-	const salvar = async () => {
-		if (!nome.trim()) {
-			Alert.alert("Informe o nome");
-			return;
-		}
+    if (!result.canceled) {
+      setFoto(result.assets[0].uri);
+    }
+  }
 
-		try {
-			setLoading(true);
+  /* 💾 SAVE */
+  async function salvar() {
+    if (!nome.trim()) {
+      Alert.alert(
+        "Informe seu nome"
+      );
 
-			let fotoFinal = foto;
+      return;
+    }
 
-			if (foto && !foto.startsWith("https")) {
-				fotoFinal = await uploadImagem(foto, user.uid);
-			}
+    try {
+      setLoading(true);
 
-			const userRef = doc(db, "users", user.uid);
+      let fotoFinal = foto;
 
-			// Firebase Auth
-			await updateProfile(auth.currentUser, {
-				displayName: nome,
-				photoURL: fotoFinal,
-			});
+      if (
+        foto &&
+        !foto.startsWith("https")
+      ) {
+        fotoFinal =
+          await uploadImagem(
+            foto,
+            user.uid
+          );
+      }
 
-			// Firestore
-			await setDoc(
-				userRef,
-				{
-					nome,
-					foto: fotoFinal,
-					telefone,
-					cpf,
-					email: user.email,
-				},
-				{ merge: true }
-			);
+      await updateProfile(
+        auth.currentUser,
+        {
+          displayName: nome,
+          photoURL: fotoFinal,
+        }
+      );
 
-			setFoto(fotoFinal);
+      const ref = doc(
+        db,
+        "users",
+        user.uid
+      );
 
-			Alert.alert("Sucesso", "Dados atualizados!");
+      await setDoc(
+        ref,
+        {
+          nome,
+          username,
+          bio,
+          cidade,
 
-			navigation.goBack();
-		} catch (error) {
-			console.log(error);
-			Alert.alert("Erro", error.message || "Erro ao salvar");
-		} finally {
-			setLoading(false);
-		}
-	};
+          telefone,
+          cpf,
 
-	return (
-		<View style={styles.container}>
-			{/* 🔥 HEADER */}
-			<LinearGradient
-				colors={[Colors.background, Colors.surface]}
-				style={[styles.header, { paddingTop: insets.top + 10 }]}
-			>
-				<TouchableOpacity onPress={() => navigation.goBack()}>
-					<MaterialCommunityIcons
-						name="arrow-left"
-						size={26}
-						color={Colors.primary}
-					/>
-				</TouchableOpacity>
+          instagram,
+          facebook,
+          threads,
+          x,
+          spotify,
+          tiktok,
+          website,
 
-				<AppText style={styles.headerTitle}>Editar Perfil</AppText>
-			</LinearGradient>
+          foto: fotoFinal,
+          email: user.email,
 
-			{/* 👤 AVATAR */}
-			<View style={styles.avatarWrapper}>
-				<Image
-					source={{
-						uri:
-							typeof foto === "string" && foto.length > 0
-								? foto
-								: "https://i.pravatar.cc/150",
-					}}
-					style={styles.avatar}
-				/>
+          updatedAt:
+            serverTimestamp(),
+        },
+        { merge: true }
+      );
 
-				<TouchableOpacity onPress={escolherFoto} style={styles.cameraButton}>
-					<MaterialCommunityIcons name="camera" size={18} color="#fff" />
-				</TouchableOpacity>
-			</View>
+      Alert.alert(
+        "Sucesso",
+        "Perfil atualizado!"
+      );
 
-			{/* 📝 FORM */}
-			<View style={styles.card}>
-				<AppText style={styles.label}>Nome</AppText>
-				<TextInput
-					style={styles.input}
-					placeholder="Nome"
-					placeholderTextColor={Colors.textMuted}
-					value={nome}
-					onChangeText={setNome}
-				/>
+      navigation.goBack();
+    } catch (error) {
+      console.log(error);
 
-				<AppText style={styles.label}>Email</AppText>
-				<TextInput
-					style={[styles.input, styles.disabled]}
-					value={user?.email}
-					editable={false}
-				/>
+      Alert.alert(
+        "Erro",
+        error.message
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
-				<AppText style={styles.label}>Telefone</AppText>
-				<TextInput
-					style={styles.input}
-					placeholder="Telefone"
-					placeholderTextColor={Colors.textMuted}
-					value={telefone}
-					onChangeText={handleTelChange}
-				/>
+  /* 🎨 INPUT */
+  const renderInput = (
+    icon,
+    placeholder,
+    value,
+    setValue
+  ) => (
+    <View style={styles.inputWrapper}>
+      <MaterialCommunityIcons
+        name={icon}
+        size={20}
+        color={Colors.primary}
+      />
 
-				<AppText style={styles.label}>CPF</AppText>
-				<TextInput
-					style={styles.input}
-					placeholder="CPF"
-					placeholderTextColor={Colors.textMuted}
-					value={cpf}
-					onChangeText={setCpf}
-				/>
+      <TextInput
+        placeholder={placeholder}
+        placeholderTextColor={
+          Colors.textMuted
+        }
+        value={value}
+        onChangeText={setValue}
+        style={styles.input}
+      />
+    </View>
+  );
 
-				{/* 🚀 BOTÃO */}
-				<TouchableOpacity
-					onPress={salvar}
-					disabled={loading}
-					style={styles.button}
-				>
-					{loading ? (
-						<ActivityIndicator color={Colors.textPrimary} />
-					) : (
-						<AppText style={styles.buttonText}>Salvar Alterações</AppText>
-					)}
-				</TouchableOpacity>
-			</View>
-		</View>
-	);
+  return (
+    <View style={styles.container}>
+      {/* 🌌 HEADER */}
+      <LinearGradient
+        colors={[
+          Colors.background,
+          Colors.surface,
+        ]}
+        style={[
+          styles.header,
+          {
+            paddingTop:
+              insets.top + 10,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={() =>
+            navigation.goBack()
+          }
+        >
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={26}
+            color={Colors.primary}
+          />
+        </TouchableOpacity>
+
+        <AppText
+          style={styles.headerTitle}
+        >
+          Editar Perfil
+        </AppText>
+      </LinearGradient>
+
+      <ScrollView
+        showsVerticalScrollIndicator={
+          false
+        }
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
+        {/* 👤 AVATAR */}
+        <View style={styles.avatarArea}>
+          <View style={styles.avatarGlow} />
+
+          <Image
+            source={{
+              uri:
+                foto ||
+                "https://i.pravatar.cc/200",
+            }}
+            style={styles.avatar}
+          />
+
+          <TouchableOpacity
+            onPress={escolherFoto}
+            style={styles.camera}
+          >
+            <MaterialCommunityIcons
+              name="camera"
+              size={18}
+              color="#fff"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* 📝 CARD */}
+        <View style={styles.card}>
+          {renderInput(
+            "account",
+            "Nome",
+            nome,
+            setNome
+          )}
+
+          {renderInput(
+            "at",
+            "Username",
+            username,
+            setUsername
+          )}
+
+          {renderInput(
+            "map-marker",
+            "Cidade",
+            cidade,
+            setCidade
+          )}
+
+          {renderInput(
+            "phone",
+            "Telefone",
+            telefone,
+            setTelefone
+          )}
+
+          {renderInput(
+            "card-account-details",
+            "CPF",
+            cpf,
+            setCpf
+          )}
+
+          {/* 🧾 BIO */}
+          <View
+            style={styles.bioWrapper}
+          >
+            <TextInput
+              placeholder="Bio"
+              placeholderTextColor={
+                Colors.textMuted
+              }
+              multiline
+              value={bio}
+              onChangeText={setBio}
+              style={styles.bio}
+            />
+          </View>
+
+          {/* 🌐 REDES */}
+          <AppText
+            style={styles.section}
+          >
+            Redes Sociais
+          </AppText>
+
+          {renderInput(
+            "instagram",
+            "Instagram",
+            instagram,
+            setInstagram
+          )}
+
+          {renderInput(
+            "facebook",
+            "Facebook",
+            facebook,
+            setFacebook
+          )}
+
+          {renderInput(
+            "threads",
+            "Threads",
+            threads,
+            setThreads
+          )}
+
+          {renderInput(
+            "twitter",
+            "X / Twitter",
+            x,
+            setX
+          )}
+
+          {renderInput(
+            "spotify",
+            "Spotify",
+            spotify,
+            setSpotify
+          )}
+
+          {renderInput(
+            "music-note",
+            "TikTok",
+            tiktok,
+            setTiktok
+          )}
+
+          {renderInput(
+            "web",
+            "Website",
+            website,
+            setWebsite
+          )}
+
+          {/* 🚀 BTN */}
+          <TouchableOpacity
+            onPress={salvar}
+            disabled={loading}
+            style={styles.button}
+          >
+            <LinearGradient
+              colors={[
+                Colors.primary,
+                Colors.primaryLight,
+              ]}
+              style={styles.gradient}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <AppText
+                  style={
+                    styles.buttonText
+                  }
+                >
+                  Salvar Alterações
+                </AppText>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        <View
+          style={{ height: 120 }}
+        />
+      </ScrollView>
+    </View>
+  );
 }
 
-/* 🎨 STYLES */
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: Colors.background,
-	},
-
-	header: {
-		paddingHorizontal: 16,
-		paddingBottom: 16,
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 12,
-	},
-
-	headerTitle: {
-		fontSize: 18,
-		fontWeight: "bold",
-		color: Colors.textPrimary,
-	},
-
-	avatarWrapper: {
-    width: 110, 
-    height: 110,
-    alignSelf: "center",
-    marginTop: 20,
-    marginBottom: 10,
-    position: "relative",
+  container: {
+    flex: 1,
+    backgroundColor:
+      Colors.background,
   },
 
-	avatar: {
-		width: 110,
-		height: 110,
-		borderRadius: 60,
-		borderWidth: 2,
-		borderColor: Colors.primary,
-	},
+  header: {
+    paddingHorizontal: 16,
+    paddingBottom: 18,
 
-	cameraButton: {
-		position: "absolute",
-		bottom: 0,
-		right: 0,
-		backgroundColor: Colors.primary,
-		padding: 8,
-		borderRadius: 20,
-	},
+    flexDirection: "row",
 
-	card: {
-		backgroundColor: Colors.surface,
-		margin: 16,
-		padding: 16,
-		borderRadius: 16,
-		borderWidth: 1,
-		borderColor: Colors.border,
-	},
+    alignItems: "center",
 
-	label: {
-		color: Colors.textSecondary,
-		fontSize: 13,
-		marginBottom: 6,
-		marginTop: 10,
-	},
+    gap: 14,
+  },
 
-	input: {
-		backgroundColor: Colors.input,
-		color: Colors.textPrimary,
-		borderRadius: 12,
-		padding: 12,
-		borderWidth: 1,
-		borderColor: Colors.border,
-	},
+  headerTitle: {
+    color: Colors.textPrimary,
 
-	disabled: {
-		opacity: 0.5,
-	},
+    fontSize: 20,
 
-	button: {
-		marginTop: 20,
-		backgroundColor: Colors.primary,
-		padding: 14,
-		borderRadius: 14,
-		alignItems: "center",
-	},
+    fontWeight: "bold",
+  },
 
-	buttonText: {
-		color: "#fff",
-		fontWeight: "bold",
-		fontSize: 16,
-	},
+  avatarArea: {
+    alignItems: "center",
+
+    marginTop: 24,
+  },
+
+  avatarGlow: {
+    position: "absolute",
+
+    width: 140,
+    height: 140,
+
+    borderRadius: 70,
+
+    backgroundColor:
+      "rgba(108,92,231,0.25)",
+
+    shadowColor: Colors.primary,
+
+    shadowOpacity: 0.8,
+
+    shadowRadius: 24,
+  },
+
+  avatar: {
+    width: 120,
+    height: 120,
+
+    borderRadius: 60,
+
+    borderWidth: 3,
+
+    borderColor: Colors.primary,
+  },
+
+  camera: {
+    position: "absolute",
+
+    bottom: 0,
+    right: 120,
+
+    backgroundColor:
+      Colors.primary,
+
+    width: 38,
+    height: 38,
+
+    borderRadius: 19,
+
+    alignItems: "center",
+
+    justifyContent: "center",
+  },
+
+  card: {
+    margin: 16,
+
+    padding: 18,
+
+    borderRadius: 28,
+
+    backgroundColor:
+      Colors.surface,
+
+    borderWidth: 1,
+
+    borderColor: Colors.border,
+  },
+
+  inputWrapper: {
+    flexDirection: "row",
+
+    alignItems: "center",
+
+    gap: 12,
+
+    backgroundColor:
+      Colors.card,
+
+    paddingHorizontal: 14,
+
+    borderRadius: 18,
+
+    marginBottom: 14,
+
+    borderWidth: 1,
+
+    borderColor: Colors.border,
+  },
+
+  input: {
+    flex: 1,
+
+    color: Colors.textPrimary,
+
+    paddingVertical: 16,
+  },
+
+  bioWrapper: {
+    backgroundColor:
+      Colors.card,
+
+    borderRadius: 18,
+
+    borderWidth: 1,
+
+    borderColor: Colors.border,
+
+    padding: 14,
+
+    marginBottom: 20,
+  },
+
+  bio: {
+    minHeight: 90,
+
+    color: Colors.textPrimary,
+
+    textAlignVertical: "top",
+  },
+
+  section: {
+    fontSize: 16,
+
+    fontWeight: "bold",
+
+    color: Colors.textPrimary,
+
+    marginBottom: 14,
+
+    marginTop: 10,
+  },
+
+  button: {
+    marginTop: 12,
+
+    borderRadius: 18,
+
+    overflow: "hidden",
+  },
+
+  gradient: {
+    paddingVertical: 16,
+
+    alignItems: "center",
+
+    borderRadius: 18,
+  },
+
+  buttonText: {
+    color: "#fff",
+
+    fontWeight: "bold",
+
+    fontSize: 16,
+  },
 });

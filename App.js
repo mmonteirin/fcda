@@ -5,7 +5,33 @@ import AppNavigator from "./navigation/AppNavigator";
 import { navigationRef } from "./navigation/NavigationService"; // ✅ corrigido
 
 import { useFonts } from "expo-font";
-import { ActivityIndicator, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Platform,
+  ScrollView,
+  SectionList,
+  View,
+} from "react-native";
+
+const boundedScrollProps = {
+  alwaysBounceVertical: false,
+  bounces: false,
+  overScrollMode: "never",
+};
+
+[ScrollView, FlatList, SectionList].forEach((Component) => {
+  Component.defaultProps = {
+    ...Component.defaultProps,
+    ...boundedScrollProps,
+  };
+});
+
+if (Platform.OS === "web" && typeof document !== "undefined") {
+  document.documentElement.style.overscrollBehavior = "none";
+  document.body.style.overscrollBehavior = "none";
+  document.body.style.overflow = "hidden";
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
