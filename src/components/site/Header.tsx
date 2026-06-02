@@ -64,7 +64,7 @@ export function Header() {
           ) : null}
 
           <Link
-            to="/contato"
+            to="/filie-se"
             className="ml-3 inline-flex items-center rounded-full bg-deep px-5 py-2.5 text-sm font-bold text-deep-foreground hover:bg-primary transition-colors"
           >
             Filie-se

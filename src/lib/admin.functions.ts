@@ -482,3 +482,84 @@ export const deleteMensagem = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ============ SOLICITAÇÕES DE FILIAÇÃO ============
+const filiacaoSchema = z.object({
+  tipo: z.enum(["filiacao", "vinculacao"]),
+  razaoSocial: z.string().min(1).max(200),
+  cnpj: z.string().min(1).max(20),
+  inscricaoEstadual: z.string().optional().nullable(),
+  endereco: z.string().min(1).max(200),
+  cep: z.string().min(1).max(10),
+  bairro: z.string().min(1).max(100),
+  cidade: z.string().min(1).max(100),
+  uf: z.string().min(2).max(2),
+  fone: z.string().optional().nullable(),
+  fax: z.string().optional().nullable(),
+  alvara: z.string().optional().nullable(),
+  certidao: z.string().optional().nullable(),
+  dataFundacao: z.string().optional().nullable(),
+  dataPublicacao: z.string().optional().nullable(),
+});
+
+export const sendFiliacao = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => filiacaoSchema.parse(d))
+  .handler(async ({ data }) => {
+    const supabase = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("solicitacoes_filiacao").insert({
+      tipo: data.tipo,
+      razao_social: data.razaoSocial,
+      cnpj: data.cnpj,
+      inscricao_estadual: data.inscricaoEstadual,
+      endereco: data.endereco,
+      cep: data.cep,
+      bairro: data.bairro,
+      cidade: data.cidade,
+      uf: data.uf,
+      fone: data.fone,
+      fax: data.fax,
+      alvara: data.alvara,
+      certidao: data.certidao,
+      data_fundacao: data.dataFundacao,
+      data_publicacao: data.dataPublicacao,
+      status: "pendente",
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const aprovarFiliacao = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const supabase = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("solicitacoes_filiacao")
+      .update({ status: "aprovado" })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const rejeitarFiliacao = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const supabase = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from("solicitacoes_filiacao")
+      .update({ status: "rejeitado" })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

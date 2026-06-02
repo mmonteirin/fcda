@@ -7,8 +7,18 @@ import {
   diretoresQuery,
   usersQuery,
   mensagensQuery,
+  filiacaoQuery,
 } from "@/lib/site-queries";
-import { Newspaper, Calendar, Waves, Users, ArrowRight, UserCog, Mail } from "lucide-react";
+import {
+  Newspaper,
+  Calendar,
+  Waves,
+  Users,
+  ArrowRight,
+  UserCog,
+  Mail,
+  Building2,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   loader: ({ context }) =>
@@ -19,6 +29,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
       context.queryClient.ensureQueryData(diretoresQuery),
       context.queryClient.ensureQueryData(usersQuery),
       context.queryClient.ensureQueryData(mensagensQuery),
+      context.queryClient.ensureQueryData(filiacaoQuery),
     ]),
   errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
   component: AdminIndex,
@@ -31,7 +42,9 @@ function AdminIndex() {
   const diretores = useSuspenseQuery(diretoresQuery).data;
   const users = useSuspenseQuery(usersQuery).data;
   const mensagens = useSuspenseQuery(mensagensQuery).data;
+  const filiacao = useSuspenseQuery(filiacaoQuery).data;
   const unreadCount = mensagens.filter((m) => !m.lido).length;
+  const pendentesCount = filiacao.filter((f) => f.status === "pendente").length;
 
   const cards = [
     { to: "/admin/noticias", label: "Notícias", count: noticias.length, icon: Newspaper },
@@ -45,6 +58,13 @@ function AdminIndex() {
       count: unreadCount,
       icon: Mail,
       highlight: unreadCount > 0,
+    },
+    {
+      to: "/admin/filiacoes",
+      label: "Filiações",
+      count: pendentesCount,
+      icon: Building2,
+      highlight: pendentesCount > 0,
     },
   ];
 
