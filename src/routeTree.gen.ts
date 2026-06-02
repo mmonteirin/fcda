@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TransparenciaRouteImport } from './routes/transparencia'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as NoticiasRouteImport } from './routes/noticias'
@@ -23,6 +24,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as NoticiasIdRouteImport } from './routes/noticias.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin/usuarios'
+import { Route as AuthenticatedAdminTransparenciaRouteImport } from './routes/_authenticated/admin/transparencia'
 import { Route as AuthenticatedAdminNoticiasRouteImport } from './routes/_authenticated/admin/noticias'
 import { Route as AuthenticatedAdminModalidadesRouteImport } from './routes/_authenticated/admin/modalidades'
 import { Route as AuthenticatedAdminMensagensRouteImport } from './routes/_authenticated/admin/mensagens'
@@ -33,6 +35,11 @@ import { Route as AuthenticatedAdminDiretoresRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminCategoriasModalidadesRouteImport } from './routes/_authenticated/admin/categorias-modalidades'
 import { Route as AuthenticatedAdminBannerRouteImport } from './routes/_authenticated/admin/banner'
 
+const TransparenciaRoute = TransparenciaRouteImport.update({
+  id: '/transparencia',
+  path: '/transparencia',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SobreRoute = SobreRouteImport.update({
   id: '/sobre',
   path: '/sobre',
@@ -103,6 +110,12 @@ const AuthenticatedAdminUsuariosRoute =
     path: '/admin/usuarios',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminTransparenciaRoute =
+  AuthenticatedAdminTransparenciaRouteImport.update({
+    id: '/admin/transparencia',
+    path: '/admin/transparencia',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminNoticiasRoute =
   AuthenticatedAdminNoticiasRouteImport.update({
     id: '/admin/noticias',
@@ -169,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/noticias': typeof NoticiasRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/sobre': typeof SobreRoute
+  '/transparencia': typeof TransparenciaRoute
   '/noticias/$id': typeof NoticiasIdRoute
   '/admin/banner': typeof AuthenticatedAdminBannerRoute
   '/admin/categorias-modalidades': typeof AuthenticatedAdminCategoriasModalidadesRoute
@@ -179,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/admin/mensagens': typeof AuthenticatedAdminMensagensRoute
   '/admin/modalidades': typeof AuthenticatedAdminModalidadesRoute
   '/admin/noticias': typeof AuthenticatedAdminNoticiasRoute
+  '/admin/transparencia': typeof AuthenticatedAdminTransparenciaRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -193,6 +208,7 @@ export interface FileRoutesByTo {
   '/noticias': typeof NoticiasRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/sobre': typeof SobreRoute
+  '/transparencia': typeof TransparenciaRoute
   '/noticias/$id': typeof NoticiasIdRoute
   '/admin/banner': typeof AuthenticatedAdminBannerRoute
   '/admin/categorias-modalidades': typeof AuthenticatedAdminCategoriasModalidadesRoute
@@ -203,6 +219,7 @@ export interface FileRoutesByTo {
   '/admin/mensagens': typeof AuthenticatedAdminMensagensRoute
   '/admin/modalidades': typeof AuthenticatedAdminModalidadesRoute
   '/admin/noticias': typeof AuthenticatedAdminNoticiasRoute
+  '/admin/transparencia': typeof AuthenticatedAdminTransparenciaRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
@@ -219,6 +236,7 @@ export interface FileRoutesById {
   '/noticias': typeof NoticiasRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/sobre': typeof SobreRoute
+  '/transparencia': typeof TransparenciaRoute
   '/noticias/$id': typeof NoticiasIdRoute
   '/_authenticated/admin/banner': typeof AuthenticatedAdminBannerRoute
   '/_authenticated/admin/categorias-modalidades': typeof AuthenticatedAdminCategoriasModalidadesRoute
@@ -229,6 +247,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/mensagens': typeof AuthenticatedAdminMensagensRoute
   '/_authenticated/admin/modalidades': typeof AuthenticatedAdminModalidadesRoute
   '/_authenticated/admin/noticias': typeof AuthenticatedAdminNoticiasRoute
+  '/_authenticated/admin/transparencia': typeof AuthenticatedAdminTransparenciaRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -245,6 +264,7 @@ export interface FileRouteTypes {
     | '/noticias'
     | '/reset-password'
     | '/sobre'
+    | '/transparencia'
     | '/noticias/$id'
     | '/admin/banner'
     | '/admin/categorias-modalidades'
@@ -255,6 +275,7 @@ export interface FileRouteTypes {
     | '/admin/mensagens'
     | '/admin/modalidades'
     | '/admin/noticias'
+    | '/admin/transparencia'
     | '/admin/usuarios'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -269,6 +290,7 @@ export interface FileRouteTypes {
     | '/noticias'
     | '/reset-password'
     | '/sobre'
+    | '/transparencia'
     | '/noticias/$id'
     | '/admin/banner'
     | '/admin/categorias-modalidades'
@@ -279,6 +301,7 @@ export interface FileRouteTypes {
     | '/admin/mensagens'
     | '/admin/modalidades'
     | '/admin/noticias'
+    | '/admin/transparencia'
     | '/admin/usuarios'
     | '/admin'
   id:
@@ -294,6 +317,7 @@ export interface FileRouteTypes {
     | '/noticias'
     | '/reset-password'
     | '/sobre'
+    | '/transparencia'
     | '/noticias/$id'
     | '/_authenticated/admin/banner'
     | '/_authenticated/admin/categorias-modalidades'
@@ -304,6 +328,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/mensagens'
     | '/_authenticated/admin/modalidades'
     | '/_authenticated/admin/noticias'
+    | '/_authenticated/admin/transparencia'
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
@@ -320,10 +345,18 @@ export interface RootRouteChildren {
   NoticiasRoute: typeof NoticiasRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   SobreRoute: typeof SobreRoute
+  TransparenciaRoute: typeof TransparenciaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/transparencia': {
+      id: '/transparencia'
+      path: '/transparencia'
+      fullPath: '/transparencia'
+      preLoaderRoute: typeof TransparenciaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sobre': {
       id: '/sobre'
       path: '/sobre'
@@ -422,6 +455,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsuariosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/transparencia': {
+      id: '/_authenticated/admin/transparencia'
+      path: '/admin/transparencia'
+      fullPath: '/admin/transparencia'
+      preLoaderRoute: typeof AuthenticatedAdminTransparenciaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/noticias': {
       id: '/_authenticated/admin/noticias'
       path: '/admin/noticias'
@@ -498,6 +538,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminMensagensRoute: typeof AuthenticatedAdminMensagensRoute
   AuthenticatedAdminModalidadesRoute: typeof AuthenticatedAdminModalidadesRoute
   AuthenticatedAdminNoticiasRoute: typeof AuthenticatedAdminNoticiasRoute
+  AuthenticatedAdminTransparenciaRoute: typeof AuthenticatedAdminTransparenciaRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -513,6 +554,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminMensagensRoute: AuthenticatedAdminMensagensRoute,
   AuthenticatedAdminModalidadesRoute: AuthenticatedAdminModalidadesRoute,
   AuthenticatedAdminNoticiasRoute: AuthenticatedAdminNoticiasRoute,
+  AuthenticatedAdminTransparenciaRoute: AuthenticatedAdminTransparenciaRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
@@ -545,6 +587,7 @@ const rootRouteChildren: RootRouteChildren = {
   NoticiasRoute: NoticiasRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   SobreRoute: SobreRoute,
+  TransparenciaRoute: TransparenciaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

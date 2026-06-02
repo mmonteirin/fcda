@@ -334,6 +334,84 @@ export const uploadImage = createServerFn({ method: "POST" })
     return { url: publicUrlData.publicUrl };
   });
 
+// ============ PAINEL DA TRANSPARÊNCIA ============
+const transparenciaSchema = z.object({
+  id: z.string().uuid().optional(),
+  tipo: z.enum(["boletim", "edital", "prestacao_contas"]),
+  titulo: z.string().min(1).max(200),
+  descricao: z.string().optional().nullable(),
+  arquivo_url: z.string().min(1),
+  arquivo_nome: z.string().min(1),
+  data_publicacao: z.string().min(1),
+  publicado: z.boolean(),
+});
+
+const uploadTransparenciaPdfSchema = z.object({
+  fileName: z.string(),
+  fileType: z.string(),
+  fileData: z.string(), // base64 encoded
+});
+
+export const uploadTransparenciaPdf = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => uploadTransparenciaPdfSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertEditor(context.supabase, context.userId);
+
+    const fileExt = data.fileName.split(".").pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `transparencia/${fileName}`;
+
+    // Convert base64 back to File
+    const base64Data = data.fileData.split(",")[1];
+    const binaryString = Buffer.from(base64Data, "base64");
+    const file = new File([binaryString], data.fileName, { type: data.fileType });
+
+    const { data: uploadData, error: uploadError } = await context.supabase.storage
+      .from("site-images")
+      .upload(filePath, file);
+
+    if (uploadError) throw new Error(uploadError.message);
+
+    const { data: publicUrlData } = context.supabase.storage
+      .from("site-images")
+      .getPublicUrl(filePath);
+
+    return { url: publicUrlData.publicUrl };
+  });
+
+export const saveTransparencia = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => transparenciaSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    await assertEditor(context.supabase, context.userId);
+    const { id, ...rest } = data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = context.supabase as any;
+    if (id) {
+      const { error } = await sb.from("transparencia_documentos").update(rest).eq("id", id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await sb.from("transparencia_documentos").insert(rest);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+export const deleteTransparencia = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertEditor(context.supabase, context.userId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (context.supabase as any)
+      .from("transparencia_documentos")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ============ BANNER ============
 const bannerSchema = z.object({
   texto: z.string().min(1).max(500),

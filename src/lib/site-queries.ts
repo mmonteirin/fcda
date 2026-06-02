@@ -47,6 +47,17 @@ export type Diretor = {
   ordem: number;
 };
 
+export type TransparenciaDocumento = {
+  id: string;
+  tipo: "boletim" | "edital" | "prestacao_contas";
+  titulo: string;
+  descricao: string | null;
+  arquivo_url: string;
+  arquivo_nome: string;
+  data_publicacao: string;
+  publicado: boolean;
+};
+
 export type UserWithRoles = {
   id: string;
   email: string;
@@ -137,6 +148,22 @@ export const diretoresQuery = queryOptions({
     return data ?? [];
   },
 });
+
+export const transparenciaQuery = (onlyPublished = true) =>
+  queryOptions({
+    queryKey: ["transparencia", onlyPublished],
+    queryFn: async (): Promise<TransparenciaDocumento[]> => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let q = (supabase as any)
+        .from("transparencia_documentos")
+        .select("*")
+        .order("data_publicacao", { ascending: false });
+      if (onlyPublished) q = q.eq("publicado", true);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
 export const usersQuery = queryOptions({
   queryKey: ["users"],

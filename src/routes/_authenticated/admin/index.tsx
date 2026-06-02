@@ -8,6 +8,7 @@ import {
   usersQuery,
   mensagensQuery,
   filiacaoQuery,
+  transparenciaQuery,
 } from "@/lib/site-queries";
 import {
   Newspaper,
@@ -18,6 +19,7 @@ import {
   UserCog,
   Mail,
   Building2,
+  FileText,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
@@ -27,9 +29,10 @@ export const Route = createFileRoute("/_authenticated/admin/")({
       context.queryClient.ensureQueryData(eventosQuery()),
       context.queryClient.ensureQueryData(modalidadesQuery),
       context.queryClient.ensureQueryData(diretoresQuery),
-      context.queryClient.ensureQueryData(usersQuery),
-      context.queryClient.ensureQueryData(mensagensQuery),
-      context.queryClient.ensureQueryData(filiacaoQuery),
+      context.queryClient.ensureQueryData(usersQuery()),
+      context.queryClient.ensureQueryData(mensagensQuery()),
+      context.queryClient.ensureQueryData(filiacaoQuery()),
+      context.queryClient.ensureQueryData(transparenciaQuery(false)),
     ]),
   errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
   component: AdminIndex,
