@@ -274,12 +274,14 @@ export const uploadPdf = createServerFn({ method: "POST" })
     const file = new File([binaryString], data.fileName, { type: data.fileType });
 
     const { data: uploadData, error: uploadError } = await context.supabase.storage
-      .from("imagens")
+      .from("site-images")
       .upload(filePath, file);
 
     if (uploadError) throw new Error(uploadError.message);
 
-    const { data: publicUrlData } = context.supabase.storage.from("imagens").getPublicUrl(filePath);
+    const { data: publicUrlData } = context.supabase.storage
+      .from("site-images")
+      .getPublicUrl(filePath);
 
     // Save to eventos_pdfs table
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -320,12 +322,14 @@ export const uploadImage = createServerFn({ method: "POST" })
     const file = new File([binaryString], data.fileName, { type: data.fileType });
 
     const { data: uploadData, error: uploadError } = await context.supabase.storage
-      .from("imagens")
+      .from("site-images")
       .upload(filePath, file);
 
     if (uploadError) throw new Error(uploadError.message);
 
-    const { data: publicUrlData } = context.supabase.storage.from("imagens").getPublicUrl(filePath);
+    const { data: publicUrlData } = context.supabase.storage
+      .from("site-images")
+      .getPublicUrl(filePath);
 
     return { url: publicUrlData.publicUrl };
   });
