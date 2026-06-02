@@ -69,6 +69,12 @@ function AdminIndex() {
       icon: Building2,
       highlight: pendentesCount > 0,
     },
+    {
+      to: "/admin/transparencia",
+      label: "Transparência",
+      count: transparencia.length,
+      icon: FileText,
+    },
   ];
 
   return (
