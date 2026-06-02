@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { noticiasQuery, eventosQuery } from "@/lib/site-queries";
@@ -75,8 +75,10 @@ function Noticias() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {noticias.map((n) => (
-                <article
+                <Link
                   key={n.id}
+                  to="/noticias/$id"
+                  params={{ id: n.id }}
                   className="group rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card hover:shadow-elegant transition-all hover:-translate-y-1"
                 >
                   <div className="aspect-[4/3] bg-emerald-gradient relative overflow-hidden">
@@ -99,7 +101,7 @@ function Noticias() {
                     </h3>
                     <p className="mt-3 text-sm text-muted-foreground line-clamp-3">{n.resumo}</p>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           )}

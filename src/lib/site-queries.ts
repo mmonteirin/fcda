@@ -92,6 +92,23 @@ export const noticiasQuery = (onlyPublished = true) =>
     },
   });
 
+export const noticiaByIdQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["noticia", id],
+    queryFn: async (): Promise<Noticia | null> => {
+      const { data, error } = await supabase
+        .from("noticias")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error) {
+        if (error.code === "PGRST116") return null; // Not found
+        throw error;
+      }
+      return data;
+    },
+  });
+
 export const eventosQuery = (ano?: number) =>
   queryOptions({
     queryKey: ["eventos", ano],
@@ -237,6 +254,42 @@ export const mensagensQuery = queryOptions({
     const { data, error } = await (supabase as any)
       .from("mensagens")
       .select("id, nome, email, telefone, assunto, mensagem, lido, created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+});
+
+export type SolicitacaoFiliacao = {
+  id: string;
+  tipo: "filiacao" | "vinculacao";
+  razao_social: string;
+  cnpj: string;
+  inscricao_estadual: string | null;
+  endereco: string;
+  cep: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  fone: string | null;
+  fax: string | null;
+  alvara: string | null;
+  certidao: string | null;
+  data_fundacao: string | null;
+  data_publicacao: string | null;
+  status: "pendente" | "aprovado" | "rejeitado";
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export const filiacaoQuery = queryOptions({
+  queryKey: ["solicitacoes_filiacao"],
+  queryFn: async (): Promise<SolicitacaoFiliacao[]> => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any)
+      .from("solicitacoes_filiacao")
+      .select("*")
       .order("created_at", { ascending: false });
     if (error) throw error;
     return data ?? [];

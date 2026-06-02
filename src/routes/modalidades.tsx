@@ -107,7 +107,7 @@ function Modalidades() {
           {modalidadesSemCategoria.length > 0 && (
             <div className="mb-24">
               <div className="mb-8">
-                <h2 className="text-3xl font-bold text-deep">Outras modalidades</h2>
+                <h2 className="text-3xl font-bold text-deep">Todas as modalidades</h2>
               </div>
               <div className="space-y-24">
                 {modalidadesSemCategoria.map((m, i) => (
