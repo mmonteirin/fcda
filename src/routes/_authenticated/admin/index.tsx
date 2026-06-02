@@ -29,9 +29,9 @@ export const Route = createFileRoute("/_authenticated/admin/")({
       context.queryClient.ensureQueryData(eventosQuery()),
       context.queryClient.ensureQueryData(modalidadesQuery),
       context.queryClient.ensureQueryData(diretoresQuery),
-      context.queryClient.ensureQueryData(usersQuery()),
-      context.queryClient.ensureQueryData(mensagensQuery()),
-      context.queryClient.ensureQueryData(filiacaoQuery()),
+      context.queryClient.ensureQueryData(usersQuery),
+      context.queryClient.ensureQueryData(mensagensQuery),
+      context.queryClient.ensureQueryData(filiacaoQuery),
       context.queryClient.ensureQueryData(transparenciaQuery(false)),
     ]),
   errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
@@ -46,6 +46,7 @@ function AdminIndex() {
   const users = useSuspenseQuery(usersQuery).data;
   const mensagens = useSuspenseQuery(mensagensQuery).data;
   const filiacao = useSuspenseQuery(filiacaoQuery).data;
+  const transparencia = useSuspenseQuery(transparenciaQuery(false)).data;
   const unreadCount = mensagens.filter((m) => !m.lido).length;
   const pendentesCount = filiacao.filter((f) => f.status === "pendente").length;
 
