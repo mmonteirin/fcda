@@ -8,6 +8,7 @@ import {
   usersQuery,
   mensagensQuery,
   filiacaoQuery,
+  transparenciaQuery,
 } from "@/lib/site-queries";
 import {
   Newspaper,
@@ -18,6 +19,7 @@ import {
   UserCog,
   Mail,
   Building2,
+  FileText,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
@@ -30,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
       context.queryClient.ensureQueryData(usersQuery),
       context.queryClient.ensureQueryData(mensagensQuery),
       context.queryClient.ensureQueryData(filiacaoQuery),
+      context.queryClient.ensureQueryData(transparenciaQuery(false)),
     ]),
   errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
   component: AdminIndex,
@@ -43,6 +46,7 @@ function AdminIndex() {
   const users = useSuspenseQuery(usersQuery).data;
   const mensagens = useSuspenseQuery(mensagensQuery).data;
   const filiacao = useSuspenseQuery(filiacaoQuery).data;
+  const transparencia = useSuspenseQuery(transparenciaQuery(false)).data;
   const unreadCount = mensagens.filter((m) => !m.lido).length;
   const pendentesCount = filiacao.filter((f) => f.status === "pendente").length;
 
@@ -65,6 +69,12 @@ function AdminIndex() {
       count: pendentesCount,
       icon: Building2,
       highlight: pendentesCount > 0,
+    },
+    {
+      to: "/admin/transparencia",
+      label: "Transparência",
+      count: transparencia.length,
+      icon: FileText,
     },
   ];
 
