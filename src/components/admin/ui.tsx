@@ -2,16 +2,18 @@ import { type ReactNode } from "react";
 import { Pencil, Trash2, Plus, X } from "lucide-react";
 import { inputClass } from "./utils";
 
-export function AdminToolbar({ title, onNew }: { title: string; onNew: () => void }) {
+export function AdminToolbar({ title, onNew }: { title: string; onNew?: () => void }) {
   return (
     <div className="flex items-center justify-between mb-6">
       <h1 className="text-3xl font-bold text-deep">{title}</h1>
-      <button
-        onClick={onNew}
-        className="inline-flex items-center gap-2 rounded-lg bg-deep text-deep-foreground font-bold text-sm px-4 py-2 hover:bg-primary"
-      >
-        <Plus className="h-4 w-4" /> Novo
-      </button>
+      {onNew && (
+        <button
+          onClick={onNew}
+          className="inline-flex items-center gap-2 rounded-lg bg-deep text-deep-foreground font-bold text-sm px-4 py-2 hover:bg-primary"
+        >
+          <Plus className="h-4 w-4" /> Novo
+        </button>
+      )}
     </div>
   );
 }

@@ -455,12 +455,14 @@ export const sendMensagem = createServerFn({ method: "POST" })
   });
 
 export const markMensagemAsRead = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
+  .handler(async ({ data }) => {
+    const supabase = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+    );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (context.supabase as any)
+    const { error } = await (supabase as any)
       .from("mensagens")
       .update({ lido: true })
       .eq("id", data.id);
@@ -469,12 +471,14 @@ export const markMensagemAsRead = createServerFn({ method: "POST" })
   });
 
 export const deleteMensagem = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
+  .handler(async ({ data }) => {
+    const supabase = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+    );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (context.supabase as any).from("mensagens").delete().eq("id", data.id);
+    const { error } = await (supabase as any).from("mensagens").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

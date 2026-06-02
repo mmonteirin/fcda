@@ -9,8 +9,6 @@ import { useInvalidate } from "@/components/admin/utils";
 import { Mail, Trash2, Check, Clock, User, Phone } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/mensagens")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(mensagensQuery),
-  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
   component: AdminMensagens,
 });
 
@@ -48,7 +46,6 @@ function AdminMensagens() {
     <div>
       <AdminToolbar
         title={`Mensagens ${unreadCount > 0 ? `(${unreadCount} não lidas)` : ""}`}
-        onNew={() => {}}
       />
 
       {err && <div className="text-sm text-destructive mb-4">{err}</div>}
