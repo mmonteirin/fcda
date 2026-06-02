@@ -2,8 +2,6 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "fcda",
   "compatibility_date": "2025-09-24",
-  "name": "fcda",
-  "compatibility_date": "2026-06-02",
   "compatibility_flags": ["nodejs_compat"],
   "main": "dist/server/server.js",
 }
