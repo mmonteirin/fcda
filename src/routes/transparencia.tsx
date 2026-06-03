@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { transparenciaQuery, type TransparenciaDocumento } from "@/lib/site-queries";
+import { getTipoLabel, TIPOS } from "@/lib/transparencia-utils";
 import { FileText, Calendar, Download, Filter } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export const Route = createFileRoute("/transparencia")({
   head: () => ({
@@ -36,37 +37,20 @@ function formatData(d: string) {
   }
 }
 
-function getTipoLabel(tipo: TransparenciaDocumento["tipo"]) {
-  const labels = {
-    boletim: "Boletim",
-    edital: "Edital de Convocação",
-    prestacao_contas: "Prestação de Contas",
-  };
-  return labels[tipo];
-}
-
-function getTipoColor(tipo: TransparenciaDocumento["tipo"]) {
-  const colors = {
-    boletim: "bg-primary/15 text-primary border-primary/30",
-    edital: "bg-gold/15 text-deep border-gold/30",
-    prestacao_contas: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
-  };
-  return colors[tipo];
-}
-
 function Transparencia() {
   const documentos = useSuspenseQuery(transparenciaQuery(true)).data;
   const [filtroTipo, setFiltroTipo] = useState<string | null>(null);
 
-  const tipos = ["boletim", "edital", "prestacao_contas"] as const;
   const documentosFiltrados = filtroTipo
     ? documentos.filter((d) => d.tipo === filtroTipo)
     : documentos;
 
-  const documentosPorTipo = tipos.reduce((acc, tipo) => {
-    acc[tipo] = documentos.filter((d) => d.tipo === tipo);
-    return acc;
-  }, {} as Record<string, TransparenciaDocumento[]>);
+  const documentosPorTipo = useMemo(() => {
+    return TIPOS.reduce((acc, tipo) => {
+      acc[tipo] = documentos.filter((d) => d.tipo === tipo);
+      return acc;
+    }, {} as Record<string, TransparenciaDocumento[]>);
+  }, [documentos]);
 
   return (
     <SiteLayout>
@@ -101,7 +85,7 @@ function Transparencia() {
             >
               Todos
             </button>
-            {tipos.map((tipo) => (
+            {TIPOS.map((tipo) => (
               <button
                 key={tipo}
                 onClick={() => setFiltroTipo(tipo)}
@@ -125,7 +109,7 @@ function Transparencia() {
             </div>
           ) : (
             <div className="space-y-12">
-              {tipos.map((tipo) => {
+              {TIPOS.map((tipo) => {
                 const docs = filtroTipo
                   ? documentosFiltrados.filter((d) => d.tipo === tipo)
                   : documentosPorTipo[tipo];

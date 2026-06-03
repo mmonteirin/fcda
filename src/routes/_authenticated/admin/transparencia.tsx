@@ -8,6 +8,9 @@ import {
   deleteTransparencia,
   uploadTransparenciaPdf,
 } from "@/lib/admin.functions";
+import { getTipoLabel } from "@/lib/transparencia-utils";
+import { useAuth } from "@/lib/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
 import { Upload, X, FileText } from "lucide-react";
@@ -22,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/admin/transparencia")({
 });
 
 function AdminTransparencia() {
+  const { user } = useAuth();
   const documentos = useSuspenseQuery(transparenciaQuery(false)).data;
   const [editing, setEditing] = useState<Partial<TransparenciaDocumento> | null>(
     null,
@@ -41,7 +45,6 @@ function AdminTransparencia() {
     setUploading(true);
     setErr(null);
     try {
-      // Convert File to base64 for serialization
       const fileData = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -49,12 +52,10 @@ function AdminTransparencia() {
         reader.readAsDataURL(file);
       });
 
-      const result = await upload({
-        data: {
-          fileName: file.name,
-          fileType: file.type,
-          fileData,
-        },
+      const result = await uploadTransparenciaPdf(supabase, user!.id, {
+        fileName: file.name,
+        fileType: file.type,
+        fileData,
       });
       setEditing({
         ...editing,
@@ -74,18 +75,16 @@ function AdminTransparencia() {
     setBusy(true);
     setErr(null);
     try {
-      await save({
-        data: {
-          id: editing.id,
-          tipo: editing.tipo || "boletim",
-          titulo: editing.titulo || "",
-          descricao: editing.descricao || null,
-          arquivo_url: editing.arquivo_url || "",
-          arquivo_nome: editing.arquivo_nome || "",
-          data_publicacao:
-            editing.data_publicacao || new Date().toISOString().slice(0, 10),
-          publicado: editing.publicado ?? true,
-        },
+      await saveTransparencia(supabase, user!.id, {
+        id: editing.id,
+        tipo: editing.tipo || "boletim",
+        titulo: editing.titulo || "",
+        descricao: editing.descricao || null,
+        arquivo_url: editing.arquivo_url || "",
+        arquivo_nome: editing.arquivo_nome || "",
+        data_publicacao:
+          editing.data_publicacao || new Date().toISOString().slice(0, 10),
+        publicado: editing.publicado ?? true,
       });
       invalidate();
       setEditing(null);
@@ -94,15 +93,6 @@ function AdminTransparencia() {
     } finally {
       setBusy(false);
     }
-  }
-
-  function getTipoLabel(tipo: TransparenciaDocumento["tipo"]) {
-    const labels = {
-      boletim: "Boletim",
-      edital: "Edital de Convocação",
-      prestacao_contas: "Prestação de Contas",
-    };
-    return labels[tipo];
   }
 
   return (
@@ -159,7 +149,7 @@ function AdminTransparencia() {
                 <RowActions
                   onEdit={() => setEditing(d)}
                   onDelete={async () => {
-                    await del({ data: { id: d.id } });
+                    await deleteTransparencia(supabase, user!.id, d.id);
                     invalidate();
                   }}
                 />

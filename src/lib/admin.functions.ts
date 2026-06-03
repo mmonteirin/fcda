@@ -2,9 +2,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { useAuth } from "@/lib/use-auth";
+import { supabase as supabaseClient } from "@/integrations/supabase/client";
 
 type SupabaseClient = ReturnType<typeof createClient<Database>>;
+
+// Get the Supabase client and user ID from context
+export function useAdminContext() {
+  const { user } = useAuth();
+  if (!user) throw new Error("Usuário não autenticado");
+  return { supabase: supabaseClient, userId: user.id };
+}
 
 async function assertEditor(supabase: SupabaseClient, userId: string) {
   const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
@@ -79,33 +87,28 @@ const eventoSchema = z.object({
   ano: z.number().int().min(2000).max(2100).optional().nullable(),
 });
 
-export const saveEvento = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => eventoSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
-    const { id, ...rest } = data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sb = context.supabase as any;
-    if (id) {
-      const { error } = await sb.from("eventos").update(rest).eq("id", id);
-      if (error) throw new Error(error.message);
-    } else {
-      const { error } = await sb.from("eventos").insert(rest);
-      if (error) throw new Error(error.message);
-    }
-    return { ok: true };
-  });
-
-export const deleteEvento = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
-    const { error } = await context.supabase.from("eventos").delete().eq("id", data.id);
+export async function saveEvento(supabase: SupabaseClient, userId: string, data: unknown) {
+  const validated = eventoSchema.parse(data);
+  await assertEditor(supabase, userId);
+  const { id, ...rest } = validated;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  if (id) {
+    const { error } = await sb.from("eventos").update(rest).eq("id", id);
     if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+  } else {
+    const { error } = await sb.from("eventos").insert(rest);
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true };
+}
+
+export async function deleteEvento(supabase: SupabaseClient, userId: string, id: string) {
+  await assertEditor(supabase, userId);
+  const { error } = await supabase.from("eventos").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
 
 // ============ CATEGORIAS DE MODALIDADES ============
 const categoriaModalidadeSchema = z.object({
@@ -116,37 +119,38 @@ const categoriaModalidadeSchema = z.object({
   ordem: z.number().int().min(0).max(999),
 });
 
-export const saveCategoriaModalidade = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => categoriaModalidadeSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
-    const { id, ...rest } = data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sb = context.supabase as any;
-    if (id) {
-      const { error } = await sb.from("categorias_modalidades").update(rest).eq("id", id);
-      if (error) throw new Error(error.message);
-    } else {
-      const { error } = await sb.from("categorias_modalidades").insert(rest);
-      if (error) throw new Error(error.message);
-    }
-    return { ok: true };
-  });
-
-export const deleteCategoriaModalidade = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (context.supabase as any)
-      .from("categorias_modalidades")
-      .delete()
-      .eq("id", data.id);
+export async function saveCategoriaModalidade(
+  supabase: SupabaseClient,
+  userId: string,
+  data: unknown,
+) {
+  const validated = categoriaModalidadeSchema.parse(data);
+  await assertEditor(supabase, userId);
+  const { id, ...rest } = validated;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  if (id) {
+    const { error } = await sb.from("categorias_modalidades").update(rest).eq("id", id);
     if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+  } else {
+    const { error } = await sb.from("categorias_modalidades").insert(rest);
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true };
+}
+
+export async function deleteCategoriaModalidade(
+  supabase: SupabaseClient,
+  userId: string,
+  id: string,
+) {
+  await assertEditor(supabase, userId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  const { error } = await sb.from("categorias_modalidades").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
 
 // ============ MODALIDADES ============
 const modalidadeSchema = z.object({
@@ -163,33 +167,28 @@ const modalidadeSchema = z.object({
   categoria_id: z.string().uuid().optional().nullable(),
 });
 
-export const saveModalidade = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => modalidadeSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
-    const { id, ...rest } = data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sb = context.supabase as any;
-    if (id) {
-      const { error } = await sb.from("modalidades").update(rest).eq("id", id);
-      if (error) throw new Error(error.message);
-    } else {
-      const { error } = await sb.from("modalidades").insert(rest);
-      if (error) throw new Error(error.message);
-    }
-    return { ok: true };
-  });
-
-export const deleteModalidade = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
-    const { error } = await context.supabase.from("modalidades").delete().eq("id", data.id);
+export async function saveModalidade(supabase: SupabaseClient, userId: string, data: unknown) {
+  const validated = modalidadeSchema.parse(data);
+  await assertEditor(supabase, userId);
+  const { id, ...rest } = validated;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  if (id) {
+    const { error } = await sb.from("modalidades").update(rest).eq("id", id);
     if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+  } else {
+    const { error } = await sb.from("modalidades").insert(rest);
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true };
+}
+
+export async function deleteModalidade(supabase: SupabaseClient, userId: string, id: string) {
+  await assertEditor(supabase, userId);
+  const { error } = await supabase.from("modalidades").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
 
 // ============ DIRETORES ============
 const diretorSchema = z.object({
@@ -279,19 +278,18 @@ export const uploadPdf = createServerFn({ method: "POST" })
 
     if (uploadError) throw new Error(uploadError.message);
 
-    const { data: publicUrlData } = context.supabase.storage
-      .from("site-images")
-      .getPublicUrl(filePath);
+  const { data: publicUrlData } = supabase.storage.from("site-images").getPublicUrl(filePath);
 
-    // Save to eventos_pdfs table
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: dbError } = await (context.supabase as any).from("eventos_pdfs").insert({
-      evento_id: data.eventoId,
-      tipo: data.tipo,
-      url: publicUrlData.publicUrl,
-      nome_arquivo: data.fileName,
-      uploaded_by: context.userId,
-    });
+  // Save to eventos_pdfs table
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  const { error: dbError } = await sb.from("eventos_pdfs").insert({
+    evento_id: validated.eventoId,
+    tipo: validated.tipo,
+    url: publicUrlData.publicUrl,
+    nome_arquivo: validated.fileName,
+    uploaded_by: userId,
+  });
 
     if (dbError) throw new Error(dbError.message);
 
@@ -327,9 +325,7 @@ export const uploadImage = createServerFn({ method: "POST" })
 
     if (uploadError) throw new Error(uploadError.message);
 
-    const { data: publicUrlData } = context.supabase.storage
-      .from("site-images")
-      .getPublicUrl(filePath);
+  const { data: publicUrlData } = supabase.storage.from("site-images").getPublicUrl(filePath);
 
     return { url: publicUrlData.publicUrl };
   });
@@ -373,44 +369,35 @@ export const uploadTransparenciaPdf = createServerFn({ method: "POST" })
 
     if (uploadError) throw new Error(uploadError.message);
 
-    const { data: publicUrlData } = context.supabase.storage
-      .from("site-images")
-      .getPublicUrl(filePath);
+  const { data: publicUrlData } = supabase.storage.from("site-images").getPublicUrl(filePath);
 
-    return { url: publicUrlData.publicUrl };
-  });
+  return { url: publicUrlData.publicUrl };
+}
 
-export const saveTransparencia = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => transparenciaSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
-    const { id, ...rest } = data;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sb = context.supabase as any;
-    if (id) {
-      const { error } = await sb.from("transparencia_documentos").update(rest).eq("id", id);
-      if (error) throw new Error(error.message);
-    } else {
-      const { error } = await sb.from("transparencia_documentos").insert(rest);
-      if (error) throw new Error(error.message);
-    }
-    return { ok: true };
-  });
-
-export const deleteTransparencia = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (context.supabase as any)
-      .from("transparencia_documentos")
-      .delete()
-      .eq("id", data.id);
+export async function saveTransparencia(supabase: SupabaseClient, userId: string, data: unknown) {
+  const validated = transparenciaSchema.parse(data);
+  await assertEditor(supabase, userId);
+  const { id, ...rest } = validated;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  if (id) {
+    const { error } = await sb.from("transparencia_documentos").update(rest).eq("id", id);
     if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+  } else {
+    const { error } = await sb.from("transparencia_documentos").insert(rest);
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true };
+}
+
+export async function deleteTransparencia(supabase: SupabaseClient, userId: string, id: string) {
+  await assertEditor(supabase, userId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  const { error } = await sb.from("transparencia_documentos").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
 
 // ============ BANNER ============
 const bannerSchema = z.object({
@@ -419,31 +406,23 @@ const bannerSchema = z.object({
   ativo: z.boolean(),
 });
 
-export const getBanner = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (context.supabase as any)
-      .from("banner_config")
-      .select("*")
-      .eq("id", "default")
-      .single();
-    if (error && error.code !== "PGRST116") throw error; // PGRST116 = not found
-    return data ?? { id: "default", texto: "", link: null, ativo: false };
-  });
+export async function getBanner(supabase: SupabaseClient) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  const { data, error } = await sb.from("banner_config").select("*").eq("id", "default").single();
+  if (error && error.code !== "PGRST116") throw error; // PGRST116 = not found
+  return data ?? { id: "default", texto: "", link: null, ativo: false };
+}
 
-export const saveBanner = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => bannerSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    await assertEditor(context.supabase, context.userId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (context.supabase as any)
-      .from("banner_config")
-      .upsert({ id: "default", ...data });
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+export async function saveBanner(supabase: SupabaseClient, userId: string, data: unknown) {
+  const validated = bannerSchema.parse(data);
+  await assertEditor(supabase, userId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  const { error } = await sb.from("banner_config").upsert({ id: "default", ...validated });
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
 
 // ============ USUÁRIOS ============
 const userRoleSchema = z.object({
@@ -524,46 +503,28 @@ const mensagemSchema = z.object({
   mensagem: z.string().min(1).max(2000),
 });
 
-export const sendMensagem = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => mensagemSchema.parse(d))
-  .handler(async ({ data }) => {
-    const supabase = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-    );
-    const { error } = await supabase.from("mensagens").insert(data);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+export async function sendMensagem(supabase: SupabaseClient, data: unknown) {
+  const validated = mensagemSchema.parse(data);
+  const { error } = await supabase.from("mensagens").insert(validated);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
 
-export const markMensagemAsRead = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const supabase = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-    );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from("mensagens")
-      .update({ lido: true })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+export async function markMensagemAsRead(supabase: SupabaseClient, id: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  const { error } = await sb.from("mensagens").update({ lido: true }).eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
 
-export const deleteMensagem = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const supabase = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-    );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("mensagens").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+export async function deleteMensagem(supabase: SupabaseClient, id: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  const { error } = await sb.from("mensagens").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
 
 // ============ SOLICITAÇÕES DE FILIAÇÃO ============
 const filiacaoSchema = z.object({
@@ -584,64 +545,52 @@ const filiacaoSchema = z.object({
   dataPublicacao: z.string().optional().nullable(),
 });
 
-export const sendFiliacao = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => filiacaoSchema.parse(d))
-  .handler(async ({ data }) => {
-    const supabase = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-    );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("solicitacoes_filiacao").insert({
-      tipo: data.tipo,
-      razao_social: data.razaoSocial,
-      cnpj: data.cnpj,
-      inscricao_estadual: data.inscricaoEstadual,
-      endereco: data.endereco,
-      cep: data.cep,
-      bairro: data.bairro,
-      cidade: data.cidade,
-      uf: data.uf,
-      fone: data.fone,
-      fax: data.fax,
-      alvara: data.alvara,
-      certidao: data.certidao,
-      data_fundacao: data.dataFundacao,
-      data_publicacao: data.dataPublicacao,
-      status: "pendente",
-    });
-    if (error) throw new Error(error.message);
-    return { ok: true };
+export async function sendFiliacao(supabase: SupabaseClient, data: unknown) {
+  const validated = filiacaoSchema.parse(data);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  const { error } = await sb.from("solicitacoes_filiacao").insert({
+    tipo: validated.tipo,
+    razao_social: validated.razaoSocial,
+    cnpj: validated.cnpj,
+    inscricao_estadual: validated.inscricaoEstadual,
+    endereco: validated.endereco,
+    cep: validated.cep,
+    bairro: validated.bairro,
+    cidade: validated.cidade,
+    uf: validated.uf,
+    fone: validated.fone,
+    fax: validated.fax,
+    alvara: validated.alvara,
+    certidao: validated.certidao,
+    data_fundacao: validated.dataFundacao,
+    data_publicacao: validated.dataPublicacao,
+    status: "pendente",
   });
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
 
-export const aprovarFiliacao = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const supabase = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-    );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from("solicitacoes_filiacao")
-      .update({ status: "aprovado" })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+export async function aprovarFiliacao(supabase: SupabaseClient, userId: string, id: string) {
+  await assertEditor(supabase, userId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  const { error } = await sb
+    .from("solicitacoes_filiacao")
+    .update({ status: "aprovado" })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
 
-export const rejeitarFiliacao = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const supabase = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-    );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from("solicitacoes_filiacao")
-      .update({ status: "rejeitado" })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+export async function rejeitarFiliacao(supabase: SupabaseClient, userId: string, id: string) {
+  await assertEditor(supabase, userId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sb = supabase as any;
+  const { error } = await sb
+    .from("solicitacoes_filiacao")
+    .update({ status: "rejeitado" })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}

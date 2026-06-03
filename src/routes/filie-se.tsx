@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { FileText, Users, Award, AlertCircle, Mail, Phone } from "lucide-react";
 import { useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { sendFiliacao } from "@/lib/admin.functions";
+import { useAuth } from "@/lib/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/filie-se")({
   head: () => ({
@@ -58,9 +59,7 @@ function FilieSe() {
     <SiteLayout>
       <section className="py-24 bg-hero text-primary-foreground">
         <div className="mx-auto max-w-5xl px-6">
-          <div className="text-xs uppercase tracking-[0.25em] text-gold font-bold">
-            FCDA
-          </div>
+          <div className="text-xs uppercase tracking-[0.25em] text-gold font-bold">FCDA</div>
           <h1 className="mt-4 text-4xl md:text-5xl font-bold">Filia-se</h1>
           <p className="mt-4 text-lg text-primary-foreground/80">
             Processo de ingresso na Federação Cearense de Desportos Aquáticos
@@ -84,9 +83,7 @@ function FilieSe() {
                   <div className="h-12 w-12 rounded-xl bg-emerald-gradient grid place-items-center text-primary-foreground">
                     <Award className="h-6 w-6" />
                   </div>
-                  <h2 className="text-xl font-bold text-deep">
-                    1. Filiação à FCDA (Federados)
-                  </h2>
+                  <h2 className="text-xl font-bold text-deep">1. Filiação à FCDA (Federados)</h2>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
                   A filiação representa o nível mais completo de integração à federação. Além dos
@@ -131,9 +128,9 @@ function FilieSe() {
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
                   A vinculação é um plano de fomento destinado a entidades (associações, escolas,
-                  academias, ONGs) que desejam iniciar nos esportes aquáticos competitivos, mas ainda não
-                  possuem estrutura técnica ou financeira para a filiação plena. É considerada uma
-                  categoria intermediária entre o aluno e o atleta formal federado.
+                  academias, ONGs) que desejam iniciar nos esportes aquáticos competitivos, mas
+                  ainda não possuem estrutura técnica ou financeira para a filiação plena. É
+                  considerada uma categoria intermediária entre o aluno e o atleta formal federado.
                 </p>
                 <div className="space-y-3">
                   <div>
@@ -155,10 +152,10 @@ function FilieSe() {
                   <div>
                     <h3 className="font-semibold text-deep text-sm">Limitações:</h3>
                     <p className="text-sm text-muted-foreground">
-                      Entidades e atletas vinculados não possuem direitos políticos (não votam). Além disso,
-                      não podem participar de eventos da CBDA, não são convocados para seleções estaduais e
-                      não participam do ranking de "Melhores do Ano", salvo exceção para as Maratonas
-                      Aquáticas.
+                      Entidades e atletas vinculados não possuem direitos políticos (não votam).
+                      Além disso, não podem participar de eventos da CBDA, não são convocados para
+                      seleções estaduais e não participam do ranking de "Melhores do Ano", salvo
+                      exceção para as Maratonas Aquáticas.
                     </p>
                   </div>
                 </div>
@@ -183,8 +180,8 @@ function FilieSe() {
                       podem mudar de entidade durante a temporada em curso.
                     </li>
                     <li>
-                      <strong>Exigência para Eventos Nacionais:</strong> Caso a entidade ou o
-                      atleta deseje participar de qualquer evento da CBDA, é obrigatório realizar o
+                      <strong>Exigência para Eventos Nacionais:</strong> Caso a entidade ou o atleta
+                      deseje participar de qualquer evento da CBDA, é obrigatório realizar o
                       processo de filiação.
                     </li>
                   </ul>
@@ -199,7 +196,10 @@ function FilieSe() {
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <span className="font-semibold text-deep">Secretaria:</span>{" "}
-                    <a href="mailto:secretaria@fcda.org.br" className="text-primary hover:underline">
+                    <a
+                      href="mailto:secretaria@fcda.org.br"
+                      className="text-primary hover:underline"
+                    >
                       secretaria@fcda.org.br
                     </a>
                   </div>
@@ -264,9 +264,7 @@ function FilieSe() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-deep mb-2">
-                        CNPJ *
-                      </label>
+                      <label className="block text-sm font-semibold text-deep mb-2">CNPJ *</label>
                       <input
                         type="text"
                         name="cnpj"

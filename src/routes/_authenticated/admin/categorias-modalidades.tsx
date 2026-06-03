@@ -2,33 +2,21 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import {
-  categoriasModalidadesQuery,
-  type CategoriaModalidade,
-} from "@/lib/site-queries";
-import {
-  saveCategoriaModalidade,
-  deleteCategoriaModalidade,
-} from "@/lib/admin.functions";
-import {
-  AdminToolbar,
-  AdminTable,
-  RowActions,
-  Modal,
-  Field,
-} from "@/components/admin/ui";
+import { categoriasModalidadesQuery, type CategoriaModalidade } from "@/lib/site-queries";
+import { saveCategoriaModalidade, deleteCategoriaModalidade } from "@/lib/admin.functions";
+import { useAuth } from "@/lib/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/categorias-modalidades")({
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(categoriasModalidadesQuery),
-  errorComponent: ({ error }) => (
-    <div className="text-destructive">Erro: {error.message}</div>
-  ),
+  loader: ({ context }) => context.queryClient.ensureQueryData(categoriasModalidadesQuery),
+  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
   component: AdminCategoriasModalidades,
 });
 
 function AdminCategoriasModalidades() {
+  const { user } = useAuth();
   const categorias = useSuspenseQuery(categoriasModalidadesQuery).data;
   const [editing, setEditing] = useState<Partial<CategoriaModalidade> | null>(null);
   const [busy, setBusy] = useState(false);
@@ -43,14 +31,12 @@ function AdminCategoriasModalidades() {
     setBusy(true);
     setErr(null);
     try {
-      await save({
-        data: {
-          id: editing.id,
-          nome: editing.nome || "",
-          slug: editing.slug || "",
-          descricao: editing.descricao || null,
-          ordem: Number(editing.ordem ?? 0),
-        },
+      await saveCategoriaModalidade(supabase, user!.id, {
+        id: editing.id,
+        nome: editing.nome || "",
+        slug: editing.slug || "",
+        descricao: editing.descricao || null,
+        ordem: Number(editing.ordem ?? 0),
       });
       invalidate();
       setEditing(null);

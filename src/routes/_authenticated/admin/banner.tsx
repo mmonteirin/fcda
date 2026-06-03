@@ -4,6 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { bannerQuery, type BannerConfig } from "@/lib/site-queries";
 import { saveBanner } from "@/lib/admin.functions";
+import { useAuth } from "@/lib/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, Field } from "@/components/admin/ui";
 import { useInvalidate, inputClass } from "@/components/admin/utils";
 
@@ -14,6 +16,7 @@ export const Route = createFileRoute("/_authenticated/admin/banner")({
 });
 
 function AdminBanner() {
+  const { user } = useAuth();
   const banner = useSuspenseQuery(bannerQuery).data as BannerConfig;
   const save = useServerFn(saveBanner);
   const invalidate = useInvalidate(["banner"]);
