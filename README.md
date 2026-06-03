@@ -23,12 +23,14 @@ Site oficial da Federação Cearense de Desportos Aquáticos (FCDA), desenvolvid
 ## 🔧 Configuração
 
 1. **Clone o repositório**
+
    ```bash
    git clone <repositório>
    cd Fcda
    ```
 
 2. **Instale as dependências**
+
    ```bash
    bun install
    # ou
@@ -36,8 +38,9 @@ Site oficial da Federação Cearense de Desportos Aquáticos (FCDA), desenvolvid
    ```
 
 3. **Configure as variáveis de ambiente**
-   
+
    Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+
    ```env
    SUPABASE_URL="https://seu-projeto.supabase.co"
    SUPABASE_PUBLISHABLE_KEY="sua-chave-publica"
@@ -48,7 +51,7 @@ Site oficial da Federação Cearense de Desportos Aquáticos (FCDA), desenvolvid
    ```
 
 4. **Execute as migrações do Supabase**
-   
+
    No dashboard do Supabase, execute as migrações na ordem:
    - `20260601125652_f533286c-1cf5-45cc-a61e-fc6708fa7e0f.sql`
    - `20260601125716_bc87c69b-f9e0-418f-8079-7fc0dbdc7120.sql`
@@ -60,6 +63,7 @@ Site oficial da Federação Cearense de Desportos Aquáticos (FCDA), desenvolvid
 ## 🏃 Executando o Projeto
 
 **Modo de desenvolvimento:**
+
 ```bash
 bun run dev
 # ou
@@ -67,6 +71,7 @@ npm run dev
 ```
 
 **Build para produção:**
+
 ```bash
 bun run build
 # ou
@@ -74,6 +79,7 @@ npm run build
 ```
 
 **Preview do build:**
+
 ```bash
 bun run preview
 # ou
@@ -113,6 +119,7 @@ Fcda/
 ## 🎨 Funcionalidades
 
 ### Site Público
+
 - **Home**: Apresentação da federação
 - **Sobre**: Informações sobre a FCDA
 - **Notícias**: Notícias e comunicados
@@ -122,6 +129,7 @@ Fcda/
 - **Contato**: Formulário de contato
 
 ### Painel Administrativo
+
 - **Notícias**: Criar, editar e excluir notícias
 - **Eventos**: Gerenciar eventos e competições
 - **Modalidades**: Gerenciar modalidades e categorias
@@ -132,6 +140,7 @@ Fcda/
 - **Banner**: Configurar banner da home
 
 ### Tipos de PDF Suportados
+
 - Resultados
 - Pontuação
 - Eficiência
@@ -159,6 +168,7 @@ Fcda/
 ## 🗄️ Banco de Dados
 
 O projeto utiliza Supabase como backend, com as seguintes tabelas principais:
+
 - `profiles`: Perfis de usuários
 - `user_roles`: Funções de usuário (admin, editor)
 - `modalidades`: Modalidades aquáticas
@@ -180,6 +190,7 @@ O projeto utiliza Supabase como backend, com as seguintes tabelas principais:
 ## 📞 Contato
 
 **Sede Administrativa**
+
 ```
 Federação Cearense de Desportos Aquáticos (FCDA)
 Av. da Abolição, 2727 – Meireles

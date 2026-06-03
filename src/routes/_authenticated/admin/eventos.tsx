@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { eventosQuery, type Evento } from "@/lib/site-queries";
 import { saveEvento, deleteEvento } from "@/lib/admin.functions";
+import { useAuth } from "@/lib/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
 import { Filter } from "lucide-react";
@@ -20,8 +21,7 @@ function AdminEventos() {
   const [editing, setEditing] = useState<Partial<Evento> | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const save = useServerFn(saveEvento);
-  const del = useServerFn(deleteEvento);
+  const { user } = useAuth();
   const invalidate = useInvalidate(["eventos"]);
 
   // Get unique years from events
@@ -35,16 +35,14 @@ function AdminEventos() {
     setBusy(true);
     setErr(null);
     try {
-      await save({
-        data: {
-          id: editing.id,
-          data_texto: editing.data_texto || "",
-          data_inicio: editing.data_inicio || null,
-          nome: editing.nome || "",
-          local: editing.local || "",
-          modalidade: editing.modalidade || "",
-          ano: editing.ano ?? null,
-        },
+      await saveEvento(supabase, user!.id, {
+        id: editing.id,
+        data_texto: editing.data_texto || "",
+        data_inicio: editing.data_inicio || null,
+        nome: editing.nome || "",
+        local: editing.local || "",
+        modalidade: editing.modalidade || "",
+        ano: editing.ano ?? null,
       });
       invalidate();
       setEditing(null);
@@ -112,7 +110,7 @@ function AdminEventos() {
                 <RowActions
                   onEdit={() => setEditing(e)}
                   onDelete={async () => {
-                    await del({ data: { id: e.id } });
+                    await deleteEvento(supabase, user!.id, e.id);
                     invalidate();
                   }}
                 />

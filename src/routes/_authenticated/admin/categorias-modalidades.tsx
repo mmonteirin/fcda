@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { categoriasModalidadesQuery, type CategoriaModalidade } from "@/lib/site-queries";
 import { saveCategoriaModalidade, deleteCategoriaModalidade } from "@/lib/admin.functions";
@@ -21,8 +20,6 @@ function AdminCategoriasModalidades() {
   const [editing, setEditing] = useState<Partial<CategoriaModalidade> | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const save = useServerFn(saveCategoriaModalidade);
-  const del = useServerFn(deleteCategoriaModalidade);
   const invalidate = useInvalidate(["categorias-modalidades"]);
 
   async function submit(e: React.FormEvent) {
@@ -98,7 +95,7 @@ function AdminCategoriasModalidades() {
                 <RowActions
                   onEdit={() => setEditing(c)}
                   onDelete={async () => {
-                    await del({ data: { id: c.id } });
+                    await deleteCategoriaModalidade(supabase, user!.id, c.id);
                     invalidate();
                   }}
                 />

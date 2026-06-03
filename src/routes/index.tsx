@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { modalidadesQuery, noticiasQuery, eventosQuery, modalidadeImg } from "@/lib/site-queries";
@@ -48,15 +49,18 @@ function Home() {
   const noticias = useSuspenseQuery(noticiasQuery(true)).data;
   const eventos = useSuspenseQuery(eventosQuery()).data;
 
-  // Filtrar eventos para mostrar apenas os futuros
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  const eventosFuturos = eventos.filter((e) => {
-    if (!e.data_inicio) return false;
-    const dataEvento = new Date(e.data_inicio);
-    dataEvento.setHours(0, 0, 0, 0);
-    return dataEvento >= hoje;
-  });
+  // Filtrar eventos futuros — useMemo garante que new Date() é avaliado
+  // apenas uma vez por render, evitando divergência server/cliente.
+  const eventosFuturos = useMemo(() => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    return eventos.filter((e) => {
+      if (!e.data_inicio) return false;
+      const dataEvento = new Date(e.data_inicio);
+      dataEvento.setHours(0, 0, 0, 0);
+      return dataEvento >= hoje;
+    });
+  }, [eventos]);
 
   return (
     <SiteLayout>
@@ -233,9 +237,11 @@ function Home() {
 
             <div className="grid md:grid-cols-3 gap-6">
               {noticias.slice(0, 3).map((n) => (
-                <article
+                <Link
                   key={n.id}
-                  className="group rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card hover:shadow-elegant transition-shadow"
+                  to="/noticias/$id"
+                  params={{ id: n.id }}
+                  className="group rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card hover:shadow-elegant transition-all hover:-translate-y-1"
                 >
                   <div className="aspect-[4/3] bg-emerald-gradient relative overflow-hidden">
                     {n.imagem_url && (
@@ -257,7 +263,7 @@ function Home() {
                     </h3>
                     <p className="mt-3 text-sm text-muted-foreground line-clamp-3">{n.resumo}</p>
                   </div>
-                </article>
+                </Link>
               ))}
             </div>
           </div>

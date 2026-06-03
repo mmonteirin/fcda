@@ -12,13 +12,11 @@ export const Route = createFileRoute("/transparencia")({
       { title: "Painel da Transparência — FCDA" },
       {
         name: "description",
-        content:
-          "Boletins, editais de convocações e prestação de contas da FCDA.",
+        content: "Boletins, editais de convocações e prestação de contas da FCDA.",
       },
     ],
   }),
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(transparenciaQuery(true)),
+  loader: ({ context }) => context.queryClient.ensureQueryData(transparenciaQuery(true)),
   errorComponent: ({ error }) => (
     <div className="p-12 text-destructive">Erro ao carregar: {error.message}</div>
   ),
@@ -46,10 +44,13 @@ function Transparencia() {
     : documentos;
 
   const documentosPorTipo = useMemo(() => {
-    return TIPOS.reduce((acc, tipo) => {
-      acc[tipo] = documentos.filter((d) => d.tipo === tipo);
-      return acc;
-    }, {} as Record<string, TransparenciaDocumento[]>);
+    return TIPOS.reduce(
+      (acc, tipo) => {
+        acc[tipo] = documentos.filter((d) => d.tipo === tipo);
+        return acc;
+      },
+      {} as Record<string, TransparenciaDocumento[]>,
+    );
   }, [documentos]);
 
   return (
@@ -59,12 +60,10 @@ function Transparencia() {
           <div className="text-xs uppercase tracking-[0.25em] text-gold font-bold">
             Transparência
           </div>
-          <h1 className="mt-4 text-5xl md:text-6xl font-bold">
-            Painel da Transparência
-          </h1>
+          <h1 className="mt-4 text-5xl md:text-6xl font-bold">Painel da Transparência</h1>
           <p className="mt-6 text-lg text-primary-foreground/80 max-w-2xl">
-            Acesso a boletins, editais de convocações e prestação de contas da
-            Federação Cearense de Desportos Aquáticos.
+            Acesso a boletins, editais de convocações e prestação de contas da Federação Cearense de
+            Desportos Aquáticos.
           </p>
         </div>
       </section>
@@ -103,9 +102,7 @@ function Transparencia() {
           {documentosFiltrados.length === 0 ? (
             <div className="text-center py-16">
               <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground text-lg">
-                Nenhum documento encontrado.
-              </p>
+              <p className="text-muted-foreground text-lg">Nenhum documento encontrado.</p>
             </div>
           ) : (
             <div className="space-y-12">
@@ -118,11 +115,15 @@ function Transparencia() {
                 return (
                   <div key={tipo}>
                     <h2 className="text-2xl font-bold text-deep mb-6 flex items-center gap-3">
-                      <span className={`w-3 h-3 rounded-full ${
-                        tipo === "boletim" ? "bg-primary" :
-                        tipo === "edital" ? "bg-gold" :
-                        "bg-emerald-500"
-                      }`} />
+                      <span
+                        className={`w-3 h-3 rounded-full ${
+                          tipo === "boletim"
+                            ? "bg-primary"
+                            : tipo === "edital"
+                              ? "bg-gold"
+                              : "bg-emerald-500"
+                        }`}
+                      />
                       {getTipoLabel(tipo)}
                     </h2>
                     <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-card">

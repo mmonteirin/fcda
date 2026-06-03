@@ -16,25 +16,18 @@ import { inputClass, useInvalidate } from "@/components/admin/utils";
 import { Upload, X, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/transparencia")({
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(transparenciaQuery(false)),
-  errorComponent: ({ error }) => (
-    <div className="text-destructive">Erro: {error.message}</div>
-  ),
+  loader: ({ context }) => context.queryClient.ensureQueryData(transparenciaQuery(false)),
+  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
   component: AdminTransparencia,
 });
 
 function AdminTransparencia() {
   const { user } = useAuth();
   const documentos = useSuspenseQuery(transparenciaQuery(false)).data;
-  const [editing, setEditing] = useState<Partial<TransparenciaDocumento> | null>(
-    null,
-  );
+  const [editing, setEditing] = useState<Partial<TransparenciaDocumento> | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const save = useServerFn(saveTransparencia);
-  const del = useServerFn(deleteTransparencia);
   const upload = useServerFn(uploadTransparenciaPdf);
   const invalidate = useInvalidate(["transparencia"]);
 
@@ -52,11 +45,7 @@ function AdminTransparencia() {
         reader.readAsDataURL(file);
       });
 
-      const result = await uploadTransparenciaPdf(supabase, user!.id, {
-        fileName: file.name,
-        fileType: file.type,
-        fileData,
-      });
+      const result = await upload({ data: { fileName: file.name, fileType: file.type, fileData } });
       setEditing({
         ...editing,
         arquivo_url: result.url,
@@ -82,8 +71,7 @@ function AdminTransparencia() {
         descricao: editing.descricao || null,
         arquivo_url: editing.arquivo_url || "",
         arquivo_nome: editing.arquivo_nome || "",
-        data_publicacao:
-          editing.data_publicacao || new Date().toISOString().slice(0, 10),
+        data_publicacao: editing.data_publicacao || new Date().toISOString().slice(0, 10),
         publicado: editing.publicado ?? true,
       });
       invalidate();
@@ -126,9 +114,7 @@ function AdminTransparencia() {
           {documentos.map((d) => (
             <tr key={d.id} className="border-t border-border">
               <td className="px-4 py-3">
-                <span className="text-xs font-semibold text-primary">
-                  {getTipoLabel(d.tipo)}
-                </span>
+                <span className="text-xs font-semibold text-primary">{getTipoLabel(d.tipo)}</span>
               </td>
               <td className="px-4 py-3 font-semibold text-deep">{d.titulo}</td>
               <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">
@@ -137,9 +123,7 @@ function AdminTransparencia() {
               <td className="px-4 py-3">
                 <span
                   className={`text-xs font-bold uppercase rounded-full px-2.5 py-1 ${
-                    d.publicado
-                      ? "bg-primary/15 text-primary"
-                      : "bg-muted text-muted-foreground"
+                    d.publicado ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {d.publicado ? "Publicado" : "Rascunho"}
@@ -204,9 +188,7 @@ function AdminTransparencia() {
                   type="date"
                   className={inputClass}
                   value={editing.data_publicacao ?? ""}
-                  onChange={(e) =>
-                    setEditing({ ...editing, data_publicacao: e.target.value })
-                  }
+                  onChange={(e) => setEditing({ ...editing, data_publicacao: e.target.value })}
                   required
                 />
               </Field>
@@ -216,9 +198,7 @@ function AdminTransparencia() {
                 className={inputClass}
                 rows={3}
                 value={editing.descricao ?? ""}
-                onChange={(e) =>
-                  setEditing({ ...editing, descricao: e.target.value })
-                }
+                onChange={(e) => setEditing({ ...editing, descricao: e.target.value })}
               />
             </Field>
             <Field label="Arquivo PDF">
@@ -268,9 +248,7 @@ function AdminTransparencia() {
               <input
                 type="checkbox"
                 checked={editing.publicado ?? true}
-                onChange={(e) =>
-                  setEditing({ ...editing, publicado: e.target.checked })
-                }
+                onChange={(e) => setEditing({ ...editing, publicado: e.target.checked })}
               />
               <span className="font-semibold text-deep">Publicado</span>
             </label>

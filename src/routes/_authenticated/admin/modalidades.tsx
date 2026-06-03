@@ -2,12 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import {
-  modalidadesQuery,
-  categoriasModalidadesQuery,
-  type Modalidade,
-} from "@/lib/site-queries";
+import { modalidadesQuery, categoriasModalidadesQuery, type Modalidade } from "@/lib/site-queries";
 import { saveModalidade, deleteModalidade, uploadImage } from "@/lib/admin.functions";
+import { useAuth } from "@/lib/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
 import { Upload, X } from "lucide-react";
@@ -29,8 +27,7 @@ function AdminModalidades() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const save = useServerFn(saveModalidade);
-  const del = useServerFn(deleteModalidade);
+  const { user } = useAuth();
   const upload = useServerFn(uploadImage);
   const invalidate = useInvalidate(["modalidades"]);
 
@@ -71,16 +68,14 @@ function AdminModalidades() {
     setBusy(true);
     setErr(null);
     try {
-      await save({
-        data: {
-          id: editing.id,
-          slug: editing.slug || "",
-          nome: editing.nome || "",
-          descricao: editing.descricao || "",
-          img_url: editing.img_url || null,
-          ordem: Number(editing.ordem ?? 0),
-          categoria_id: editing.categoria_id || null,
-        },
+      await saveModalidade(supabase, user!.id, {
+        id: editing.id,
+        slug: editing.slug || "",
+        nome: editing.nome || "",
+        descricao: editing.descricao || "",
+        img_url: editing.img_url || null,
+        ordem: Number(editing.ordem ?? 0),
+        categoria_id: editing.categoria_id || null,
       });
       invalidate();
       setEditing(null);
@@ -124,7 +119,7 @@ function AdminModalidades() {
                 <RowActions
                   onEdit={() => setEditing(m)}
                   onDelete={async () => {
-                    await del({ data: { id: m.id } });
+                    await deleteModalidade(supabase, user!.id, m.id);
                     invalidate();
                   }}
                 />

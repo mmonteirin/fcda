@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { noticiasQuery, eventosQuery } from "@/lib/site-queries";
 import { Calendar, MapPin } from "lucide-react";
@@ -41,15 +42,16 @@ function Noticias() {
   const noticias = useSuspenseQuery(noticiasQuery(true)).data;
   const eventos = useSuspenseQuery(eventosQuery()).data;
 
-  // Filtrar eventos para mostrar apenas os futuros
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  const eventosFuturos = eventos.filter((e) => {
-    if (!e.data_inicio) return false;
-    const dataEvento = new Date(e.data_inicio);
-    dataEvento.setHours(0, 0, 0, 0);
-    return dataEvento >= hoje;
-  });
+  const eventosFuturos = useMemo(() => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    return eventos.filter((e) => {
+      if (!e.data_inicio) return false;
+      const dataEvento = new Date(e.data_inicio);
+      dataEvento.setHours(0, 0, 0, 0);
+      return dataEvento >= hoje;
+    });
+  }, [eventos]);
 
   return (
     <SiteLayout>

@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
@@ -278,18 +279,20 @@ export const uploadPdf = createServerFn({ method: "POST" })
 
     if (uploadError) throw new Error(uploadError.message);
 
-  const { data: publicUrlData } = supabase.storage.from("site-images").getPublicUrl(filePath);
+    const { data: publicUrlData } = context.supabase.storage
+      .from("site-images")
+      .getPublicUrl(filePath);
 
-  // Save to eventos_pdfs table
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
-  const { error: dbError } = await sb.from("eventos_pdfs").insert({
-    evento_id: validated.eventoId,
-    tipo: validated.tipo,
-    url: publicUrlData.publicUrl,
-    nome_arquivo: validated.fileName,
-    uploaded_by: userId,
-  });
+    // Save to eventos_pdfs table
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sb = context.supabase as any;
+    const { error: dbError } = await sb.from("eventos_pdfs").insert({
+      evento_id: data.eventoId,
+      tipo: data.tipo,
+      url: publicUrlData.publicUrl,
+      nome_arquivo: data.fileName,
+      uploaded_by: context.userId,
+    });
 
     if (dbError) throw new Error(dbError.message);
 
@@ -325,7 +328,9 @@ export const uploadImage = createServerFn({ method: "POST" })
 
     if (uploadError) throw new Error(uploadError.message);
 
-  const { data: publicUrlData } = supabase.storage.from("site-images").getPublicUrl(filePath);
+    const { data: publicUrlData } = context.supabase.storage
+      .from("site-images")
+      .getPublicUrl(filePath);
 
     return { url: publicUrlData.publicUrl };
   });
@@ -369,10 +374,12 @@ export const uploadTransparenciaPdf = createServerFn({ method: "POST" })
 
     if (uploadError) throw new Error(uploadError.message);
 
-  const { data: publicUrlData } = supabase.storage.from("site-images").getPublicUrl(filePath);
+    const { data: publicUrlData } = context.supabase.storage
+      .from("site-images")
+      .getPublicUrl(filePath);
 
-  return { url: publicUrlData.publicUrl };
-}
+    return { url: publicUrlData.publicUrl };
+  });
 
 export async function saveTransparencia(supabase: SupabaseClient, userId: string, data: unknown) {
   const validated = transparenciaSchema.parse(data);

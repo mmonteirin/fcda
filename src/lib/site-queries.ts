@@ -107,11 +107,7 @@ export const noticiaByIdQuery = (id: string) =>
   queryOptions({
     queryKey: ["noticia", id],
     queryFn: async (): Promise<Noticia | null> => {
-      const { data, error } = await supabase
-        .from("noticias")
-        .select("*")
-        .eq("id", id)
-        .single();
+      const { data, error } = await supabase.from("noticias").select("*").eq("id", id).single();
       if (error) {
         if (error.code === "PGRST116") return null; // Not found
         throw error;

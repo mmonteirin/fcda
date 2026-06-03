@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+
 import { useState } from "react";
 import { bannerQuery, type BannerConfig } from "@/lib/site-queries";
 import { saveBanner } from "@/lib/admin.functions";
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/admin/banner")({
 function AdminBanner() {
   const { user } = useAuth();
   const banner = useSuspenseQuery(bannerQuery).data as BannerConfig;
-  const save = useServerFn(saveBanner);
+
   const invalidate = useInvalidate(["banner"]);
   const [texto, setTexto] = useState(banner.texto);
   const [link, setLink] = useState(banner.link || "");
@@ -31,7 +31,7 @@ function AdminBanner() {
     setBusy(true);
     setError(null);
     try {
-      await save({ data: { texto, link: link || null, ativo } });
+      await saveBanner(supabase, user!.id, { texto, link: link || null, ativo });
       invalidate();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Erro ao salvar banner");
@@ -42,7 +42,7 @@ function AdminBanner() {
 
   return (
     <div>
-      <AdminToolbar title="Banner de Aviso" onNew={() => {}} />
+      <AdminToolbar title="Banner de Aviso" />
 
       <div className="max-w-2xl">
         <form onSubmit={handleSave} className="space-y-6">

@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site/SiteLayout";
 import { MapPin, Phone, Mail, Clock, Send } from "lucide-react";
 import { useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { sendMensagem } from "@/lib/admin.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/contato")({
   head: () => ({
@@ -21,21 +21,17 @@ export const Route = createFileRoute("/contato")({
 function Contato() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const formRef = useRef<HTMLFormElement>(null);
-  const sendMessage = useServerFn(sendMensagem);
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("sending");
     const fd = new FormData(e.currentTarget);
     try {
-      await sendMessage({
-        data: {
-          nome: fd.get("nome") as string,
-          email: fd.get("email") as string,
-          telefone: (fd.get("tel") as string) || null,
-          assunto: fd.get("assunto") as string,
-          mensagem: fd.get("mensagem") as string,
-        },
+      await sendMensagem(supabase, {
+        nome: fd.get("nome") as string,
+        email: fd.get("email") as string,
+        telefone: (fd.get("tel") as string) || null,
+        assunto: fd.get("assunto") as string,
+        mensagem: fd.get("mensagem") as string,
       });
       setStatus("sent");
       formRef.current?.reset();

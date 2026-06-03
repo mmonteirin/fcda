@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+
 import { useState } from "react";
 import { AdminToolbar } from "@/components/admin/ui";
 import { useInvalidate } from "@/components/admin/utils";
 import { FileText, Check, X, Clock, Building2, Calendar, MapPin, Phone } from "lucide-react";
 import { filiacaoQuery, type SolicitacaoFiliacao } from "@/lib/site-queries";
 import { aprovarFiliacao, rejeitarFiliacao } from "@/lib/admin.functions";
+import { useAuth } from "@/lib/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin/filiacoes")({
   loader: ({ context }) => context.queryClient.ensureQueryData(filiacaoQuery),
@@ -15,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/admin/filiacoes")({
 });
 
 function AdminFiliacoes() {
+  const { user } = useAuth();
   const [err, setErr] = useState<string | null>(null);
   const [selectedFiliacao, setSelectedFiliacao] = useState<SolicitacaoFiliacao | null>(null);
   const [filter, setFilter] = useState<"todas" | "pendentes" | "aprovadas" | "rejeitadas">(
@@ -22,8 +25,6 @@ function AdminFiliacoes() {
   );
   const invalidate = useInvalidate(["solicitacoes_filiacao"]);
   const solicitacoes = useSuspenseQuery(filiacaoQuery).data;
-  const aprovar = useServerFn(aprovarFiliacao);
-  const rejeitar = useServerFn(rejeitarFiliacao);
 
   const filteredSolicitacoes = solicitacoes.filter((s) => {
     if (filter === "todas") return true;
@@ -37,7 +38,7 @@ function AdminFiliacoes() {
 
   async function handleAprovar(id: string) {
     try {
-      await aprovar({ data: { id } });
+      await aprovarFiliacao(supabase, user!.id, id);
       invalidate();
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Erro ao aprovar solicitação");
@@ -46,7 +47,7 @@ function AdminFiliacoes() {
 
   async function handleRejeitar(id: string) {
     try {
-      await rejeitar({ data: { id } });
+      await rejeitarFiliacao(supabase, user!.id, id);
       invalidate();
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Erro ao rejeitar solicitação");
@@ -132,8 +133,8 @@ function AdminFiliacoes() {
                           soli.status === "pendente"
                             ? "bg-amber-100 text-amber-800"
                             : soli.status === "aprovado"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-destructive/10 text-destructive"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-destructive/10 text-destructive"
                         }`}
                       >
                         {soli.status === "pendente" && <Clock className="h-3 w-3" />}
@@ -162,8 +163,8 @@ function AdminFiliacoes() {
                     selectedFiliacao.status === "pendente"
                       ? "bg-amber-100 text-amber-800"
                       : selectedFiliacao.status === "aprovado"
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-destructive/10 text-destructive"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : "bg-destructive/10 text-destructive"
                   }`}
                 >
                   {selectedFiliacao.status === "pendente" && <Clock className="h-4 w-4" />}
@@ -283,7 +284,9 @@ function AdminFiliacoes() {
           ) : (
             <div className="text-center py-12">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Selecione uma solicitação para ver os detalhes</p>
+              <p className="text-muted-foreground">
+                Selecione uma solicitação para ver os detalhes
+              </p>
             </div>
           )}
         </div>

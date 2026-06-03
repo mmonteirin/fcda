@@ -1,14 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+
 import { useState } from "react";
 import { mensagensQuery, type Mensagem } from "@/lib/site-queries";
 import { markMensagemAsRead, deleteMensagem } from "@/lib/admin.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar } from "@/components/admin/ui";
 import { useInvalidate } from "@/components/admin/utils";
 import { Mail, Trash2, Check, Clock, User, Phone } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/mensagens")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(mensagensQuery),
+  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
   component: AdminMensagens,
 });
 
@@ -16,13 +19,12 @@ function AdminMensagens() {
   const mensagens = useSuspenseQuery(mensagensQuery).data;
   const [err, setErr] = useState<string | null>(null);
   const [selectedMensagem, setSelectedMensagem] = useState<Mensagem | null>(null);
-  const markAsRead = useServerFn(markMensagemAsRead);
-  const deleteMsg = useServerFn(deleteMensagem);
+
   const invalidate = useInvalidate(["mensagens"]);
 
   async function handleMarkAsRead(id: string) {
     try {
-      await markAsRead({ data: { id } });
+      await markMensagemAsRead(supabase, id);
       invalidate();
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Erro ao marcar como lida");
@@ -32,7 +34,7 @@ function AdminMensagens() {
   async function handleDelete(id: string) {
     if (!confirm("Tem certeza que deseja excluir esta mensagem?")) return;
     try {
-      await deleteMsg({ data: { id } });
+      await deleteMensagem(supabase, id);
       invalidate();
       if (selectedMensagem?.id === id) setSelectedMensagem(null);
     } catch (e: unknown) {
@@ -44,9 +46,7 @@ function AdminMensagens() {
 
   return (
     <div>
-      <AdminToolbar
-        title={`Mensagens ${unreadCount > 0 ? `(${unreadCount} não lidas)` : ""}`}
-      />
+      <AdminToolbar title={`Mensagens ${unreadCount > 0 ? `(${unreadCount} não lidas)` : ""}`} />
 
       {err && <div className="text-sm text-destructive mb-4">{err}</div>}
 
