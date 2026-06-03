@@ -302,6 +302,10 @@ export type SolicitacaoFiliacao = {
   data_publicacao: string | null;
   status: "pendente" | "aprovado" | "rejeitado";
   observacoes: string | null;
+  doc_cnpj_url: string | null;
+  doc_requerimento_url: string | null;
+  aceite_termo: boolean;
+  aceite_em: string | null;
   created_at: string;
   updated_at: string;
 };

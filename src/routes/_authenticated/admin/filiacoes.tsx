@@ -264,6 +264,58 @@ function AdminFiliacoes() {
                 </div>
               </div>
 
+              {/* Documentos enviados */}
+              {(selectedFiliacao.doc_cnpj_url || selectedFiliacao.doc_requerimento_url) && (
+                <div>
+                  <h3 className="font-semibold text-deep mb-2">Documentos Enviados</h3>
+                  <div className="space-y-2">
+                    {selectedFiliacao.doc_cnpj_url && (
+                      <a
+                        href={selectedFiliacao.doc_cnpj_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-primary hover:underline"
+                      >
+                        <FileText className="h-4 w-4 shrink-0" />
+                        Documento CNPJ
+                      </a>
+                    )}
+                    {selectedFiliacao.doc_requerimento_url && (
+                      <a
+                        href={selectedFiliacao.doc_requerimento_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-primary hover:underline"
+                      >
+                        <FileText className="h-4 w-4 shrink-0" />
+                        Requerimento de Filiação
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Termo de aceite */}
+              <div>
+                <h3 className="font-semibold text-deep mb-2">Termo de Aceite</h3>
+                {selectedFiliacao.aceite_termo ? (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Check className="h-4 w-4 text-emerald-600" />
+                    <span className="text-emerald-700 font-semibold">
+                      Aceito em{" "}
+                      {selectedFiliacao.aceite_em
+                        ? new Date(selectedFiliacao.aceite_em).toLocaleString("pt-BR")
+                        : "data não registrada"}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-sm">
+                    <X className="h-4 w-4 text-destructive" />
+                    <span className="text-muted-foreground">Não aceito</span>
+                  </div>
+                )}
+              </div>
+
               {selectedFiliacao.status === "pendente" && (
                 <div className="flex gap-3 pt-4 border-t border-border">
                   <button

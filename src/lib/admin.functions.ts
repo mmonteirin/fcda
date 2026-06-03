@@ -550,6 +550,9 @@ const filiacaoSchema = z.object({
   certidao: z.string().optional().nullable(),
   dataFundacao: z.string().optional().nullable(),
   dataPublicacao: z.string().optional().nullable(),
+  docCnpjUrl: z.string().url().optional().nullable(),
+  docRequerimentoUrl: z.string().url().optional().nullable(),
+  aceiteTermo: z.boolean(),
 });
 
 export async function sendFiliacao(supabase: SupabaseClient, data: unknown) {
@@ -572,6 +575,10 @@ export async function sendFiliacao(supabase: SupabaseClient, data: unknown) {
     certidao: validated.certidao,
     data_fundacao: validated.dataFundacao,
     data_publicacao: validated.dataPublicacao,
+    doc_cnpj_url: validated.docCnpjUrl ?? null,
+    doc_requerimento_url: validated.docRequerimentoUrl ?? null,
+    aceite_termo: validated.aceiteTermo,
+    aceite_em: validated.aceiteTermo ? new Date().toISOString() : null,
     status: "pendente",
   });
   if (error) throw new Error(error.message);
