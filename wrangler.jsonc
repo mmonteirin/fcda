@@ -4,4 +4,10 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "dist/server/server.js",
+  "vars": {
+    "SUPABASE_URL": "https://ucesipxemhrugmqwxtei.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_Sf19DBS7HhDQRi4h1pxXWQ_pd-rjTSr",
+    "VITE_SUPABASE_URL": "https://ucesipxemhrugmqwxtei.supabase.co",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_Sf19DBS7HhDQRi4h1pxXWQ_pd-rjTSr",
+  },
 }
