@@ -5,7 +5,30 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { loadEnv } from "vite";
 import type { Plugin } from "vite";
+
+// ── Env vars ────────────────────────────────────────────────────────────────
+// TanStack Start uses Rolldown for the client environment build.
+// Rolldown does NOT pick up Vite's top-level `define` substitutions from the
+// Lovable config, so we inject VITE_* vars explicitly via rolldownOptions.define.
+//
+// loadEnv reads .env / .env.local / .env.production from the project root.
+// We use "" as prefix to capture every variable, then filter to VITE_* below.
+const _mode = process.env.NODE_ENV === "development" ? "development" : "production";
+const _env = loadEnv(_mode, process.cwd(), "");
+
+const clientRolldownDefine: Record<string, string> = {
+  "import.meta.env.MODE": JSON.stringify(_mode),
+  "import.meta.env.DEV": _mode === "development" ? "true" : "false",
+  "import.meta.env.PROD": _mode !== "development" ? "true" : "false",
+  "import.meta.env.SSR": "false",
+};
+for (const [key, value] of Object.entries(_env)) {
+  if (key.startsWith("VITE_")) {
+    clientRolldownDefine[`import.meta.env.${key}`] = JSON.stringify(value);
+  }
+}
 
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
@@ -14,6 +37,15 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    environments: {
+      client: {
+        build: {
+          rolldownOptions: {
+            define: clientRolldownDefine,
+          },
+        },
+      },
+    },
     plugins: [vendorChunkPlugin()],
   },
 });
