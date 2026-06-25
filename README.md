@@ -6,16 +6,6 @@ Site institucional oficial da FCDA, com painel administrativo completo para gest
 
 ---
 
-## Screenshots
-
-| Site público | Painel administrativo |
-|---|---|
-| ![Home FCDA](./docs/screenshot-home.png) | ![Admin FCDA](./docs/screenshot-admin.png) |
-
-> **Dados em produção:** 291 atletas ativos · 7 clubes filiados · 27 eventos gerenciados · 23 tipos de PDF suportados
-
----
-
 ## Stack
 
 | Camada | Tecnologias |
