@@ -1,212 +1,152 @@
 # FCDA — Federação Cearense de Desportos Aquáticos
 
-Site oficial da Federação Cearense de Desportos Aquáticos (FCDA), desenvolvido com tecnologias modernas para gerenciamento de conteúdo e eventos de natação e outros esportes aquáticos.
+Site institucional oficial da FCDA, com painel administrativo completo para gestão de conteúdo, eventos e documentos.
 
-## 🚀 Tecnologias Utilizadas
+🌐 **[fcda.org.br](https://www.fcda.org.br)**
 
-- **Frontend**: React 19, TypeScript
-- **Framework**: TanStack Start (SSR)
-- **Routing**: TanStack Router
-- **State Management**: TanStack Query
-- **UI Components**: Radix UI, shadcn/ui
-- **Styling**: TailwindCSS 4
-- **Backend**: Supabase (Database, Auth, Storage)
-- **Validação**: Zod
-- **Deploy**: Cloudflare Workers
+---
 
-## 📋 Pré-requisitos
+## Screenshots
 
+| Site público | Painel administrativo |
+|---|---|
+| ![Home FCDA](./docs/screenshot-home.png) | ![Admin FCDA](./docs/screenshot-admin.png) |
+
+> **Dados em produção:** 291 atletas ativos · 7 clubes filiados · 27 eventos gerenciados · 23 tipos de PDF suportados
+
+---
+
+## Stack
+
+| Camada | Tecnologias |
+|---|---|
+| Frontend | React 19, TypeScript |
+| Framework | TanStack Start (SSR) |
+| Routing | TanStack Router |
+| Data fetching | TanStack Query |
+| UI | Radix UI, shadcn/ui, TailwindCSS 4 |
+| Backend | Supabase (Database, Auth, Storage) |
+| Validação | Zod |
+| Deploy | Cloudflare Workers |
+
+---
+
+## Por que essas escolhas
+
+**TanStack Start sobre Next.js:** O TanStack Start oferece SSR com controle mais granular sobre o data fetching por rota, sem a camada de abstração do App Router. Como o site tem páginas públicas com SSR pesado (notícias, eventos) e um painel admin puramente client-side, essa separação ficou mais limpa.
+
+**Cloudflare Workers:** Deploy na edge garante latência baixa para usuários em todo o Brasil, sem custo de servidor fixo. O bundle do TanStack Start compila bem para o runtime do Workers.
+
+**Supabase:** RLS nativo eliminou a necessidade de uma API intermediária para as operações do painel admin. As políticas de acesso por role (admin/editor) ficam declaradas no banco, não espalhadas no código.
+
+---
+
+## Funcionalidades
+
+### Site público
+- Home com banner configurável via painel
+- Notícias e comunicados
+- Calendário de eventos e competições
+- Modalidades aquáticas (Natação, Águas Abertas, Paranatação, Polo Aquático, Saltos Ornamentais, Nado Artístico)
+- Página de diretoria
+- Formulário de contato
+
+### Painel administrativo
+- Autenticação com controle de acesso por roles (admin, editor)
+- CRUD completo de notícias, eventos, modalidades, categorias e diretoria
+- Upload de PDFs por evento (23 tipos: resultados, balizamentos, regulamentos, rankings, etc.)
+- Gestão de usuários e permissões
+- Configuração de banner da home
+- Caixa de mensagens do formulário de contato
+
+---
+
+## Banco de dados
+
+```
+profiles            → dados dos usuários
+user_roles          → papéis de acesso (admin, editor)
+modalidades         → modalidades aquáticas
+categorias_modalidades
+noticias            → notícias e comunicados
+eventos             → competições e eventos
+eventos_pdfs        → documentos vinculados a eventos
+diretores           → membros da diretoria
+mensagens           → contatos recebidos pelo formulário
+banner_config       → configuração do banner da home
+```
+
+**Segurança:** Row Level Security (RLS) habilitado em todas as tabelas. Políticas baseadas em roles via Supabase Auth.
+
+---
+
+## Como rodar localmente
+
+### Pré-requisitos
 - Node.js 18+ ou Bun
 - Conta no Supabase
-- Variáveis de ambiente configuradas
 
-## 🔧 Configuração
-
-1. **Clone o repositório**
-
-   ```bash
-   git clone <repositório>
-   cd Fcda
-   ```
-
-2. **Instale as dependências**
-
-   ```bash
-   bun install
-   # ou
-   npm install
-   ```
-
-3. **Configure as variáveis de ambiente**
-
-   Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
-
-   ```env
-   SUPABASE_URL="https://seu-projeto.supabase.co"
-   SUPABASE_PUBLISHABLE_KEY="sua-chave-publica"
-   SUPABASE_SERVICE_ROLE_KEY="sua-chave-service-role"
-   VITE_SUPABASE_PROJECT_ID="seu-project-id"
-   VITE_SUPABASE_PUBLISHABLE_KEY="sua-chave-publica"
-   VITE_SUPABASE_URL="https://seu-projeto.supabase.co"
-   ```
-
-4. **Execute as migrações do Supabase**
-
-   No dashboard do Supabase, execute as migrações na ordem:
-   - `20260601125652_f533286c-1cf5-45cc-a61e-fc6708fa7e0f.sql`
-   - `20260601125716_bc87c69b-f9e0-418f-8079-7fc0dbdc7120.sql`
-   - `20260602010300_create_mensagens.sql`
-   - `20260602020000_add_eventos_pdfs.sql`
-   - `20260602030000_update_pdf_tipo.sql`
-   - `20260602040000_add_lido_column.sql`
-
-## 🏃 Executando o Projeto
-
-**Modo de desenvolvimento:**
+### Setup
 
 ```bash
-bun run dev
-# ou
-npm run dev
+git clone https://github.com/mmonteirin/fcda
+cd fcda
+bun install
 ```
 
-**Build para produção:**
+Crie `.env` na raiz:
+
+```env
+SUPABASE_URL="https://seu-projeto.supabase.co"
+SUPABASE_PUBLISHABLE_KEY="sua-chave-publica"
+SUPABASE_SERVICE_ROLE_KEY="sua-chave-service-role"
+VITE_SUPABASE_PROJECT_ID="seu-project-id"
+VITE_SUPABASE_PUBLISHABLE_KEY="sua-chave-publica"
+VITE_SUPABASE_URL="https://seu-projeto.supabase.co"
+```
+
+Execute as migrações no dashboard do Supabase (pasta `supabase/migrations/`, em ordem cronológica).
 
 ```bash
-bun run build
-# ou
-npm run build
+bun run dev      # desenvolvimento
+bun run build    # build de produção
+bun run preview  # preview do build
 ```
 
-**Preview do build:**
+---
 
-```bash
-bun run preview
-# ou
-npm run preview
-```
-
-## 📁 Estrutura do Projeto
+## Estrutura do projeto
 
 ```
-Fcda/
-├── src/
-│   ├── components/
-│   │   ├── admin/          # Componentes do painel administrativo
-│   │   ├── site/           # Componentes do site público
-│   │   └── ui/             # Componentes UI reutilizáveis
-│   ├── hooks/              # Hooks customizados
-│   ├── integrations/
-│   │   └── supabase/       # Integração com Supabase
-│   ├── lib/                # Funções utilitárias e queries
-│   ├── routes/             # Rotas do TanStack Router
-│   │   ├── _authenticated/ # Rotas autenticadas
-│   │   │   └── admin/      # Painel administrativo
-│   │   └── ...             # Rotas públicas
-│   ├── router.tsx          # Configuração do router
-│   ├── server.ts           # Configuração do servidor
-│   └── start.ts            # Ponto de entrada
-├── supabase/
-│   ├── migrations/         # Migrações do banco de dados
-│   └── config.toml         # Configuração do Supabase
-├── .env                    # Variáveis de ambiente
-├── index.html              # HTML de entrada
-├── package.json            # Dependências do projeto
-├── tsconfig.json           # Configuração do TypeScript
-└── vite.config.ts          # Configuração do Vite
+src/
+├── components/
+│   ├── admin/     # Componentes do painel administrativo
+│   ├── site/      # Componentes do site público
+│   └── ui/        # Componentes reutilizáveis (shadcn/ui)
+├── hooks/         # Hooks customizados
+├── integrations/
+│   └── supabase/  # Client, types e queries
+├── lib/           # Funções utilitárias
+├── routes/
+│   ├── _authenticated/
+│   │   └── admin/ # Rotas protegidas do painel
+│   └── ...        # Rotas públicas
+├── router.tsx
+├── server.ts
+└── start.ts
+supabase/
+├── migrations/
+└── config.toml
 ```
 
-## 🎨 Funcionalidades
+---
 
-### Site Público
+## Contato
 
-- **Home**: Apresentação da federação
-- **Sobre**: Informações sobre a FCDA
-- **Notícias**: Notícias e comunicados
-- **Eventos**: Calendário de eventos e competições
-- **Modalidades**: Informações sobre as modalidades aquáticas
-- **Diretoria**: Lista de diretores
-- **Contato**: Formulário de contato
+**Federação Cearense de Desportos Aquáticos**  
+Av. da Abolição, 2727 – Meireles, Fortaleza – CE  
+secretaria@fcda.org.br · [fcda.org.br](https://www.fcda.org.br)
 
-### Painel Administrativo
+---
 
-- **Notícias**: Criar, editar e excluir notícias
-- **Eventos**: Gerenciar eventos e competições
-- **Modalidades**: Gerenciar modalidades e categorias
-- **Diretores**: Gerenciar diretoria
-- **Usuários**: Gerenciar usuários e permissões
-- **PDFs**: Upload de PDFs para eventos (23 tipos diferentes)
-- **Mensagens**: Visualizar mensagens enviadas pelo formulário de contato
-- **Banner**: Configurar banner da home
-
-### Tipos de PDF Suportados
-
-- Resultados
-- Pontuação
-- Eficiência
-- Recordes
-- Quadro de medalhas
-- Índice Técnico
-- Programa de Provas
-- Inscritos por clube
-- Relação de Inscritos
-- Balizamentos
-- Resultados Gerais
-- Regulamentos
-- Relação de Cortes
-- Mapa de Inscrição
-- Índices
-- Lista de Hotéis
-- Outros
-- Súmula
-- Tabela de Jogos
-- Mapa da Prova
-- Termo de Responsabilidade
-- Ranking
-- Inscrições
-
-## 🗄️ Banco de Dados
-
-O projeto utiliza Supabase como backend, com as seguintes tabelas principais:
-
-- `profiles`: Perfis de usuários
-- `user_roles`: Funções de usuário (admin, editor)
-- `modalidades`: Modalidades aquáticas
-- `categorias_modalidades`: Categorias de modalidades
-- `noticias`: Notícias e comunicados
-- `eventos`: Eventos e competições
-- `eventos_pdfs`: PDFs associados a eventos
-- `diretores`: Diretores da federação
-- `mensagens`: Mensagens do formulário de contato
-- `banner_config`: Configuração do banner
-
-## 🔐 Segurança
-
-- Autenticação via Supabase Auth
-- Row Level Security (RLS) habilitado em todas as tabelas
-- Políticas de acesso baseadas em roles (admin, editor)
-- Middleware de autenticação para rotas protegidas
-
-## 📞 Contato
-
-**Sede Administrativa**
-
-```
-Federação Cearense de Desportos Aquáticos (FCDA)
-Av. da Abolição, 2727 – Meireles
-Fortaleza – CE, CEP 60165-081
-```
-
-**E-mail**: fcdaquaticos@fcda.org.br
-
-**Atendimento Presencial**: Terças e Quintas-feiras, 07h às 11h
-
-**Site**: www.fcda.org.br
-
-## 📄 Licença
-
-Este projeto é propriedade da Federação Cearense de Desportos Aquáticos (FCDA).
-
-## 🤝 Contribuindo
-
-Para contribuir com o projeto, entre em contato com a equipe de desenvolvimento da FCDA.
+*Desenvolvido por [Marcos Monteiro](https://github.com/mmonteirin)*
