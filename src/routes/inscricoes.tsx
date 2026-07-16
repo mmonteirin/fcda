@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SiteLayout } from "@/components/site/SiteLayout";
+import { SiteLayout } from "@/components/layout/SiteLayout";
 import { ExternalLink, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/inscricoes")({

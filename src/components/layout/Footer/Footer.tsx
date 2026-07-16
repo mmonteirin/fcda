@@ -22,7 +22,6 @@ export function Footer() {
             1958. Filiada à Confederação Brasileira de Desportos Aquáticos.
           </p>
         </div>
-
         <div>
           <h4 className="text-xs uppercase tracking-[0.2em] text-gold mb-4">Navegação</h4>
           <ul className="space-y-2 text-sm">
@@ -48,7 +47,6 @@ export function Footer() {
             </li>
           </ul>
         </div>
-
         <div>
           <h4 className="text-xs uppercase tracking-[0.2em] text-gold mb-4">Contato</h4>
           <ul className="space-y-3 text-sm text-primary-foreground/80">
@@ -86,10 +84,9 @@ export function Footer() {
       </div>
       <div className="border-t border-primary-foreground/10">
         <div className="mx-auto max-w-7xl px-6 py-5 text-xs text-primary-foreground/60 flex flex-col md:flex-row justify-between gap-2">
-          <span>
-            © {new Date().getFullYear()} Federação Cearense de Desportos Aquáticos. Todos os
-            direitos reservados.
-          </span>
+          <span>Federação Cearense de Desportos Aquáticos.</span>
+           <span>
+            © {new Date().getFullYear()} Site desenvolvido e todos os direitos reservados por MMC Sistemas computacionais. </span>
           <span>CNPJ 07.961.535/0001-78</span>
         </div>
       </div>

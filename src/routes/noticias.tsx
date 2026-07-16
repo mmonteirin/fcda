@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { SiteLayout } from "@/components/site/SiteLayout";
+import { SiteLayout } from "@/components/layout/SiteLayout";
 import { noticiasQuery, eventosQuery } from "@/lib/site-queries";
 import { Calendar, MapPin } from "lucide-react";
 
@@ -80,7 +80,7 @@ function Noticias() {
                 <Link
                   key={n.id}
                   to="/noticias/$id"
-                  params={{ id: n.id }}
+                  params={{ id: n.slug }}
                   className="group rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card hover:shadow-elegant transition-all hover:-translate-y-1"
                 >
                   <div className="aspect-[4/3] bg-emerald-gradient relative overflow-hidden">

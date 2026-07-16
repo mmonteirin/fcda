@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SiteLayout } from "@/components/site/SiteLayout";
+import { SiteLayout } from "@/components/layout/SiteLayout";
 import { MapPin, Phone, Mail, Clock, Send } from "lucide-react";
 import { useRef, useState } from "react";
 import { sendMensagem } from "@/lib/admin.functions";

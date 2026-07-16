@@ -3,15 +3,16 @@ import { useState } from "react";
 import { Menu, X, LogIn, Shield } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
 import logoFCDA from "@/assets/logoFCDA.png";
+import { DesktopNav } from "./DesktopNav";
+import { TopBar } from "./TopBar";
 
 const nav = [
   { to: "/", label: "Início" },
-  { to: "/sobre", label: "A Federação" },
+  { to: "/sobre", label: "A FCDA" },
   { to: "/modalidades", label: "Modalidades" },
-  { to: "/eventos", label: "Eventos" },
+  { to: "/eventos", label: "Competições" },
   { to: "/noticias", label: "Notícias" },
   { to: "/transparencia", label: "Transparência" },
-  { to: "/inscricoes", label: "Inscrições" },
   { to: "/contato", label: "Contato" },
 ] as const;
 
@@ -21,6 +22,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-xl">
+      <TopBar />
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-3 group">
           <img src={logoFCDA} alt="FCDA Logo" className="h-11 w-auto" />
@@ -34,18 +36,8 @@ export function Header() {
           </div>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-1">
-          {nav.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="px-4 py-2 text-sm font-semibold text-foreground/70 hover:text-deep transition-colors rounded-md"
-              activeOptions={{ exact: item.to === "/" }}
-              activeProps={{ className: "text-deep" }}
-            >
-              {item.label}
-            </Link>
-          ))}
+        <div className="hidden xl:flex items-center gap-1">
+          <DesktopNav />
 
           {isEditor ? (
             <Link
@@ -70,18 +62,18 @@ export function Header() {
           >
             Filie-se
           </Link>
-        </nav>
+        </div>
 
         <button
           onClick={() => setOpen(!open)}
-          className="lg:hidden p-2 text-deep"
+          className="xl:hidden p-2 text-deep"
           aria-label="Menu"
         >
           {open ? <X /> : <Menu />}
         </button>
       </div>
       {open && (
-        <div className="lg:hidden border-t border-border bg-background">
+        <div className="xl:hidden border-t border-border bg-background">
           <div className="px-6 py-4 flex flex-col gap-1">
             {nav.map((item) => (
               <Link
@@ -93,6 +85,12 @@ export function Header() {
                 {item.label}
               </Link>
             ))}
+            <a
+              href="mailto:secretaria@fcda.org.br?subject=Informa%C3%A7%C3%B5es%20sobre%20cursos"
+              className="px-3 py-3 text-base font-semibold text-foreground/80 hover:text-deep"
+            >
+              Cursos
+            </a>
             {isEditor ? (
               <Link
                 to="/admin"

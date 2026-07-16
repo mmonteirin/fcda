@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SiteLayout } from "@/components/site/SiteLayout";
+import { SiteLayout } from "@/components/layout/SiteLayout";
 import { FileText, Users, Award, AlertCircle, Mail, Upload, CheckCircle, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { sendFiliacao } from "@/lib/admin.functions";

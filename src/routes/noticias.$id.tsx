@@ -1,13 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { SiteLayout } from "@/components/site/SiteLayout";
-import { noticiaByIdQuery, noticiasQuery } from "@/lib/site-queries";
+import { SiteLayout } from "@/components/layout/SiteLayout";
+import { noticiaByIdentifierQuery, noticiasQuery } from "@/lib/site-queries";
 import { Calendar, ArrowLeft, Tag, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/noticias/$id")({
   loader: ({ context, params }) =>
     Promise.all([
-      context.queryClient.ensureQueryData(noticiaByIdQuery(params.id)),
+      context.queryClient.ensureQueryData(noticiaByIdentifierQuery(params.id)),
       context.queryClient.ensureQueryData(noticiasQuery(true)),
     ]),
   head: ({ loaderData }) => {
@@ -85,17 +85,19 @@ function ArticleContent({ content }: { content: string }) {
 
 function NoticiaDetalhes() {
   const { id } = Route.useParams();
-  const noticia = useSuspenseQuery(noticiaByIdQuery(id)).data;
+  const noticia = useSuspenseQuery(noticiaByIdentifierQuery(id)).data;
   const todasNoticias = useSuspenseQuery(noticiasQuery(true)).data;
 
   // Outras notícias da mesma categoria (excluindo a atual)
   const relacionadas = todasNoticias
-    .filter((n) => n.id !== id && n.categoria === noticia?.categoria)
+    .filter((n) => n.id !== noticia?.id && n.categoria === noticia?.categoria)
     .slice(0, 3);
 
   // Se não tem da mesma categoria, pega as mais recentes
   const sugeridas =
-    relacionadas.length > 0 ? relacionadas : todasNoticias.filter((n) => n.id !== id).slice(0, 3);
+    relacionadas.length > 0
+      ? relacionadas
+      : todasNoticias.filter((n) => n.id !== noticia?.id).slice(0, 3);
 
   if (!noticia) {
     return (
@@ -225,7 +227,7 @@ function NoticiaDetalhes() {
                 <Link
                   key={n.id}
                   to="/noticias/$id"
-                  params={{ id: n.id }}
+                  params={{ id: n.slug }}
                   className="group flex flex-col rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card hover:shadow-elegant transition-all hover:-translate-y-1"
                 >
                   {n.imagem_url ? (

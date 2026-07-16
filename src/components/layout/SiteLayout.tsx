@@ -1,5 +1,5 @@
-import { Header } from "./Header";
-import { Footer } from "./Footer";
+import { Header } from "./Header/Header";
+import { Footer } from "./Footer/Footer";
 import { Banner } from "./Banner";
 
 export function SiteLayout({ children }: { children: React.ReactNode }) {

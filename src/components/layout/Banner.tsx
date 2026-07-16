@@ -7,9 +7,7 @@ export function Banner() {
   const banner = useSuspenseQuery(bannerQuery).data;
   const [dismissed, setDismissed] = useState(false);
 
-  if (!banner.ativo || !banner.texto || dismissed) {
-    return null;
-  }
+  if (!banner.ativo || !banner.texto || dismissed) return null;
 
   return (
     <div className="bg-primary text-primary-foreground px-4 py-3">

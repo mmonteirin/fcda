@@ -8,16 +8,16 @@ Site institucional oficial da FCDA, com painel administrativo completo para gest
 
 ## Stack
 
-| Camada | Tecnologias |
-|---|---|
-| Frontend | React 19, TypeScript |
-| Framework | TanStack Start (SSR) |
-| Routing | TanStack Router |
-| Data fetching | TanStack Query |
-| UI | Radix UI, shadcn/ui, TailwindCSS 4 |
-| Backend | Supabase (Database, Auth, Storage) |
-| Validação | Zod |
-| Deploy | Cloudflare Workers |
+| Camada        | Tecnologias                        |
+| ------------- | ---------------------------------- |
+| Frontend      | React 19, TypeScript               |
+| Framework     | TanStack Start (SSR)               |
+| Routing       | TanStack Router                    |
+| Data fetching | TanStack Query                     |
+| UI            | Radix UI, shadcn/ui, TailwindCSS 4 |
+| Backend       | Supabase (Database, Auth, Storage) |
+| Validação     | Zod                                |
+| Deploy        | Cloudflare Workers                 |
 
 ---
 
@@ -34,6 +34,7 @@ Site institucional oficial da FCDA, com painel administrativo completo para gest
 ## Funcionalidades
 
 ### Site público
+
 - Home com banner configurável via painel
 - Notícias e comunicados
 - Calendário de eventos e competições
@@ -42,6 +43,7 @@ Site institucional oficial da FCDA, com painel administrativo completo para gest
 - Formulário de contato
 
 ### Painel administrativo
+
 - Autenticação com controle de acesso por roles (admin, editor)
 - CRUD completo de notícias, eventos, modalidades, categorias e diretoria
 - Upload de PDFs por evento (23 tipos: resultados, balizamentos, regulamentos, rankings, etc.)
@@ -73,6 +75,7 @@ banner_config       → configuração do banner da home
 ## Como rodar localmente
 
 ### Pré-requisitos
+
 - Node.js 18+ ou Bun
 - Conta no Supabase
 
@@ -139,4 +142,4 @@ secretaria@fcda.org.br · [fcda.org.br](https://www.fcda.org.br)
 
 ---
 
-*Desenvolvido por [Marcos Monteiro](https://github.com/mmonteirin)*
+_Desenvolvido por [Marcos Monteiro](https://github.com/mmonteirin)_

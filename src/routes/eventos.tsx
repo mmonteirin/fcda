@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { SiteLayout } from "@/components/site/SiteLayout";
+import { SiteLayout } from "@/components/layout/SiteLayout";
 import { eventosQuery, eventosPdfsQuery, type Evento, type EventoPdf } from "@/lib/site-queries";
 import { Calendar, MapPin, FileText, Download, ExternalLink, Filter } from "lucide-react";
 import { useState } from "react";
@@ -72,6 +72,16 @@ function Eventos() {
   const [anoFilter, setAnoFilter] = useState<number | undefined>(undefined);
   const eventos = useSuspenseQuery(eventosQuery(anoFilter)).data;
   const pdfs = useSuspenseQuery(eventosPdfsQuery).data;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const proximosEventos = eventos
+    .filter((evento) => evento.data_inicio && new Date(evento.data_inicio) >= hoje)
+    .slice(0, 3);
+  const resultados = pdfs.filter((pdf) =>
+    ["resultados", "resultados_gerais", "pontuacao", "eficiencia", "recordes", "ranking"].includes(
+      pdf.tipo,
+    ),
+  );
 
   // Get unique years from events
   const anos = Array.from(
@@ -101,7 +111,87 @@ function Eventos() {
         </div>
       </section>
 
-      <section className="py-24">
+      <nav className="border-b border-border bg-card" aria-label="Seções de eventos">
+        <div className="mx-auto flex max-w-7xl gap-5 overflow-x-auto px-6 py-4 text-sm font-semibold text-muted-foreground">
+          <a href="#calendario" className="whitespace-nowrap hover:text-primary">
+            Calendário
+          </a>
+          <a href="#proximos-eventos" className="whitespace-nowrap hover:text-primary">
+            Próximos eventos
+          </a>
+          <a href="#resultados" className="whitespace-nowrap hover:text-primary">
+            Resultados
+          </a>
+          <a href="#fotos" className="whitespace-nowrap hover:text-primary">
+            Fotos
+          </a>
+          <a href="#documentos" className="whitespace-nowrap hover:text-primary">
+            Documentos
+          </a>
+        </div>
+      </nav>
+
+      <section id="proximos-eventos" className="scroll-mt-32 py-16 bg-secondary/35">
+        <div className="mx-auto max-w-7xl px-6">
+          <h2 className="text-3xl font-bold text-deep">Próximos eventos</h2>
+          {proximosEventos.length === 0 ? (
+            <p className="mt-4 text-muted-foreground">Nenhum evento futuro cadastrado.</p>
+          ) : (
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              {proximosEventos.map((evento) => (
+                <div
+                  key={evento.id}
+                  className="rounded-2xl border border-border bg-card p-5 shadow-card"
+                >
+                  <p className="text-sm font-bold text-primary">{evento.data_texto}</p>
+                  <h3 className="mt-2 text-lg font-bold text-deep">{evento.nome}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{evento.local}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section id="resultados" className="scroll-mt-32 py-16">
+        <div className="mx-auto max-w-7xl px-6">
+          <h2 className="text-3xl font-bold text-deep">Resultados</h2>
+          <p className="mt-2 text-muted-foreground">
+            Resultados, rankings, recordes e documentos técnicos publicados.
+          </p>
+          {resultados.length === 0 ? (
+            <p className="mt-6 text-muted-foreground">Nenhum resultado publicado ainda.</p>
+          ) : (
+            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {resultados.map((pdf) => (
+                <a
+                  key={pdf.id}
+                  href={pdf.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-xl border border-border bg-card p-4 font-semibold text-deep hover:border-primary"
+                >
+                  {getTipoLabel(pdf.tipo)}
+                  <span className="mt-1 block text-sm font-normal text-muted-foreground">
+                    {pdf.nome_arquivo}
+                  </span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section id="fotos" className="scroll-mt-32 py-16 bg-secondary/35">
+        <div className="mx-auto max-w-7xl px-6">
+          <h2 className="text-3xl font-bold text-deep">Fotos</h2>
+          <p className="mt-3 text-muted-foreground">
+            A galeria oficial das competições será publicada nesta área.
+          </p>
+        </div>
+      </section>
+
+      <section id="calendario" className="scroll-mt-32 py-24">
         <div className="mx-auto max-w-7xl px-6">
           {anos.length > 0 && (
             <div className="mb-8 flex items-center gap-3">
@@ -154,7 +244,10 @@ function Eventos() {
                       </div>
 
                       {eventoPdfs.length > 0 && (
-                        <div className="mt-6 pt-6 border-t border-border">
+                        <div
+                          id="documentos"
+                          className="mt-6 pt-6 border-t border-border scroll-mt-32"
+                        >
                           <h3 className="text-sm font-semibold text-deep mb-3 flex items-center gap-2">
                             <FileText className="h-4 w-4" /> Documentos disponíveis
                           </h3>
