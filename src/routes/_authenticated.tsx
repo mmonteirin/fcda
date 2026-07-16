@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   UserCircle,
   Mail,
+  Trophy,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -80,6 +81,8 @@ function AuthenticatedLayout() {
     { to: "/admin/noticias", label: "Notícias", icon: Newspaper },
     { to: "/admin/eventos", label: "Eventos", icon: Calendar },
     { to: "/admin/eventos-pdfs", label: "PDFs Eventos", icon: Newspaper },
+    { to: "/admin/recordes", label: "Recordes", icon: Trophy },
+    { to: "/admin/rankings", label: "Rankings", icon: Trophy },
     { to: "/admin/filiacoes", label: "Inscrições", icon: Users },
     { to: "/admin/mensagens", label: "Mensagens", icon: Mail },
     { to: "/admin/transparencia", label: "Transparência", icon: Newspaper },

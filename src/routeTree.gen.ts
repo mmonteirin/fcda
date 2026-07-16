@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TransparenciaRouteImport } from './routes/transparencia'
 import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as RecordesRouteImport } from './routes/recordes'
+import { Route as RankingsRouteImport } from './routes/rankings'
 import { Route as NoticiasRouteImport } from './routes/noticias'
 import { Route as ModalidadesRouteImport } from './routes/modalidades'
 import { Route as LoginRouteImport } from './routes/login'
@@ -25,6 +27,8 @@ import { Route as NoticiasIdRouteImport } from './routes/noticias.$id'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin/usuarios'
 import { Route as AuthenticatedAdminTransparenciaRouteImport } from './routes/_authenticated/admin/transparencia'
+import { Route as AuthenticatedAdminRecordesRouteImport } from './routes/_authenticated/admin/recordes'
+import { Route as AuthenticatedAdminRankingsRouteImport } from './routes/_authenticated/admin/rankings'
 import { Route as AuthenticatedAdminPerfilRouteImport } from './routes/_authenticated/admin/perfil'
 import { Route as AuthenticatedAdminNoticiasRouteImport } from './routes/_authenticated/admin/noticias'
 import { Route as AuthenticatedAdminModalidadesRouteImport } from './routes/_authenticated/admin/modalidades'
@@ -49,6 +53,16 @@ const SobreRoute = SobreRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecordesRoute = RecordesRouteImport.update({
+  id: '/recordes',
+  path: '/recordes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RankingsRoute = RankingsRouteImport.update({
+  id: '/rankings',
+  path: '/rankings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NoticiasRoute = NoticiasRouteImport.update({
@@ -115,6 +129,18 @@ const AuthenticatedAdminTransparenciaRoute =
   AuthenticatedAdminTransparenciaRouteImport.update({
     id: '/admin/transparencia',
     path: '/admin/transparencia',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminRecordesRoute =
+  AuthenticatedAdminRecordesRouteImport.update({
+    id: '/admin/recordes',
+    path: '/admin/recordes',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminRankingsRoute =
+  AuthenticatedAdminRankingsRouteImport.update({
+    id: '/admin/rankings',
+    path: '/admin/rankings',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAdminPerfilRoute =
@@ -187,6 +213,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/noticias': typeof NoticiasRouteWithChildren
+  '/rankings': typeof RankingsRoute
+  '/recordes': typeof RecordesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sobre': typeof SobreRoute
   '/transparencia': typeof TransparenciaRoute
@@ -201,6 +229,8 @@ export interface FileRoutesByFullPath {
   '/admin/modalidades': typeof AuthenticatedAdminModalidadesRoute
   '/admin/noticias': typeof AuthenticatedAdminNoticiasRoute
   '/admin/perfil': typeof AuthenticatedAdminPerfilRoute
+  '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
+  '/admin/recordes': typeof AuthenticatedAdminRecordesRoute
   '/admin/transparencia': typeof AuthenticatedAdminTransparenciaRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -214,6 +244,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/noticias': typeof NoticiasRouteWithChildren
+  '/rankings': typeof RankingsRoute
+  '/recordes': typeof RecordesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sobre': typeof SobreRoute
   '/transparencia': typeof TransparenciaRoute
@@ -228,6 +260,8 @@ export interface FileRoutesByTo {
   '/admin/modalidades': typeof AuthenticatedAdminModalidadesRoute
   '/admin/noticias': typeof AuthenticatedAdminNoticiasRoute
   '/admin/perfil': typeof AuthenticatedAdminPerfilRoute
+  '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
+  '/admin/recordes': typeof AuthenticatedAdminRecordesRoute
   '/admin/transparencia': typeof AuthenticatedAdminTransparenciaRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -243,6 +277,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/noticias': typeof NoticiasRouteWithChildren
+  '/rankings': typeof RankingsRoute
+  '/recordes': typeof RecordesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sobre': typeof SobreRoute
   '/transparencia': typeof TransparenciaRoute
@@ -257,6 +293,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/modalidades': typeof AuthenticatedAdminModalidadesRoute
   '/_authenticated/admin/noticias': typeof AuthenticatedAdminNoticiasRoute
   '/_authenticated/admin/perfil': typeof AuthenticatedAdminPerfilRoute
+  '/_authenticated/admin/rankings': typeof AuthenticatedAdminRankingsRoute
+  '/_authenticated/admin/recordes': typeof AuthenticatedAdminRecordesRoute
   '/_authenticated/admin/transparencia': typeof AuthenticatedAdminTransparenciaRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -272,6 +310,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/modalidades'
     | '/noticias'
+    | '/rankings'
+    | '/recordes'
     | '/reset-password'
     | '/sobre'
     | '/transparencia'
@@ -286,6 +326,8 @@ export interface FileRouteTypes {
     | '/admin/modalidades'
     | '/admin/noticias'
     | '/admin/perfil'
+    | '/admin/rankings'
+    | '/admin/recordes'
     | '/admin/transparencia'
     | '/admin/usuarios'
     | '/admin/'
@@ -299,6 +341,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/modalidades'
     | '/noticias'
+    | '/rankings'
+    | '/recordes'
     | '/reset-password'
     | '/sobre'
     | '/transparencia'
@@ -313,6 +357,8 @@ export interface FileRouteTypes {
     | '/admin/modalidades'
     | '/admin/noticias'
     | '/admin/perfil'
+    | '/admin/rankings'
+    | '/admin/recordes'
     | '/admin/transparencia'
     | '/admin/usuarios'
     | '/admin'
@@ -327,6 +373,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/modalidades'
     | '/noticias'
+    | '/rankings'
+    | '/recordes'
     | '/reset-password'
     | '/sobre'
     | '/transparencia'
@@ -341,6 +389,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/modalidades'
     | '/_authenticated/admin/noticias'
     | '/_authenticated/admin/perfil'
+    | '/_authenticated/admin/rankings'
+    | '/_authenticated/admin/recordes'
     | '/_authenticated/admin/transparencia'
     | '/_authenticated/admin/usuarios'
     | '/_authenticated/admin/'
@@ -356,6 +406,8 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ModalidadesRoute: typeof ModalidadesRoute
   NoticiasRoute: typeof NoticiasRouteWithChildren
+  RankingsRoute: typeof RankingsRoute
+  RecordesRoute: typeof RecordesRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SobreRoute: typeof SobreRoute
   TransparenciaRoute: typeof TransparenciaRoute
@@ -382,6 +434,20 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recordes': {
+      id: '/recordes'
+      path: '/recordes'
+      fullPath: '/recordes'
+      preLoaderRoute: typeof RecordesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rankings': {
+      id: '/rankings'
+      path: '/rankings'
+      fullPath: '/rankings'
+      preLoaderRoute: typeof RankingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/noticias': {
@@ -475,6 +541,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTransparenciaRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/recordes': {
+      id: '/_authenticated/admin/recordes'
+      path: '/admin/recordes'
+      fullPath: '/admin/recordes'
+      preLoaderRoute: typeof AuthenticatedAdminRecordesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/rankings': {
+      id: '/_authenticated/admin/rankings'
+      path: '/admin/rankings'
+      fullPath: '/admin/rankings'
+      preLoaderRoute: typeof AuthenticatedAdminRankingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/perfil': {
       id: '/_authenticated/admin/perfil'
       path: '/admin/perfil'
@@ -559,6 +639,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminModalidadesRoute: typeof AuthenticatedAdminModalidadesRoute
   AuthenticatedAdminNoticiasRoute: typeof AuthenticatedAdminNoticiasRoute
   AuthenticatedAdminPerfilRoute: typeof AuthenticatedAdminPerfilRoute
+  AuthenticatedAdminRankingsRoute: typeof AuthenticatedAdminRankingsRoute
+  AuthenticatedAdminRecordesRoute: typeof AuthenticatedAdminRecordesRoute
   AuthenticatedAdminTransparenciaRoute: typeof AuthenticatedAdminTransparenciaRoute
   AuthenticatedAdminUsuariosRoute: typeof AuthenticatedAdminUsuariosRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -576,6 +658,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminModalidadesRoute: AuthenticatedAdminModalidadesRoute,
   AuthenticatedAdminNoticiasRoute: AuthenticatedAdminNoticiasRoute,
   AuthenticatedAdminPerfilRoute: AuthenticatedAdminPerfilRoute,
+  AuthenticatedAdminRankingsRoute: AuthenticatedAdminRankingsRoute,
+  AuthenticatedAdminRecordesRoute: AuthenticatedAdminRecordesRoute,
   AuthenticatedAdminTransparenciaRoute: AuthenticatedAdminTransparenciaRoute,
   AuthenticatedAdminUsuariosRoute: AuthenticatedAdminUsuariosRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
@@ -607,6 +691,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ModalidadesRoute: ModalidadesRoute,
   NoticiasRoute: NoticiasRouteWithChildren,
+  RankingsRoute: RankingsRoute,
+  RecordesRoute: RecordesRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SobreRoute: SobreRoute,
   TransparenciaRoute: TransparenciaRoute,

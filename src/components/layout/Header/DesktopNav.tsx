@@ -13,13 +13,10 @@ const modalidades = [
 ] as const;
 
 const competicoes = [
-  "Calendário",
-  "Resultados",
-  "Ranking",
-  "Recordes",
-  "Regulamentos",
-  "Start Lists",
-  "Fotos",
+  { label: "Calendário", to: "/eventos" },
+  { label: "Ranking", to: "/rankings" },
+  { label: "Recordes", to: "/recordes" },
+  { label: "Fotos", to: "/eventos" },
 ] as const;
 
 type MegaMenuName = "modalidades" | "competicoes";
@@ -117,15 +114,15 @@ export function DesktopNav() {
           onClick={() => setOpenMenu(openMenu === "competicoes" ? null : "competicoes")}
         />
         {openMenu === "competicoes" && (
-          <div className="absolute left-0 top-full z-50 mt-3 w-60 rounded-2xl border border-border/80 bg-card p-3 shadow-elegant">
+          <div className="absolute left-0 top-full z-50 mt-3 w-56 rounded-2xl border border-border/80 bg-card p-3 shadow-elegant">
             <div className="space-y-1">
               {competicoes.map((item) => (
                 <Link
-                  key={item}
-                  to="/eventos"
+                  key={item.label}
+                  to={item.to}
                   className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-deep transition-colors hover:bg-secondary"
                 >
-                  {item}
+                  {item.label}
                 </Link>
               ))}
             </div>
