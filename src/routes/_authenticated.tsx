@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/use-auth";
 import {
   Newspaper,
@@ -9,6 +9,10 @@ import {
   LogOut,
   ExternalLink,
   UserCog,
+  ChevronDown,
+  LayoutDashboard,
+  UserCircle,
+  Mail,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -16,9 +20,22 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
-  const { loading, session, isEditor, signOut, user } = useAuth();
+  const { loading, session, isEditor, isAdmin, signOut, user } = useAuth();
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const displayName =
+    user?.user_metadata?.nome ??
+    user?.user_metadata?.full_name ??
+    user?.email?.split("@")[0] ??
+    "Usuário";
+  const roleLabel = isAdmin ? "Administrador" : "Editor";
+  const initials = displayName
+    .split(" ")
+    .map((part: string) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   useEffect(() => {
     if (!loading && !session) {
@@ -63,6 +80,9 @@ function AuthenticatedLayout() {
     { to: "/admin/noticias", label: "Notícias", icon: Newspaper },
     { to: "/admin/eventos", label: "Eventos", icon: Calendar },
     { to: "/admin/eventos-pdfs", label: "PDFs Eventos", icon: Newspaper },
+    { to: "/admin/filiacoes", label: "Inscrições", icon: Users },
+    { to: "/admin/mensagens", label: "Mensagens", icon: Mail },
+    { to: "/admin/transparencia", label: "Transparência", icon: Newspaper },
     { to: "/admin/categorias-modalidades", label: "Categorias", icon: WavesIcon },
     { to: "/admin/modalidades", label: "Modalidades", icon: WavesIcon },
     { to: "/admin/diretores", label: "Diretoria", icon: Users },
@@ -88,17 +108,50 @@ function AuthenticatedLayout() {
             <Link to="/" className="text-muted-foreground hover:text-deep">
               Ver site
             </Link>
-            <span className="text-muted-foreground hidden sm:inline">·</span>
-            <span className="text-muted-foreground hidden sm:inline">{user?.email}</span>
-            <button
-              onClick={async () => {
-                await signOut();
-                navigate({ to: "/login", replace: true });
-              }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 font-semibold hover:bg-secondary"
-            >
-              <LogOut className="h-3.5 w-3.5" /> Sair
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-secondary"
+                aria-expanded={userMenuOpen}
+              >
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                  {initials}
+                </span>
+                <span className="hidden sm:block">
+                  <span className="block text-sm font-bold text-deep">{displayName}</span>
+                  <span className="block text-xs text-muted-foreground">{roleLabel}</span>
+                </span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </button>
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-2 w-52 rounded-xl border border-border bg-card p-2 shadow-elegant">
+                  <Link
+                    to="/admin"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-secondary"
+                  >
+                    <LayoutDashboard className="h-4 w-4" /> Painel
+                  </Link>
+                  <Link
+                    to="/admin/perfil"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-secondary"
+                  >
+                    <UserCircle className="h-4 w-4" /> Perfil
+                  </Link>
+                  <div className="my-2 border-t border-border" />
+                  <button
+                    onClick={async () => {
+                      await signOut();
+                      navigate({ to: "/login", replace: true });
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-destructive hover:bg-destructive/10"
+                  >
+                    <LogOut className="h-4 w-4" /> Sair
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>

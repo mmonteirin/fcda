@@ -9,6 +9,9 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run build",
     "format": "prettier --write .",
     "deploy": "bun run build && wrangler deploy"
   },

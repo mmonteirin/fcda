@@ -49,7 +49,7 @@ export type Diretor = {
 
 export type TransparenciaDocumento = {
   id: string;
-  tipo: "boletim" | "edital" | "prestacao_contas";
+  tipo: "boletim" | "edital" | "prestacao_contas" | "regulamento" | "ata" | "relatorio";
   titulo: string;
   descricao: string | null;
   arquivo_url: string;
@@ -103,11 +103,16 @@ export const noticiasQuery = (onlyPublished = true) =>
     },
   });
 
-export const noticiaByIdQuery = (id: string) =>
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export const noticiaByIdentifierQuery = (identifier: string) =>
   queryOptions({
-    queryKey: ["noticia", id],
+    queryKey: ["noticia", identifier],
     queryFn: async (): Promise<Noticia | null> => {
-      const { data, error } = await supabase.from("noticias").select("*").eq("id", id).single();
+      const query = supabase.from("noticias").select("*");
+      const { data, error } = await (
+        uuidPattern.test(identifier) ? query.eq("id", identifier) : query.eq("slug", identifier)
+      ).single();
       if (error) {
         if (error.code === "PGRST116") return null; // Not found
         throw error;

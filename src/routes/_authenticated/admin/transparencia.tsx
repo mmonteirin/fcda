@@ -169,9 +169,12 @@ function AdminTransparencia() {
                 }
                 required
               >
-                <option value="boletim">Boletim</option>
-                <option value="edital">Edital de Convocação</option>
+                <option value="boletim">Documentos</option>
                 <option value="prestacao_contas">Prestação de Contas</option>
+                <option value="regulamento">Regulamentos</option>
+                <option value="ata">Atas</option>
+                <option value="edital">Editais</option>
+                <option value="relatorio">Relatórios</option>
               </select>
             </Field>
             <Field label="Título">

@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { SiteLayout } from "@/components/site/SiteLayout";
+import { SiteLayout } from "@/components/layout/SiteLayout";
 import { transparenciaQuery, type TransparenciaDocumento } from "@/lib/site-queries";
 import { getTipoLabel, TIPOS } from "@/lib/transparencia-utils";
-import { FileText, Calendar, Download, Filter } from "lucide-react";
+import { FileText, Calendar, Download, Filter, Landmark } from "lucide-react";
 import { useState, useMemo } from "react";
 
 export const Route = createFileRoute("/transparencia")({
@@ -62,14 +62,32 @@ function Transparencia() {
           </div>
           <h1 className="mt-4 text-5xl md:text-6xl font-bold">Painel da Transparência</h1>
           <p className="mt-6 text-lg text-primary-foreground/80 max-w-2xl">
-            Acesso a boletins, editais de convocações e prestação de contas da Federação Cearense de
-            Desportos Aquáticos.
+            Documentos oficiais, prestação de contas, regulamentos, atas, editais e relatórios da
+            Federação Cearense de Desportos Aquáticos.
           </p>
         </div>
       </section>
 
       <section className="py-24">
         <div className="mx-auto max-w-7xl px-6">
+          <div className="mb-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {TIPOS.map((tipo) => (
+              <button
+                key={tipo}
+                onClick={() => setFiltroTipo(tipo)}
+                className={`flex items-center justify-between rounded-xl border p-4 text-left transition-colors ${
+                  filtroTipo === tipo
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/50"
+                }`}
+              >
+                <span className="font-bold text-deep">{getTipoLabel(tipo)}</span>
+                <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-muted-foreground">
+                  {documentosPorTipo[tipo].length}
+                </span>
+              </button>
+            ))}
+          </div>
           {/* Filtros */}
           <div className="flex flex-wrap items-center gap-3 mb-8">
             <Filter className="h-5 w-5 text-muted-foreground" />
@@ -101,7 +119,7 @@ function Transparencia() {
 
           {documentosFiltrados.length === 0 ? (
             <div className="text-center py-16">
-              <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <Landmark className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
               <p className="text-muted-foreground text-lg">Nenhum documento encontrado.</p>
             </div>
           ) : (

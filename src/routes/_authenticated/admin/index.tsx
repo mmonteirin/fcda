@@ -52,7 +52,7 @@ function AdminIndex() {
 
   const cards = [
     { to: "/admin/noticias", label: "Notícias", count: noticias.length, icon: Newspaper },
-    { to: "/admin/eventos", label: "Eventos", count: eventos.length, icon: Calendar },
+    { to: "/admin/eventos", label: "Competições", count: eventos.length, icon: Calendar },
     { to: "/admin/modalidades", label: "Modalidades", count: modalidades.length, icon: Waves },
     { to: "/admin/diretores", label: "Diretoria", count: diretores.length, icon: Users },
     { to: "/admin/usuarios", label: "Usuários", count: users.length, icon: UserCog },
@@ -65,14 +65,14 @@ function AdminIndex() {
     },
     {
       to: "/admin/filiacoes",
-      label: "Filiações",
+      label: "Inscrições",
       count: pendentesCount,
       icon: Building2,
       highlight: pendentesCount > 0,
     },
     {
       to: "/admin/transparencia",
-      label: "Transparência",
+      label: "Documentos",
       count: transparencia.length,
       icon: FileText,
     },
@@ -80,9 +80,9 @@ function AdminIndex() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-deep">Visão geral</h1>
+      <h1 className="text-3xl font-bold text-deep">Dashboard FCDA</h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Bem-vindo ao painel. Selecione uma seção para gerenciar o conteúdo do site.
+        Acompanhe a gestão de competições, inscrições, documentos e comunicação institucional.
       </p>
       <div className="mt-8 grid sm:grid-cols-2 gap-4">
         {cards.map((c) => (
@@ -108,6 +108,23 @@ function AdminIndex() {
           </Link>
         ))}
       </div>
+      <section className="mt-10">
+        <h2 className="text-lg font-bold text-deep">Próximos módulos</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Áreas previstas para a evolução do sistema esportivo.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {["Atletas", "Clubes", "Financeiro", "Relatórios"].map((modulo) => (
+            <div
+              key={modulo}
+              className="rounded-xl border border-dashed border-border bg-card/60 p-4"
+            >
+              <p className="font-semibold text-deep">{modulo}</p>
+              <p className="mt-1 text-xs text-muted-foreground">Em planejamento</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

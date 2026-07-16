@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { SiteLayout } from "@/components/site/SiteLayout";
+import { SiteLayout } from "@/components/layout/SiteLayout";
 import { modalidadesQuery, noticiasQuery, eventosQuery, modalidadeImg } from "@/lib/site-queries";
 import { ArrowRight, Calendar, Trophy, Users, Waves } from "lucide-react";
 import hero from "@/assets/hero-swimmer.jpg";
@@ -240,7 +240,7 @@ function Home() {
                 <Link
                   key={n.id}
                   to="/noticias/$id"
-                  params={{ id: n.id }}
+                  params={{ id: n.slug }}
                   className="group rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card hover:shadow-elegant transition-all hover:-translate-y-1"
                 >
                   <div className="aspect-[4/3] bg-emerald-gradient relative overflow-hidden">

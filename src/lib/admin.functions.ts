@@ -338,7 +338,7 @@ export const uploadImage = createServerFn({ method: "POST" })
 // ============ PAINEL DA TRANSPARÊNCIA ============
 const transparenciaSchema = z.object({
   id: z.string().uuid().optional(),
-  tipo: z.enum(["boletim", "edital", "prestacao_contas"]),
+  tipo: z.enum(["boletim", "edital", "prestacao_contas", "regulamento", "ata", "relatorio"]),
   titulo: z.string().min(1).max(200),
   descricao: z.string().optional().nullable(),
   arquivo_url: z.string().min(1),

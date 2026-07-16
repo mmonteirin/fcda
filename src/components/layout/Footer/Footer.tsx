@@ -22,7 +22,6 @@ export function Footer() {
             1958. Filiada à Confederação Brasileira de Desportos Aquáticos.
           </p>
         </div>
-
         <div>
           <h4 className="text-xs uppercase tracking-[0.2em] text-gold mb-4">Navegação</h4>
           <ul className="space-y-2 text-sm">
@@ -48,7 +47,6 @@ export function Footer() {
             </li>
           </ul>
         </div>
-
         <div>
           <h4 className="text-xs uppercase tracking-[0.2em] text-gold mb-4">Contato</h4>
           <ul className="space-y-3 text-sm text-primary-foreground/80">
