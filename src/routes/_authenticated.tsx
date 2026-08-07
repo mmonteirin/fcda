@@ -14,6 +14,7 @@ import {
   UserCircle,
   Mail,
   Trophy,
+  Building2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -86,6 +87,7 @@ function AuthenticatedLayout() {
     { to: "/admin/filiacoes", label: "Inscrições", icon: Users },
     { to: "/admin/mensagens", label: "Mensagens", icon: Mail },
     { to: "/admin/transparencia", label: "Transparência", icon: Newspaper },
+    { to: "/admin/parceiros", label: "Parceiros", icon: Building2 },
     { to: "/admin/categorias-modalidades", label: "Categorias", icon: WavesIcon },
     { to: "/admin/modalidades", label: "Modalidades", icon: WavesIcon },
     { to: "/admin/diretores", label: "Diretoria", icon: Users },

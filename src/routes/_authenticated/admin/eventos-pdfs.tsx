@@ -7,6 +7,7 @@ import { uploadPdf } from "@/lib/admin.functions";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
 import { Upload, X, FileText, Download, Plus } from "lucide-react";
+import { asDynamicSupabase } from "@/lib/supabase-helpers";
 
 export const Route = createFileRoute("/_authenticated/admin/eventos-pdfs")({
   loader: ({ context }) =>
@@ -92,8 +93,8 @@ function AdminEventosPdfs() {
   async function handleDeletePdf(id: string) {
     if (!confirm("Tem certeza que deseja excluir este PDF?")) return;
     const { supabase } = await import("@/integrations/supabase/client");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("eventos_pdfs").delete().eq("id", id);
+    const sb = asDynamicSupabase(supabase);
+    const { error } = await sb.from("eventos_pdfs").delete().eq("id", id);
     if (error) {
       setErr(error.message);
       return;

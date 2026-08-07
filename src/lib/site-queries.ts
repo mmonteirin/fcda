@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { asDynamicSupabase } from "./supabase-helpers";
 
 export type Modalidade = {
   id: string;
@@ -68,8 +69,8 @@ export type UserWithRoles = {
 export const modalidadesQuery = queryOptions({
   queryKey: ["modalidades"],
   queryFn: async (): Promise<Modalidade[]> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const sb = asDynamicSupabase(supabase);
+    const { data, error } = await sb
       .from("modalidades")
       .select("*")
       .order("ordem", { ascending: true });
@@ -81,8 +82,8 @@ export const modalidadesQuery = queryOptions({
 export const categoriasModalidadesQuery = queryOptions({
   queryKey: ["categorias-modalidades"],
   queryFn: async (): Promise<CategoriaModalidade[]> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const sb = asDynamicSupabase(supabase);
+    const { data, error } = await sb
       .from("categorias_modalidades")
       .select("*")
       .order("ordem", { ascending: true });
@@ -154,8 +155,8 @@ export const transparenciaQuery = (onlyPublished = true) =>
   queryOptions({
     queryKey: ["transparencia", onlyPublished],
     queryFn: async (): Promise<TransparenciaDocumento[]> => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let q = (supabase as any)
+      const sb = asDynamicSupabase(supabase);
+      let q = sb
         .from("transparencia_documentos")
         .select("*")
         .order("data_publicacao", { ascending: false });
@@ -208,12 +209,8 @@ export type BannerConfig = {
 export const bannerQuery = queryOptions({
   queryKey: ["banner"],
   queryFn: async (): Promise<BannerConfig> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from("banner_config")
-      .select("*")
-      .eq("id", "default")
-      .single();
+    const sb = asDynamicSupabase(supabase);
+    const { data, error } = await sb.from("banner_config").select("*").eq("id", "default").single();
     if (error && error.code !== "PGRST116") throw error;
     return data ?? { id: "default", texto: "", link: null, ativo: false };
   },
@@ -265,8 +262,8 @@ export type Mensagem = {
 export const eventosPdfsQuery = queryOptions({
   queryKey: ["eventos-pdfs"],
   queryFn: async (): Promise<EventoPdf[]> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const sb = asDynamicSupabase(supabase);
+    const { data, error } = await sb
       .from("eventos_pdfs")
       .select("*")
       .order("data_upload", { ascending: false });
@@ -278,8 +275,8 @@ export const eventosPdfsQuery = queryOptions({
 export const mensagensQuery = queryOptions({
   queryKey: ["mensagens"],
   queryFn: async (): Promise<Mensagem[]> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const sb = asDynamicSupabase(supabase);
+    const { data, error } = await sb
       .from("mensagens")
       .select("id, nome, email, telefone, assunto, mensagem, lido, created_at")
       .order("created_at", { ascending: false });
@@ -315,11 +312,23 @@ export type SolicitacaoFiliacao = {
   updated_at: string;
 };
 
+export type Parceiro = {
+  id: string;
+  nome: string;
+  logo_url: string | null;
+  site_url: string | null;
+  categoria: "apoio_institucional" | "patrocinio" | "parceria";
+  ordem: number;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export const filiacaoQuery = queryOptions({
   queryKey: ["solicitacoes_filiacao"],
   queryFn: async (): Promise<SolicitacaoFiliacao[]> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const sb = asDynamicSupabase(supabase);
+    const { data, error } = await sb
       .from("solicitacoes_filiacao")
       .select("*")
       .order("created_at", { ascending: false });
@@ -327,6 +336,19 @@ export const filiacaoQuery = queryOptions({
     return data ?? [];
   },
 });
+
+export const parceirosQuery = (onlyActive = true) =>
+  queryOptions({
+    queryKey: ["parceiros", onlyActive],
+    queryFn: async (): Promise<Parceiro[]> => {
+      const sb = asDynamicSupabase(supabase);
+      let query = sb.from("parceiros").select("*").order("ordem", { ascending: true });
+      if (onlyActive) query = query.eq("ativo", true);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
 // Map slug de modalidade para imagem local fallback
 import imgNatacao from "@/assets/mod-natacao.jpg";

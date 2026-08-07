@@ -221,6 +221,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      parceiros: {
+        Row: {
+          id: string;
+          nome: string;
+          logo_url: string | null;
+          site_url: string | null;
+          categoria: "apoio_institucional" | "patrocinio" | "parceria";
+          ordem: number;
+          ativo: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          nome: string;
+          logo_url?: string | null;
+          site_url?: string | null;
+          categoria: "apoio_institucional" | "patrocinio" | "parceria";
+          ordem?: number;
+          ativo?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          nome?: string;
+          logo_url?: string | null;
+          site_url?: string | null;
+          categoria?: "apoio_institucional" | "patrocinio" | "parceria";
+          ordem?: number;
+          ativo?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

@@ -62,20 +62,27 @@ export function Footer() {
           </ul>
           <div className="mt-5 flex gap-3">
             <a
-              href="#"
+              href="https://www.instagram.com/fcdaquaticos/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="h-9 w-9 grid place-items-center rounded-full border border-primary-foreground/20 hover:bg-gold hover:text-deep hover:border-gold transition"
+              aria-label="Instagram"
             >
               <Instagram className="h-4 w-4" />
             </a>
             <a
-              href="#"
+              href="https://www.facebook.com/fcdaquaticos/?locale=pt_BR"
+              target="_blank"
+              rel="noopener noreferrer"
               className="h-9 w-9 grid place-items-center rounded-full border border-primary-foreground/20 hover:bg-gold hover:text-deep hover:border-gold transition"
+              aria-label="Facebook"
             >
               <Facebook className="h-4 w-4" />
             </a>
             <a
               href="#"
-              className="h-9 w-9 grid place-items-center rounded-full border border-primary-foreground/20 hover:bg-gold hover:text-deep hover:border-gold transition"
+              className="h-9 w-9 grid place-items-center rounded-full border border-primary-foreground/20 hover:bg-gold hover:text-deep hover:border-gold transition opacity-50 cursor-not-allowed"
+              aria-label="YouTube (em breve)"
             >
               <Youtube className="h-4 w-4" />
             </a>
@@ -85,8 +92,10 @@ export function Footer() {
       <div className="border-t border-primary-foreground/10">
         <div className="mx-auto max-w-7xl px-6 py-5 text-xs text-primary-foreground/60 flex flex-col md:flex-row justify-between gap-2">
           <span>Federação Cearense de Desportos Aquáticos.</span>
-           <span>
-            © {new Date().getFullYear()} Site desenvolvido e todos os direitos reservados por MMC Sistemas computacionais. </span>
+          <span>
+            © {new Date().getFullYear()} Site desenvolvido e todos os direitos reservados por MMC
+            Sistemas computacionais.{" "}
+          </span>
           <span>CNPJ 07.961.535/0001-78</span>
         </div>
       </div>

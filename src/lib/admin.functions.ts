@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/lib/use-auth";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
+import { asDynamicSupabase } from "./supabase-helpers";
 
 type SupabaseClient = ReturnType<typeof createClient<Database>>;
 
@@ -15,7 +16,7 @@ export function useAdminContext() {
   return { supabase: supabaseClient, userId: user.id };
 }
 
-async function assertEditor(supabase: SupabaseClient, userId: string) {
+export async function assertEditor(supabase: SupabaseClient, userId: string) {
   const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   if (error) throw new Error(error.message);
   const roles = (data ?? []).map((r: { role: string }) => r.role);
@@ -92,8 +93,7 @@ export async function saveEvento(supabase: SupabaseClient, userId: string, data:
   const validated = eventoSchema.parse(data);
   await assertEditor(supabase, userId);
   const { id, ...rest } = validated;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   if (id) {
     const { error } = await sb.from("eventos").update(rest).eq("id", id);
     if (error) throw new Error(error.message);
@@ -128,8 +128,7 @@ export async function saveCategoriaModalidade(
   const validated = categoriaModalidadeSchema.parse(data);
   await assertEditor(supabase, userId);
   const { id, ...rest } = validated;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   if (id) {
     const { error } = await sb.from("categorias_modalidades").update(rest).eq("id", id);
     if (error) throw new Error(error.message);
@@ -146,8 +145,7 @@ export async function deleteCategoriaModalidade(
   id: string,
 ) {
   await assertEditor(supabase, userId);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   const { error } = await sb.from("categorias_modalidades").delete().eq("id", id);
   if (error) throw new Error(error.message);
   return { ok: true };
@@ -172,8 +170,7 @@ export async function saveModalidade(supabase: SupabaseClient, userId: string, d
   const validated = modalidadeSchema.parse(data);
   await assertEditor(supabase, userId);
   const { id, ...rest } = validated;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   if (id) {
     const { error } = await sb.from("modalidades").update(rest).eq("id", id);
     if (error) throw new Error(error.message);
@@ -385,8 +382,7 @@ export async function saveTransparencia(supabase: SupabaseClient, userId: string
   const validated = transparenciaSchema.parse(data);
   await assertEditor(supabase, userId);
   const { id, ...rest } = validated;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   if (id) {
     const { error } = await sb.from("transparencia_documentos").update(rest).eq("id", id);
     if (error) throw new Error(error.message);
@@ -399,8 +395,7 @@ export async function saveTransparencia(supabase: SupabaseClient, userId: string
 
 export async function deleteTransparencia(supabase: SupabaseClient, userId: string, id: string) {
   await assertEditor(supabase, userId);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   const { error } = await sb.from("transparencia_documentos").delete().eq("id", id);
   if (error) throw new Error(error.message);
   return { ok: true };
@@ -414,8 +409,7 @@ const bannerSchema = z.object({
 });
 
 export async function getBanner(supabase: SupabaseClient) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   const { data, error } = await sb.from("banner_config").select("*").eq("id", "default").single();
   if (error && error.code !== "PGRST116") throw error; // PGRST116 = not found
   return data ?? { id: "default", texto: "", link: null, ativo: false };
@@ -424,8 +418,7 @@ export async function getBanner(supabase: SupabaseClient) {
 export async function saveBanner(supabase: SupabaseClient, userId: string, data: unknown) {
   const validated = bannerSchema.parse(data);
   await assertEditor(supabase, userId);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   const { error } = await sb.from("banner_config").upsert({ id: "default", ...validated });
   if (error) throw new Error(error.message);
   return { ok: true };
@@ -518,16 +511,14 @@ export async function sendMensagem(supabase: SupabaseClient, data: unknown) {
 }
 
 export async function markMensagemAsRead(supabase: SupabaseClient, id: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   const { error } = await sb.from("mensagens").update({ lido: true }).eq("id", id);
   if (error) throw new Error(error.message);
   return { ok: true };
 }
 
 export async function deleteMensagem(supabase: SupabaseClient, id: string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   const { error } = await sb.from("mensagens").delete().eq("id", id);
   if (error) throw new Error(error.message);
   return { ok: true };
@@ -557,8 +548,7 @@ const filiacaoSchema = z.object({
 
 export async function sendFiliacao(supabase: SupabaseClient, data: unknown) {
   const validated = filiacaoSchema.parse(data);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   const { error } = await sb.from("solicitacoes_filiacao").insert({
     tipo: validated.tipo,
     razao_social: validated.razaoSocial,
@@ -587,8 +577,7 @@ export async function sendFiliacao(supabase: SupabaseClient, data: unknown) {
 
 export async function aprovarFiliacao(supabase: SupabaseClient, userId: string, id: string) {
   await assertEditor(supabase, userId);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   const { error } = await sb
     .from("solicitacoes_filiacao")
     .update({ status: "aprovado" })
@@ -599,12 +588,45 @@ export async function aprovarFiliacao(supabase: SupabaseClient, userId: string, 
 
 export async function rejeitarFiliacao(supabase: SupabaseClient, userId: string, id: string) {
   await assertEditor(supabase, userId);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  const sb = asDynamicSupabase(supabase);
   const { error } = await sb
     .from("solicitacoes_filiacao")
     .update({ status: "rejeitado" })
     .eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+// Parceiros CRUD
+const parceiroSchema = z.object({
+  id: z.string().optional(),
+  nome: z.string().min(1).max(200),
+  logo_url: z.string().url().nullable().optional(),
+  site_url: z.string().url().nullable().optional(),
+  categoria: z.enum(["apoio_institucional", "patrocinio", "parceria"]),
+  ordem: z.number().int().min(0).default(0),
+  ativo: z.boolean().default(true),
+});
+
+export async function saveParceiro(supabase: SupabaseClient, userId: string, data: unknown) {
+  const validated = parceiroSchema.parse(data);
+  await assertEditor(supabase, userId);
+  const { id, ...rest } = validated;
+  const sb = asDynamicSupabase(supabase);
+  if (id) {
+    const { error } = await sb.from("parceiros").update(rest).eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await sb.from("parceiros").insert(rest);
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true };
+}
+
+export async function deleteParceiro(supabase: SupabaseClient, userId: string, id: string) {
+  await assertEditor(supabase, userId);
+  const sb = asDynamicSupabase(supabase);
+  const { error } = await sb.from("parceiros").delete().eq("id", id);
   if (error) throw new Error(error.message);
   return { ok: true };
 }

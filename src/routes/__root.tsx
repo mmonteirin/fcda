@@ -9,8 +9,9 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider } from "@/lib/auth.tsx";
 import logoFCDA from "@/assets/logoFCDA.png";
+import "@/lib/sentry";
 
 function NotFoundComponent() {
   return (
@@ -47,10 +48,6 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
-        {/* Mensagem de diagnóstico — remover após resolver */}
-        <pre className="mt-4 rounded-lg bg-destructive/10 p-3 text-left text-xs text-destructive break-all whitespace-pre-wrap">
-          {error?.message ?? String(error)}
-        </pre>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {

@@ -16,8 +16,8 @@ export const getRouter = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dehydrate: (): any => ({
       // Queries only — mutations are not needed for SSR state transfer.
-      // The `any` return type bypasses DehydratedState’s mutationKey: unknown[]
-      // which cannot satisfy TanStack Router’s Serializable constraint.
+      // The `any` return type bypasses DehydratedState's mutationKey: unknown[]
+      // which cannot satisfy TanStack Router's Serializable constraint.
       queryClientState: dehydrate(queryClient, {
         shouldDehydrateMutation: () => false,
       }),

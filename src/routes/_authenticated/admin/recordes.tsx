@@ -42,23 +42,50 @@ export const Route = createFileRoute("/_authenticated/admin/recordes")({
   component: AdminRecordes,
 });
 function AdminRecordes() {
-  const [itens, setItens] = useState<any[]>([]);
-  const [form, setForm] = useState<any>(vazio);
+  const [itens, setItens] = useState<Record<string, unknown>[]>([]);
+  const [form, setForm] = useState<Record<string, unknown>>(vazio);
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const load = () => {
-    (supabase as any)
+    (
+      supabase as unknown as {
+        from: (table: string) => {
+          select: (columns: string) => {
+            order: (column: string) => {
+              then: <T>(resolve: (value: T) => unknown) => Promise<T>;
+            };
+          };
+        };
+      }
+    )
       .from("recordes")
       .select("*")
       .order("prova")
-      .then(({ data }: any) => setItens(data ?? []));
+      .then(({ data }: { data: unknown }) => setItens((data as Record<string, unknown>[]) ?? []));
   };
   useEffect(load, []);
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    const db = supabase as any;
-    const { error } = form.id
-      ? await db.from("recordes").update(form).eq("id", form.id)
+    const db = supabase as unknown as {
+      from: (table: string) => {
+        insert: (data: Record<string, unknown>) => {
+          then: <T>(resolve: (value: T) => unknown) => Promise<T>;
+        };
+        update: (data: Record<string, unknown>) => {
+          eq: (
+            column: string,
+            value: unknown,
+          ) => {
+            then: <T>(resolve: (value: T) => unknown) => Promise<T>;
+          };
+        };
+      };
+    };
+    const { error } = (form.id as string)
+      ? await db
+          .from("recordes")
+          .update(form)
+          .eq("id", form.id as string)
       : await db.from("recordes").insert(form);
     if (!error) {
       setOpen(false);
