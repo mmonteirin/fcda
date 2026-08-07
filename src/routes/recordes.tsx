@@ -20,12 +20,27 @@ function Recordes() {
   const [piscina, setPiscina] = useState("olimpica");
   const [sexo, setSexo] = useState("masculino");
   useEffect(() => {
-    (supabase as any)
+    (
+      supabase as unknown as {
+        from: (table: string) => {
+          select: (columns: string) => {
+            eq: (
+              column: string,
+              value: unknown,
+            ) => {
+              order: (column: string) => {
+                then: <T>(resolve: (value: T) => unknown) => Promise<T>;
+              };
+            };
+          };
+        };
+      }
+    )
       .from("recordes")
       .select("*")
       .eq("publicado", true)
       .order("prova")
-      .then(({ data }: any) => setRecordes(data ?? []));
+      .then(({ data }: { data: unknown }) => setRecordes((data as Recorde[]) ?? []));
   }, []);
   const lista = useMemo(
     () => recordes.filter((r) => r.piscina === piscina && r.sexo === sexo),

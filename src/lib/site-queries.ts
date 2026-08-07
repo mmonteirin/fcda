@@ -210,11 +210,7 @@ export const bannerQuery = queryOptions({
   queryKey: ["banner"],
   queryFn: async (): Promise<BannerConfig> => {
     const sb = asDynamicSupabase(supabase);
-    const { data, error } = await sb
-      .from("banner_config")
-      .select("*")
-      .eq("id", "default")
-      .single();
+    const { data, error } = await sb.from("banner_config").select("*").eq("id", "default").single();
     if (error && error.code !== "PGRST116") throw error;
     return data ?? { id: "default", texto: "", link: null, ativo: false };
   },

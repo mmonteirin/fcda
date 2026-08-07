@@ -31,12 +31,31 @@ function AdminRankings() {
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
-    const db = supabase as any;
+    const db = supabase as unknown as {
+      from: (table: string) => {
+        select: (columns: string) => {
+          order: (
+            column: string,
+            options: { ascending: boolean },
+          ) => {
+            then: <T>(resolve: (value: T) => unknown) => Promise<T>;
+          };
+        };
+      };
+    };
     const [{ data: rankingData }, { data: eventoData }] = await Promise.all([
-      db.from("rankings").select("*").order("ano", { ascending: false }),
-      db.from("eventos").select("id,nome,data_texto").order("data_inicio", { ascending: false }),
+      db
+        .from("rankings")
+        .select("*")
+        .order("ano", { ascending: false })
+        .then((data) => data),
+      db
+        .from("eventos")
+        .select("id,nome,data_texto")
+        .order("data_inicio", { ascending: false })
+        .then((data) => data),
     ]);
-    setRankings(rankingData ?? []);
+    setRankings((rankingData as unknown[]) ?? []);
     setEventos(eventoData ?? []);
   };
   useEffect(() => {
@@ -45,12 +64,28 @@ function AdminRankings() {
   const toggle = (id: string) =>
     setForm((f) => ({
       ...f,
-      eventos: f.eventos.includes(id) ? f.eventos.filter((x) => x !== id) : [...f.eventos, id],
+      eventos: f.eventos.includes(id)
+        ? f.eventos.filter((x: string) => x !== id)
+        : [...f.eventos, id],
     }));
   const save = async (event: React.FormEvent) => {
     event.preventDefault();
     setBusy(true);
-    const db = supabase as any;
+    const db = supabase as unknown as {
+      from: (table: string) => {
+        insert: (data: Record<string, unknown>) => {
+          then: <T>(resolve: (value: T) => unknown) => Promise<T>;
+        };
+        update: (data: Record<string, unknown>) => {
+          eq: (
+            column: string,
+            value: unknown,
+          ) => {
+            then: <T>(resolve: (value: T) => unknown) => Promise<T>;
+          };
+        };
+      };
+    };
     const { data, error } = await db
       .from("rankings")
       .insert({

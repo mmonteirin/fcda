@@ -2,8 +2,23 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { modalidadesQuery, noticiasQuery, eventosQuery, modalidadeImg, parceirosQuery } from "@/lib/site-queries";
-import { ArrowRight, Calendar, Trophy, Users, Waves, Building2, Handshake, Medal } from "lucide-react";
+import {
+  modalidadesQuery,
+  noticiasQuery,
+  eventosQuery,
+  modalidadeImg,
+  parceirosQuery,
+} from "@/lib/site-queries";
+import {
+  ArrowRight,
+  Calendar,
+  Trophy,
+  Users,
+  Waves,
+  Building2,
+  Handshake,
+  Medal,
+} from "lucide-react";
 import hero from "@/assets/hero-swimmer.jpg";
 
 export const Route = createFileRoute("/")({
@@ -328,46 +343,52 @@ function Home() {
             </div>
 
             {/* Apoio Institucional */}
-            {parceiros.filter(p => p.categoria === 'apoio_institucional').length > 0 && (
+            {parceiros.filter((p) => p.categoria === "apoio_institucional").length > 0 && (
               <div className="mb-16">
                 <div className="flex items-center gap-3 mb-8">
                   <Building2 className="h-6 w-6 text-primary" />
                   <h3 className="text-xl font-bold text-deep">Apoio Institucional</h3>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {parceiros.filter(p => p.categoria === 'apoio_institucional').map((parceiro) => (
-                    <ParceiroCard key={parceiro.id} parceiro={parceiro} />
-                  ))}
+                  {parceiros
+                    .filter((p) => p.categoria === "apoio_institucional")
+                    .map((parceiro) => (
+                      <ParceiroCard key={parceiro.id} parceiro={parceiro} />
+                    ))}
                 </div>
               </div>
             )}
 
             {/* Patrocínio */}
-            {parceiros.filter(p => p.categoria === 'patrocinio').length > 0 && (
+            {parceiros.filter((p) => p.categoria === "patrocinio").length > 0 && (
               <div className="mb-16">
                 <div className="flex items-center gap-3 mb-8">
                   <Medal className="h-6 w-6 text-primary" />
                   <h3 className="text-xl font-bold text-deep">Patrocinadores</h3>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {parceiros.filter(p => p.categoria === 'patrocinio').map((parceiro) => (
-                    <ParceiroCard key={parceiro.id} parceiro={parceiro} />
-                  ))}
+                  {parceiros
+                    .filter((p) => p.categoria === "patrocinio")
+                    .map((parceiro) => (
+                      <ParceiroCard key={parceiro.id} parceiro={parceiro} />
+                    ))}
                 </div>
               </div>
             )}
 
             {/* Parcerias */}
-            {parceiros.filter(p => p.categoria === 'parceria').length > 0 && (
+            {parceiros.filter((p) => p.categoria === "parceria").length > 0 && (
               <div>
                 <div className="flex items-center gap-3 mb-8">
                   <Handshake className="h-6 w-6 text-primary" />
                   <h3 className="text-xl font-bold text-deep">Parcerias Estratégicas</h3>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {parceiros.filter(p => p.categoria === 'parceria').map((parceiro) => (
-                    <ParceiroCard key={parceiro.id} parceiro={parceiro} />
-                  ))}
+                  {parceiros
+                    .filter((p) => p.categoria === "parceria")
+                    .map((parceiro) => (
+                      <ParceiroCard key={parceiro.id} parceiro={parceiro} />
+                    ))}
                 </div>
               </div>
             )}
@@ -378,7 +399,7 @@ function Home() {
   );
 }
 
-function ParceiroCard({ parceiro }: { parceiro: any }) {
+function ParceiroCard({ parceiro }: { parceiro: Parceiro }) {
   if (parceiro.site_url) {
     return (
       <a
@@ -414,9 +435,7 @@ function ParceiroCard({ parceiro }: { parceiro: any }) {
         />
       ) : (
         <div className="text-center">
-          <div className="text-sm font-semibold text-deep">
-            {parceiro.nome}
-          </div>
+          <div className="text-sm font-semibold text-deep">{parceiro.nome}</div>
         </div>
       )}
     </div>

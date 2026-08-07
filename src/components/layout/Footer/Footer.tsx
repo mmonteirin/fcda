@@ -92,8 +92,10 @@ export function Footer() {
       <div className="border-t border-primary-foreground/10">
         <div className="mx-auto max-w-7xl px-6 py-5 text-xs text-primary-foreground/60 flex flex-col md:flex-row justify-between gap-2">
           <span>Federação Cearense de Desportos Aquáticos.</span>
-           <span>
-            © {new Date().getFullYear()} Site desenvolvido e todos os direitos reservados por MMC Sistemas computacionais. </span>
+          <span>
+            © {new Date().getFullYear()} Site desenvolvido e todos os direitos reservados por MMC
+            Sistemas computacionais.{" "}
+          </span>
           <span>CNPJ 07.961.535/0001-78</span>
         </div>
       </div>

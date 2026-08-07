@@ -170,11 +170,7 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-xl">
       <TopBar />
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-        <Link 
-          to="/" 
-          className="flex items-center gap-3 group"
-          onClick={closeMenu}
-        >
+        <Link to="/" className="flex items-center gap-3 group" onClick={closeMenu}>
           <img src={logoFCDA} alt="FCDA Logo" className="h-11 w-auto" />
           <div className="leading-tight">
             <div className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -235,21 +231,13 @@ export function Header() {
       >
         <div className="px-6 py-4 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
           {nav.map((item) => (
-            <MobileMenuItem
-              key={item.to}
-              to={item.to}
-              label={item.label}
-              onClick={closeMenu}
-            />
+            <MobileMenuItem key={item.to} to={item.to} label={item.label} onClick={closeMenu} />
           ))}
 
           {/* Mobile Submenu - Modalidades */}
           <div className="border-t border-border/50 mt-2">
-            <MobileMenuItem
-              label="Modalidades"
-              onClick={toggleModalidades}
-            >
-              <ChevronDown 
+            <MobileMenuItem label="Modalidades" onClick={toggleModalidades}>
+              <ChevronDown
                 className={`h-4 w-4 transition-transform ${modalidadesOpen ? "rotate-180" : ""}`}
                 aria-hidden="true"
               />
@@ -264,11 +252,8 @@ export function Header() {
 
           {/* Mobile Submenu - Competições */}
           <div className="border-t border-border/50">
-            <MobileMenuItem
-              label="Competições"
-              onClick={toggleCompeticoes}
-            >
-              <ChevronDown 
+            <MobileMenuItem label="Competições" onClick={toggleCompeticoes}>
+              <ChevronDown
                 className={`h-4 w-4 transition-transform ${competicoesOpen ? "rotate-180" : ""}`}
                 aria-hidden="true"
               />

@@ -42,8 +42,8 @@ function MenuTrigger({
       className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
       {label}
-      <ChevronDown 
-        className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} 
+      <ChevronDown
+        className={`h-3.5 w-3.5 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
         aria-hidden="true"
       />
     </button>
@@ -63,7 +63,7 @@ function MegaMenuContent({
 
   useEffect(() => {
     if (isOpen && menuRef.current) {
-      const firstLink = menuRef.current.querySelector('a') as HTMLElement;
+      const firstLink = menuRef.current.querySelector("a") as HTMLElement;
       firstLink?.focus();
     }
   }, [isOpen, menuRef]);
@@ -72,8 +72,8 @@ function MegaMenuContent({
     <div
       ref={menuRef}
       className={`absolute left-0 top-full z-50 mt-3 rounded-2xl border border-border/80 bg-card p-3 shadow-elegant transition-all duration-200 ${
-        isOpen 
-          ? "opacity-100 translate-y-0 visible" 
+        isOpen
+          ? "opacity-100 translate-y-0 visible"
           : "opacity-0 -translate-y-2 invisible pointer-events-none"
       } ${className}`}
       role="menu"
@@ -110,16 +110,16 @@ export function DesktopNav() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, menu: MegaMenuName) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       setOpenMenu(openMenu === menu ? null : menu);
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setOpenMenu(null);
     }
   };
 
   const handleMenuKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === "Escape") {
       setOpenMenu(null);
     }
   };
@@ -132,20 +132,20 @@ export function DesktopNav() {
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [openMenu]);
 
   // Close menu on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setOpenMenu(null);
       }
     };
 
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
   return (
@@ -166,7 +166,7 @@ export function DesktopNav() {
         A FCDA
       </Link>
 
-      <div 
+      <div
         className="relative"
         onMouseEnter={() => handleMenuEnter("modalidades")}
         onMouseLeave={handleMenuLeave}
@@ -187,7 +187,10 @@ export function DesktopNav() {
                 role="menuitem"
                 tabIndex={-1}
               >
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-secondary text-base" aria-hidden="true">
+                <span
+                  className="grid h-8 w-8 place-items-center rounded-lg bg-secondary text-base"
+                  aria-hidden="true"
+                >
                   {modalidade.icon}
                 </span>
                 {modalidade.label}
@@ -207,7 +210,7 @@ export function DesktopNav() {
         </MegaMenuContent>
       </div>
 
-      <div 
+      <div
         className="relative"
         onMouseEnter={() => handleMenuEnter("competicoes")}
         onMouseLeave={handleMenuLeave}

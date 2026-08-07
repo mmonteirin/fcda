@@ -5,11 +5,18 @@ import { saveParceiro, deleteParceiro, assertEditor } from "@/lib/admin.function
 import { useAuth } from "@/lib/use-auth";
 import { Building2, Handshake, Medal, Plus, ExternalLink, X } from "lucide-react";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
+import { createFileRoute } from "@tanstack/react-router";
 
-// @ts-ignore
+// @ts-expect-error - Route type is complex and expected to have this pattern
 export const Route = createFileRoute("/_authenticated/admin/parceiros")({
-  loader: ({ context }: any) => context.queryClient.ensureQueryData(parceirosQuery(false)),
-  errorComponent: ({ error }: any) => <div className="text-destructive">Erro: {error.message}</div>,
+  loader: ({
+    context,
+  }: {
+    context: { queryClient: { ensureQueryData: (query: unknown) => unknown } };
+  }) => context.queryClient.ensureQueryData(parceirosQuery(false)),
+  errorComponent: ({ error }: { error: { message: string } }) => (
+    <div className="text-destructive">Erro: {error.message}</div>
+  ),
   component: ParceirosAdmin,
 });
 
@@ -17,7 +24,7 @@ function ParceirosAdmin() {
   const { data: parceiros } = useSuspenseQuery(parceirosQuery(false));
   const { user } = useAuth();
   const supabase = supabaseClient;
-  
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingParceiro, setEditingParceiro] = useState<Parceiro | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -71,8 +78,8 @@ function ParceirosAdmin() {
       await assertEditor(supabase, user.id);
       await deleteParceiro(supabase, user.id, id);
       window.location.reload();
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Erro ao excluir parceiro");
     }
   };
 
@@ -81,15 +88,13 @@ function ParceirosAdmin() {
     if (!user) return;
     try {
       await assertEditor(supabase, user.id);
-      const data = editingParceiro 
-        ? { ...formData, id: editingParceiro.id }
-        : formData;
-      
+      const data = editingParceiro ? { ...formData, id: editingParceiro.id } : formData;
+
       await saveParceiro(supabase, user.id, data);
       setModalOpen(false);
       window.location.reload();
-    } catch (e: any) {
-      setErr(e.message);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Erro ao salvar parceiro");
     }
   };
 
@@ -110,11 +115,7 @@ function ParceirosAdmin() {
         </button>
       </div>
 
-      {err && (
-        <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
-          {err}
-        </div>
-      )}
+      {err && <div className="bg-destructive/10 text-destructive p-4 rounded-lg">{err}</div>}
 
       <div className="rounded-lg border border-border bg-card">
         <table className="w-full">
@@ -133,8 +134,8 @@ function ParceirosAdmin() {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
                     {parceiro.logo_url && (
-                      <img 
-                        src={parceiro.logo_url} 
+                      <img
+                        src={parceiro.logo_url}
                         alt={parceiro.nome}
                         className="h-8 w-8 object-contain rounded"
                       />
@@ -142,7 +143,7 @@ function ParceirosAdmin() {
                     <div>
                       <div className="font-medium">{parceiro.nome}</div>
                       {parceiro.site_url && (
-                        <a 
+                        <a
                           href={parceiro.site_url}
                           target="_blank"
                           rel="noopener noreferrer"
@@ -157,20 +158,24 @@ function ParceirosAdmin() {
                 </td>
                 <td className="px-4 py-3">
                   {(() => {
-                    const cat = categoriaOptions.find(c => c.value === parceiro.categoria);
+                    const cat = categoriaOptions.find((c) => c.value === parceiro.categoria);
                     return cat ? (
                       <div className="flex items-center gap-2 text-sm">
                         <cat.icon className="h-4 w-4 text-muted-foreground" />
                         {cat.label}
                       </div>
-                    ) : parceiro.categoria;
+                    ) : (
+                      parceiro.categoria
+                    );
                   })()}
                 </td>
                 <td className="px-4 py-3">{parceiro.ordem}</td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    parceiro.ativo ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      parceiro.ativo ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
                     {parceiro.ativo ? "Ativo" : "Inativo"}
                   </span>
                 </td>
@@ -225,7 +230,13 @@ function ParceirosAdmin() {
                 <label className="block text-sm font-medium mb-1">Categoria *</label>
                 <select
                   value={formData.categoria}
-                  onChange={(e) => setFormData({ ...formData, categoria: e.target.value as any })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      categoria: e.target.value as
+                        "apoio_institucional" | "patrocinio" | "parceria",
+                    })
+                  }
                   className="w-full rounded-md border border-input px-3 py-2 text-sm"
                 >
                   {categoriaOptions.map((cat) => (
@@ -263,7 +274,9 @@ function ParceirosAdmin() {
                 <input
                   type="number"
                   value={formData.ordem}
-                  onChange={(e) => setFormData({ ...formData, ordem: parseInt(e.target.value) || 0 })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ordem: parseInt(e.target.value) || 0 })
+                  }
                   className="w-full rounded-md border border-input px-3 py-2 text-sm"
                   min="0"
                 />
@@ -277,7 +290,9 @@ function ParceirosAdmin() {
                   onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
                   className="rounded border-gray-300"
                 />
-                <label htmlFor="ativo" className="text-sm">Ativo</label>
+                <label htmlFor="ativo" className="text-sm">
+                  Ativo
+                </label>
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
