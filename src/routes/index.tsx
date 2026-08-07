@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { modalidadesQuery, noticiasQuery, eventosQuery, modalidadeImg } from "@/lib/site-queries";
-import { ArrowRight, Calendar, Trophy, Users, Waves } from "lucide-react";
+import { modalidadesQuery, noticiasQuery, eventosQuery, modalidadeImg, parceirosQuery } from "@/lib/site-queries";
+import { ArrowRight, Calendar, Trophy, Users, Waves, Building2, Handshake, Medal } from "lucide-react";
 import hero from "@/assets/hero-swimmer.jpg";
 
 export const Route = createFileRoute("/")({
@@ -27,6 +27,7 @@ export const Route = createFileRoute("/")({
       context.queryClient.ensureQueryData(modalidadesQuery),
       context.queryClient.ensureQueryData(noticiasQuery(true)),
       context.queryClient.ensureQueryData(eventosQuery()),
+      context.queryClient.ensureQueryData(parceirosQuery(true)),
     ]),
   errorComponent: ({ error }) => <div className="p-12 text-destructive">Erro: {error.message}</div>,
   component: Home,
@@ -48,6 +49,7 @@ function Home() {
   const modalidades = useSuspenseQuery(modalidadesQuery).data;
   const noticias = useSuspenseQuery(noticiasQuery(true)).data;
   const eventos = useSuspenseQuery(eventosQuery()).data;
+  const parceiros = useSuspenseQuery(parceirosQuery(true)).data;
 
   // Filtrar eventos futuros — useMemo garante que new Date() é avaliado
   // apenas uma vez por render, evitando divergência server/cliente.
@@ -311,6 +313,112 @@ function Home() {
           </div>
         </section>
       )}
+
+      {/* PARCEIROS */}
+      {parceiros.length > 0 && (
+        <section className="py-24 bg-secondary/30">
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="text-center mb-12">
+              <div className="text-xs uppercase tracking-[0.2em] text-primary font-bold">
+                Nossos Parceiros
+              </div>
+              <h2 className="mt-3 text-4xl md:text-5xl font-bold text-deep">
+                Quem apoia o esporte aquático no Ceará
+              </h2>
+            </div>
+
+            {/* Apoio Institucional */}
+            {parceiros.filter(p => p.categoria === 'apoio_institucional').length > 0 && (
+              <div className="mb-16">
+                <div className="flex items-center gap-3 mb-8">
+                  <Building2 className="h-6 w-6 text-primary" />
+                  <h3 className="text-xl font-bold text-deep">Apoio Institucional</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {parceiros.filter(p => p.categoria === 'apoio_institucional').map((parceiro) => (
+                    <ParceiroCard key={parceiro.id} parceiro={parceiro} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Patrocínio */}
+            {parceiros.filter(p => p.categoria === 'patrocinio').length > 0 && (
+              <div className="mb-16">
+                <div className="flex items-center gap-3 mb-8">
+                  <Medal className="h-6 w-6 text-primary" />
+                  <h3 className="text-xl font-bold text-deep">Patrocinadores</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {parceiros.filter(p => p.categoria === 'patrocinio').map((parceiro) => (
+                    <ParceiroCard key={parceiro.id} parceiro={parceiro} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Parcerias */}
+            {parceiros.filter(p => p.categoria === 'parceria').length > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-8">
+                  <Handshake className="h-6 w-6 text-primary" />
+                  <h3 className="text-xl font-bold text-deep">Parcerias Estratégicas</h3>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {parceiros.filter(p => p.categoria === 'parceria').map((parceiro) => (
+                    <ParceiroCard key={parceiro.id} parceiro={parceiro} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </SiteLayout>
+  );
+}
+
+function ParceiroCard({ parceiro }: { parceiro: any }) {
+  if (parceiro.site_url) {
+    return (
+      <a
+        href={parceiro.site_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group relative flex items-center justify-center p-6 rounded-2xl bg-card border border-border/60 shadow-card hover:shadow-elegant transition-all duration-300 hover:border-primary/50"
+      >
+        {parceiro.logo_url ? (
+          <img
+            src={parceiro.logo_url}
+            alt={parceiro.nome}
+            className="max-h-16 w-auto object-contain filter grayscale group-hover:grayscale-0 transition-all duration-300"
+          />
+        ) : (
+          <div className="text-center">
+            <div className="text-sm font-semibold text-deep group-hover:text-primary transition-colors">
+              {parceiro.nome}
+            </div>
+          </div>
+        )}
+      </a>
+    );
+  }
+
+  return (
+    <div className="group relative flex items-center justify-center p-6 rounded-2xl bg-card border border-border/60 shadow-card">
+      {parceiro.logo_url ? (
+        <img
+          src={parceiro.logo_url}
+          alt={parceiro.nome}
+          className="max-h-16 w-auto object-contain filter grayscale group-hover:grayscale-0 transition-all duration-300"
+        />
+      ) : (
+        <div className="text-center">
+          <div className="text-sm font-semibold text-deep">
+            {parceiro.nome}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

@@ -62,20 +62,27 @@ export function Footer() {
           </ul>
           <div className="mt-5 flex gap-3">
             <a
-              href="#"
+              href="https://www.instagram.com/fcdaquaticos/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="h-9 w-9 grid place-items-center rounded-full border border-primary-foreground/20 hover:bg-gold hover:text-deep hover:border-gold transition"
+              aria-label="Instagram"
             >
               <Instagram className="h-4 w-4" />
             </a>
             <a
-              href="#"
+              href="https://www.facebook.com/fcdaquaticos/?locale=pt_BR"
+              target="_blank"
+              rel="noopener noreferrer"
               className="h-9 w-9 grid place-items-center rounded-full border border-primary-foreground/20 hover:bg-gold hover:text-deep hover:border-gold transition"
+              aria-label="Facebook"
             >
               <Facebook className="h-4 w-4" />
             </a>
             <a
               href="#"
-              className="h-9 w-9 grid place-items-center rounded-full border border-primary-foreground/20 hover:bg-gold hover:text-deep hover:border-gold transition"
+              className="h-9 w-9 grid place-items-center rounded-full border border-primary-foreground/20 hover:bg-gold hover:text-deep hover:border-gold transition opacity-50 cursor-not-allowed"
+              aria-label="YouTube (em breve)"
             >
               <Youtube className="h-4 w-4" />
             </a>

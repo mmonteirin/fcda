@@ -98,6 +98,13 @@ VITE_SUPABASE_PUBLISHABLE_KEY="sua-chave-publica"
 VITE_SUPABASE_URL="https://seu-projeto.supabase.co"
 ```
 
+Configure o `wrangler.jsonc` para deploy:
+
+```bash
+cp wrangler.jsonc.example wrangler.jsonc
+# Edite wrangler.jsonc com suas credenciais do Supabase
+```
+
 Execute as migrações no dashboard do Supabase (pasta `supabase/migrations/`, em ordem cronológica).
 
 ```bash

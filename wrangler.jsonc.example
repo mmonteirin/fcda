@@ -9,9 +9,9 @@
     "binding": "ASSETS",
   },
   "vars": {
-    "SUPABASE_URL": "",
-    "SUPABASE_PUBLISHABLE_KEY": "",
-    "VITE_SUPABASE_URL": "",
-    "VITE_SUPABASE_PUBLISHABLE_KEY": "",
-  },
+    "SUPABASE_URL": "https://seu-projeto.supabase.co",
+    "SUPABASE_PUBLISHABLE_KEY": "sua-chave-publica",
+    "VITE_SUPABASE_URL": "https://seu-projeto.supabase.co",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sua-chave-publica"
+  }
 }

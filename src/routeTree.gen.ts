@@ -30,6 +30,7 @@ import { Route as AuthenticatedAdminTransparenciaRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminRecordesRouteImport } from './routes/_authenticated/admin/recordes'
 import { Route as AuthenticatedAdminRankingsRouteImport } from './routes/_authenticated/admin/rankings'
 import { Route as AuthenticatedAdminPerfilRouteImport } from './routes/_authenticated/admin/perfil'
+import { Route as AuthenticatedAdminParceirosRouteImport } from './routes/_authenticated/admin/parceiros'
 import { Route as AuthenticatedAdminNoticiasRouteImport } from './routes/_authenticated/admin/noticias'
 import { Route as AuthenticatedAdminModalidadesRouteImport } from './routes/_authenticated/admin/modalidades'
 import { Route as AuthenticatedAdminMensagensRouteImport } from './routes/_authenticated/admin/mensagens'
@@ -149,6 +150,12 @@ const AuthenticatedAdminPerfilRoute =
     path: '/admin/perfil',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminParceirosRoute =
+  AuthenticatedAdminParceirosRouteImport.update({
+    id: '/admin/parceiros',
+    path: '/admin/parceiros',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminNoticiasRoute =
   AuthenticatedAdminNoticiasRouteImport.update({
     id: '/admin/noticias',
@@ -228,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/admin/mensagens': typeof AuthenticatedAdminMensagensRoute
   '/admin/modalidades': typeof AuthenticatedAdminModalidadesRoute
   '/admin/noticias': typeof AuthenticatedAdminNoticiasRoute
+  '/admin/parceiros': typeof AuthenticatedAdminParceirosRoute
   '/admin/perfil': typeof AuthenticatedAdminPerfilRoute
   '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/admin/recordes': typeof AuthenticatedAdminRecordesRoute
@@ -259,6 +267,7 @@ export interface FileRoutesByTo {
   '/admin/mensagens': typeof AuthenticatedAdminMensagensRoute
   '/admin/modalidades': typeof AuthenticatedAdminModalidadesRoute
   '/admin/noticias': typeof AuthenticatedAdminNoticiasRoute
+  '/admin/parceiros': typeof AuthenticatedAdminParceirosRoute
   '/admin/perfil': typeof AuthenticatedAdminPerfilRoute
   '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/admin/recordes': typeof AuthenticatedAdminRecordesRoute
@@ -292,6 +301,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/mensagens': typeof AuthenticatedAdminMensagensRoute
   '/_authenticated/admin/modalidades': typeof AuthenticatedAdminModalidadesRoute
   '/_authenticated/admin/noticias': typeof AuthenticatedAdminNoticiasRoute
+  '/_authenticated/admin/parceiros': typeof AuthenticatedAdminParceirosRoute
   '/_authenticated/admin/perfil': typeof AuthenticatedAdminPerfilRoute
   '/_authenticated/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/_authenticated/admin/recordes': typeof AuthenticatedAdminRecordesRoute
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
     | '/admin/mensagens'
     | '/admin/modalidades'
     | '/admin/noticias'
+    | '/admin/parceiros'
     | '/admin/perfil'
     | '/admin/rankings'
     | '/admin/recordes'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/admin/mensagens'
     | '/admin/modalidades'
     | '/admin/noticias'
+    | '/admin/parceiros'
     | '/admin/perfil'
     | '/admin/rankings'
     | '/admin/recordes'
@@ -388,6 +400,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/mensagens'
     | '/_authenticated/admin/modalidades'
     | '/_authenticated/admin/noticias'
+    | '/_authenticated/admin/parceiros'
     | '/_authenticated/admin/perfil'
     | '/_authenticated/admin/rankings'
     | '/_authenticated/admin/recordes'
@@ -562,6 +575,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPerfilRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/parceiros': {
+      id: '/_authenticated/admin/parceiros'
+      path: '/admin/parceiros'
+      fullPath: '/admin/parceiros'
+      preLoaderRoute: typeof AuthenticatedAdminParceirosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/noticias': {
       id: '/_authenticated/admin/noticias'
       path: '/admin/noticias'
@@ -638,6 +658,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminMensagensRoute: typeof AuthenticatedAdminMensagensRoute
   AuthenticatedAdminModalidadesRoute: typeof AuthenticatedAdminModalidadesRoute
   AuthenticatedAdminNoticiasRoute: typeof AuthenticatedAdminNoticiasRoute
+  AuthenticatedAdminParceirosRoute: typeof AuthenticatedAdminParceirosRoute
   AuthenticatedAdminPerfilRoute: typeof AuthenticatedAdminPerfilRoute
   AuthenticatedAdminRankingsRoute: typeof AuthenticatedAdminRankingsRoute
   AuthenticatedAdminRecordesRoute: typeof AuthenticatedAdminRecordesRoute
@@ -657,6 +678,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminMensagensRoute: AuthenticatedAdminMensagensRoute,
   AuthenticatedAdminModalidadesRoute: AuthenticatedAdminModalidadesRoute,
   AuthenticatedAdminNoticiasRoute: AuthenticatedAdminNoticiasRoute,
+  AuthenticatedAdminParceirosRoute: AuthenticatedAdminParceirosRoute,
   AuthenticatedAdminPerfilRoute: AuthenticatedAdminPerfilRoute,
   AuthenticatedAdminRankingsRoute: AuthenticatedAdminRankingsRoute,
   AuthenticatedAdminRecordesRoute: AuthenticatedAdminRecordesRoute,
