@@ -301,7 +301,7 @@ const uploadImageSchema = z.object({
   fileName: z.string(),
   fileType: z.string(),
   fileData: z.string(), // base64 encoded
-  folder: z.enum(["noticias", "modalidades"]),
+  folder: z.enum(["noticias", "modalidades", "cursos"]),
 });
 
 export const uploadImage = createServerFn({ method: "POST" })
@@ -707,4 +707,42 @@ export async function uploadClubeLogo(supabase: SupabaseClient, file: File) {
 
   const { data } = supabase.storage.from("site-images").getPublicUrl(path);
   return data.publicUrl;
+}
+
+// ============ CURSOS ============
+const cursoSchema = z.object({
+  id: z.string().uuid().optional(),
+  titulo: z.string().min(1).max(200),
+  resumo: z.string().min(1).max(500),
+  descricao: z.string().optional().nullable(),
+  data_inicio: z.string().optional().nullable(),
+  data_fim: z.string().optional().nullable(),
+  local: z.string().max(200).optional().nullable(),
+  carga_horaria: z.string().max(100).optional().nullable(),
+  imagem_url: z.string().url().nullable().optional(),
+  link_inscricao: z.string().url().nullable().optional(),
+  publicado: z.boolean(),
+});
+
+export async function saveCurso(supabase: SupabaseClient, userId: string, data: unknown) {
+  const validated = cursoSchema.parse(data);
+  await assertEditor(supabase, userId);
+  const { id, ...rest } = validated;
+  const sb = asDynamicSupabase(supabase);
+  if (id) {
+    const { error } = await sb.from("cursos").update(rest).eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await sb.from("cursos").insert(rest);
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true };
+}
+
+export async function deleteCurso(supabase: SupabaseClient, userId: string, id: string) {
+  await assertEditor(supabase, userId);
+  const sb = asDynamicSupabase(supabase);
+  const { error } = await sb.from("cursos").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
 }

@@ -18,6 +18,11 @@ import {
   Building2,
   Handshake,
   Medal,
+  Shield,
+  FileText,
+  MapPin,
+  GraduationCap,
+  Award,
 } from "lucide-react";
 import hero from "@/assets/hero-swimmer.jpg";
 
@@ -93,6 +98,52 @@ function Home() {
         </div>
       </section>
 
+      {/* LINKS RÁPIDOS */}
+      <section className="py-24">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="text-center mb-12">
+            <div className="text-xs uppercase tracking-[0.2em] text-primary font-bold">
+              Acesso Rápido
+            </div>
+            <h2 className="mt-3 text-4xl md:text-5xl font-bold text-deep">O que você procura?</h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Link
+              to="/clubes"
+              className="group rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-8 hover:shadow-elegant transition-all hover:-translate-y-1"
+            >
+              <Users className="h-10 w-10 text-primary mb-4" />
+              <h3 className="text-xl font-bold text-deep mb-2">Conheça os Clubes</h3>
+              <p className="text-sm text-muted-foreground">Encontre clubes de natação no Ceará</p>
+            </Link>
+            <Link
+              to="/cursos"
+              className="group rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-8 hover:shadow-elegant transition-all hover:-translate-y-1"
+            >
+              <GraduationCap className="h-10 w-10 text-primary mb-4" />
+              <h3 className="text-xl font-bold text-deep mb-2">Cursos e Capacitações</h3>
+              <p className="text-sm text-muted-foreground">Formação em desportos aquáticos</p>
+            </Link>
+            <Link
+              to="/filie-se"
+              className="group rounded-2xl bg-gradient-to-br from-gold/20 to-gold/10 border border-gold/30 p-8 hover:shadow-elegant transition-all hover:-translate-y-1"
+            >
+              <Award className="h-10 w-10 text-gold mb-4" />
+              <h3 className="text-xl font-bold text-deep mb-2">Filiação</h3>
+              <p className="text-sm text-muted-foreground">Fili seu clube à FCDA</p>
+            </Link>
+            <Link
+              to="/transparencia"
+              className="group rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-8 hover:shadow-elegant transition-all hover:-translate-y-1"
+            >
+              <FileText className="h-10 w-10 text-primary mb-4" />
+              <h3 className="text-xl font-bold text-deep mb-2">Portal da Transparência</h3>
+              <p className="text-sm text-muted-foreground">Acesse documentos e informações</p>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* MODALIDADES */}
       <section className="py-24 bg-secondary/30">
         <div className="mx-auto max-w-7xl px-6">
@@ -111,7 +162,7 @@ function Home() {
               >
                 <div className="aspect-square rounded-t-2xl overflow-hidden bg-gradient-to-br from-secondary to-secondary/50">
                   <img
-                    src={modalidadeImg(mod.slug)}
+                    src={modalidadeImg(mod)}
                     alt={mod.nome}
                     className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300"
                   />
@@ -216,6 +267,84 @@ function Home() {
           </div>
         </section>
       )}
+
+      {/* ESTATÍSTICAS */}
+      <section className="py-24 bg-hero text-primary-foreground">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="text-center mb-12">
+            <div className="text-xs uppercase tracking-[0.2em] text-gold font-bold">
+              Números da FCDA
+            </div>
+            <h2 className="mt-3 text-4xl md:text-5xl font-bold">Nossa História</h2>
+          </div>
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="text-5xl md:text-6xl font-bold text-gold mb-2">67+</div>
+              <div className="text-lg text-primary-foreground/80">Anos de História</div>
+            </div>
+            <div className="text-center">
+              <div className="text-5xl md:text-6xl font-bold text-gold mb-2">5</div>
+              <div className="text-lg text-primary-foreground/80">Modalidades</div>
+            </div>
+            <div className="text-center">
+              <div className="text-5xl md:text-6xl font-bold text-gold mb-2">100+</div>
+              <div className="text-lg text-primary-foreground/80">Clubes Filiados</div>
+            </div>
+            <div className="text-center">
+              <div className="text-5xl md:text-6xl font-bold text-gold mb-2">1000+</div>
+              <div className="text-lg text-primary-foreground/80">Atletas</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* LINKS IMPORTANTES */}
+      <section className="py-24">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="text-center mb-12">
+            <div className="text-xs uppercase tracking-[0.2em] text-primary font-bold">
+              Informações Importantes
+            </div>
+            <h2 className="mt-3 text-4xl md:text-5xl font-bold text-deep">Links Úteis</h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Link
+              to="/transparencia"
+              className="group rounded-2xl bg-card border border-border/60 p-6 hover:shadow-elegant transition-all hover:-translate-y-1"
+            >
+              <Shield className="h-8 w-8 text-primary mb-4" />
+              <h3 className="text-lg font-bold text-deep mb-2">Código de Conduta</h3>
+              <p className="text-sm text-muted-foreground">Políticas de combate ao assédio</p>
+            </Link>
+            <a
+              href="https://www.cbda.org.br/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group rounded-2xl bg-card border border-border/60 p-6 hover:shadow-elegant transition-all hover:-translate-y-1"
+            >
+              <Trophy className="h-8 w-8 text-primary mb-4" />
+              <h3 className="text-lg font-bold text-deep mb-2">CBDA</h3>
+              <p className="text-sm text-muted-foreground">Confederação Brasileira</p>
+            </a>
+            <Link
+              to="/contato"
+              className="group rounded-2xl bg-card border border-border/60 p-6 hover:shadow-elegant transition-all hover:-translate-y-1"
+            >
+              <MapPin className="h-8 w-8 text-primary mb-4" />
+              <h3 className="text-lg font-bold text-deep mb-2">Onde Treinar</h3>
+              <p className="text-sm text-muted-foreground">Encontre piscinas no Ceará</p>
+            </Link>
+            <Link
+              to="/cursos"
+              className="group rounded-2xl bg-card border border-border/60 p-6 hover:shadow-elegant transition-all hover:-translate-y-1"
+            >
+              <GraduationCap className="h-8 w-8 text-primary mb-4" />
+              <h3 className="text-lg font-bold text-deep mb-2">Formação</h3>
+              <p className="text-sm text-muted-foreground">Cursos e capacitações</p>
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* PARCEIROS */}
       {parceiros.length > 0 && (

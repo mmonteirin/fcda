@@ -268,12 +268,12 @@ export function Header() {
 
           {/* Cursos Link */}
           <div className="border-t border-border/50">
-            <a
-              href="mailto:secretaria@fcda.org.br?subject=Informa%C3%A7%C3%B5es%20sobre%20cursos"
+            <Link
+              to="/cursos"
               className="flex items-center justify-between px-4 py-3 text-base font-semibold text-foreground/80 hover:text-deep hover:bg-secondary/50 transition-colors"
             >
               Cursos
-            </a>
+            </Link>
           </div>
 
           {/* Admin Link */}

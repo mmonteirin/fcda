@@ -20,7 +20,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as InscricoesRouteImport } from './routes/inscricoes'
 import { Route as FilieSeRouteImport } from './routes/filie-se'
 import { Route as EventosRouteImport } from './routes/eventos'
+import { Route as CursosRouteImport } from './routes/cursos'
 import { Route as ContatoRouteImport } from './routes/contato'
+import { Route as ClubesRouteImport } from './routes/clubes'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as NoticiasIdRouteImport } from './routes/noticias.$id'
@@ -38,6 +40,8 @@ import { Route as AuthenticatedAdminFiliacoesRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminEventosPdfsRouteImport } from './routes/_authenticated/admin/eventos-pdfs'
 import { Route as AuthenticatedAdminEventosRouteImport } from './routes/_authenticated/admin/eventos'
 import { Route as AuthenticatedAdminDiretoresRouteImport } from './routes/_authenticated/admin/diretores'
+import { Route as AuthenticatedAdminCursosRouteImport } from './routes/_authenticated/admin/cursos'
+import { Route as AuthenticatedAdminClubesRouteImport } from './routes/_authenticated/admin/clubes'
 import { Route as AuthenticatedAdminCategoriasModalidadesRouteImport } from './routes/_authenticated/admin/categorias-modalidades'
 import { Route as AuthenticatedAdminBannerRouteImport } from './routes/_authenticated/admin/banner'
 
@@ -96,9 +100,19 @@ const EventosRoute = EventosRouteImport.update({
   path: '/eventos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CursosRoute = CursosRouteImport.update({
+  id: '/cursos',
+  path: '/cursos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContatoRoute = ContatoRouteImport.update({
   id: '/contato',
   path: '/contato',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClubesRoute = ClubesRouteImport.update({
+  id: '/clubes',
+  path: '/clubes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -198,6 +212,18 @@ const AuthenticatedAdminDiretoresRoute =
     path: '/admin/diretores',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminCursosRoute =
+  AuthenticatedAdminCursosRouteImport.update({
+    id: '/admin/cursos',
+    path: '/admin/cursos',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminClubesRoute =
+  AuthenticatedAdminClubesRouteImport.update({
+    id: '/admin/clubes',
+    path: '/admin/clubes',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminCategoriasModalidadesRoute =
   AuthenticatedAdminCategoriasModalidadesRouteImport.update({
     id: '/admin/categorias-modalidades',
@@ -213,7 +239,9 @@ const AuthenticatedAdminBannerRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/clubes': typeof ClubesRoute
   '/contato': typeof ContatoRoute
+  '/cursos': typeof CursosRoute
   '/eventos': typeof EventosRoute
   '/filie-se': typeof FilieSeRoute
   '/inscricoes': typeof InscricoesRoute
@@ -228,6 +256,8 @@ export interface FileRoutesByFullPath {
   '/noticias/$id': typeof NoticiasIdRoute
   '/admin/banner': typeof AuthenticatedAdminBannerRoute
   '/admin/categorias-modalidades': typeof AuthenticatedAdminCategoriasModalidadesRoute
+  '/admin/clubes': typeof AuthenticatedAdminClubesRoute
+  '/admin/cursos': typeof AuthenticatedAdminCursosRoute
   '/admin/diretores': typeof AuthenticatedAdminDiretoresRoute
   '/admin/eventos': typeof AuthenticatedAdminEventosRoute
   '/admin/eventos-pdfs': typeof AuthenticatedAdminEventosPdfsRoute
@@ -245,7 +275,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/clubes': typeof ClubesRoute
   '/contato': typeof ContatoRoute
+  '/cursos': typeof CursosRoute
   '/eventos': typeof EventosRoute
   '/filie-se': typeof FilieSeRoute
   '/inscricoes': typeof InscricoesRoute
@@ -260,6 +292,8 @@ export interface FileRoutesByTo {
   '/noticias/$id': typeof NoticiasIdRoute
   '/admin/banner': typeof AuthenticatedAdminBannerRoute
   '/admin/categorias-modalidades': typeof AuthenticatedAdminCategoriasModalidadesRoute
+  '/admin/clubes': typeof AuthenticatedAdminClubesRoute
+  '/admin/cursos': typeof AuthenticatedAdminCursosRoute
   '/admin/diretores': typeof AuthenticatedAdminDiretoresRoute
   '/admin/eventos': typeof AuthenticatedAdminEventosRoute
   '/admin/eventos-pdfs': typeof AuthenticatedAdminEventosPdfsRoute
@@ -279,7 +313,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/clubes': typeof ClubesRoute
   '/contato': typeof ContatoRoute
+  '/cursos': typeof CursosRoute
   '/eventos': typeof EventosRoute
   '/filie-se': typeof FilieSeRoute
   '/inscricoes': typeof InscricoesRoute
@@ -294,6 +330,8 @@ export interface FileRoutesById {
   '/noticias/$id': typeof NoticiasIdRoute
   '/_authenticated/admin/banner': typeof AuthenticatedAdminBannerRoute
   '/_authenticated/admin/categorias-modalidades': typeof AuthenticatedAdminCategoriasModalidadesRoute
+  '/_authenticated/admin/clubes': typeof AuthenticatedAdminClubesRoute
+  '/_authenticated/admin/cursos': typeof AuthenticatedAdminCursosRoute
   '/_authenticated/admin/diretores': typeof AuthenticatedAdminDiretoresRoute
   '/_authenticated/admin/eventos': typeof AuthenticatedAdminEventosRoute
   '/_authenticated/admin/eventos-pdfs': typeof AuthenticatedAdminEventosPdfsRoute
@@ -313,7 +351,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/clubes'
     | '/contato'
+    | '/cursos'
     | '/eventos'
     | '/filie-se'
     | '/inscricoes'
@@ -328,6 +368,8 @@ export interface FileRouteTypes {
     | '/noticias/$id'
     | '/admin/banner'
     | '/admin/categorias-modalidades'
+    | '/admin/clubes'
+    | '/admin/cursos'
     | '/admin/diretores'
     | '/admin/eventos'
     | '/admin/eventos-pdfs'
@@ -345,7 +387,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/clubes'
     | '/contato'
+    | '/cursos'
     | '/eventos'
     | '/filie-se'
     | '/inscricoes'
@@ -360,6 +404,8 @@ export interface FileRouteTypes {
     | '/noticias/$id'
     | '/admin/banner'
     | '/admin/categorias-modalidades'
+    | '/admin/clubes'
+    | '/admin/cursos'
     | '/admin/diretores'
     | '/admin/eventos'
     | '/admin/eventos-pdfs'
@@ -378,7 +424,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/clubes'
     | '/contato'
+    | '/cursos'
     | '/eventos'
     | '/filie-se'
     | '/inscricoes'
@@ -393,6 +441,8 @@ export interface FileRouteTypes {
     | '/noticias/$id'
     | '/_authenticated/admin/banner'
     | '/_authenticated/admin/categorias-modalidades'
+    | '/_authenticated/admin/clubes'
+    | '/_authenticated/admin/cursos'
     | '/_authenticated/admin/diretores'
     | '/_authenticated/admin/eventos'
     | '/_authenticated/admin/eventos-pdfs'
@@ -412,7 +462,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  ClubesRoute: typeof ClubesRoute
   ContatoRoute: typeof ContatoRoute
+  CursosRoute: typeof CursosRoute
   EventosRoute: typeof EventosRoute
   FilieSeRoute: typeof FilieSeRoute
   InscricoesRoute: typeof InscricoesRoute
@@ -505,11 +557,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EventosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cursos': {
+      id: '/cursos'
+      path: '/cursos'
+      fullPath: '/cursos'
+      preLoaderRoute: typeof CursosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contato': {
       id: '/contato'
       path: '/contato'
       fullPath: '/contato'
       preLoaderRoute: typeof ContatoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clubes': {
+      id: '/clubes'
+      path: '/clubes'
+      fullPath: '/clubes'
+      preLoaderRoute: typeof ClubesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -631,6 +697,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminDiretoresRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/cursos': {
+      id: '/_authenticated/admin/cursos'
+      path: '/admin/cursos'
+      fullPath: '/admin/cursos'
+      preLoaderRoute: typeof AuthenticatedAdminCursosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/clubes': {
+      id: '/_authenticated/admin/clubes'
+      path: '/admin/clubes'
+      fullPath: '/admin/clubes'
+      preLoaderRoute: typeof AuthenticatedAdminClubesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/categorias-modalidades': {
       id: '/_authenticated/admin/categorias-modalidades'
       path: '/admin/categorias-modalidades'
@@ -651,6 +731,8 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminBannerRoute: typeof AuthenticatedAdminBannerRoute
   AuthenticatedAdminCategoriasModalidadesRoute: typeof AuthenticatedAdminCategoriasModalidadesRoute
+  AuthenticatedAdminClubesRoute: typeof AuthenticatedAdminClubesRoute
+  AuthenticatedAdminCursosRoute: typeof AuthenticatedAdminCursosRoute
   AuthenticatedAdminDiretoresRoute: typeof AuthenticatedAdminDiretoresRoute
   AuthenticatedAdminEventosRoute: typeof AuthenticatedAdminEventosRoute
   AuthenticatedAdminEventosPdfsRoute: typeof AuthenticatedAdminEventosPdfsRoute
@@ -671,6 +753,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminBannerRoute: AuthenticatedAdminBannerRoute,
   AuthenticatedAdminCategoriasModalidadesRoute:
     AuthenticatedAdminCategoriasModalidadesRoute,
+  AuthenticatedAdminClubesRoute: AuthenticatedAdminClubesRoute,
+  AuthenticatedAdminCursosRoute: AuthenticatedAdminCursosRoute,
   AuthenticatedAdminDiretoresRoute: AuthenticatedAdminDiretoresRoute,
   AuthenticatedAdminEventosRoute: AuthenticatedAdminEventosRoute,
   AuthenticatedAdminEventosPdfsRoute: AuthenticatedAdminEventosPdfsRoute,
@@ -706,7 +790,9 @@ const NoticiasRouteWithChildren = NoticiasRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  ClubesRoute: ClubesRoute,
   ContatoRoute: ContatoRoute,
+  CursosRoute: CursosRoute,
   EventosRoute: EventosRoute,
   FilieSeRoute: FilieSeRoute,
   InscricoesRoute: InscricoesRoute,

@@ -368,6 +368,22 @@ export type Clube = {
   updated_at: string;
 };
 
+export type Curso = {
+  id: string;
+  titulo: string;
+  resumo: string;
+  descricao: string | null;
+  data_inicio: string | null;
+  data_fim: string | null;
+  local: string | null;
+  carga_horaria: string | null;
+  imagem_url: string | null;
+  link_inscricao: string | null;
+  publicado: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export const clubesQuery = (onlyActive = true) =>
   queryOptions({
     queryKey: ["clubes", onlyActive],
@@ -375,6 +391,19 @@ export const clubesQuery = (onlyActive = true) =>
       const sb = asDynamicSupabase(supabase);
       let query = sb.from("clubes").select("*").order("ordem", { ascending: true });
       if (onlyActive) query = query.eq("ativo", true);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+export const cursosQuery = (onlyPublished = true) =>
+  queryOptions({
+    queryKey: ["cursos", onlyPublished],
+    queryFn: async (): Promise<Curso[]> => {
+      const sb = asDynamicSupabase(supabase);
+      let query = sb.from("cursos").select("*").order("created_at", { ascending: false });
+      if (onlyPublished) query = query.eq("publicado", true);
       const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
