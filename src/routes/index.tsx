@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
+import { HeroBanner } from "@/components/hero-banner";
+import { SkeletonGrid, SkeletonHero } from "@/components/skeleton";
 import {
   modalidadesQuery,
   noticiasQuery,
@@ -56,50 +58,71 @@ function Home() {
     });
   }, [eventos]);
 
+  // Criar slides para o banner de destaque
+  const bannerSlides = useMemo(() => {
+    const slides: Array<{
+      id: string;
+      title: string;
+      description: string;
+      image: string;
+      link?: string;
+      linkText?: string;
+    }> = [];
+
+    // Adicionar notícias importantes com imagem
+    noticias.slice(0, 3).forEach((noticia) => {
+      if (noticia.imagem_url) {
+        slides.push({
+          id: noticia.id,
+          title: noticia.titulo,
+          description: noticia.resumo,
+          image: noticia.imagem_url,
+          link: `/noticias/${noticia.slug}`,
+          linkText: "Ler mais",
+        });
+      }
+    });
+
+    // Se não tiver notícias suficientes, adicionar eventos futuros
+    if (slides.length < 3) {
+      eventosFuturos.slice(0, 3 - slides.length).forEach((evento) => {
+        slides.push({
+          id: `evento-${evento.id}`,
+          title: evento.nome,
+          description: `${evento.data_texto} • ${evento.local}`,
+          image: hero,
+          link: "/eventos",
+          linkText: "Ver evento",
+        });
+      });
+    }
+
+    // Se ainda não tiver slides, adicionar um padrão
+    if (slides.length === 0) {
+      slides.push({
+        id: "default",
+        title: "Bem-vindo à FCDA",
+        description: "Formando campeões no Ceará desde 1958",
+        image: hero,
+        link: "/sobre",
+        linkText: "Conheça a FCDA",
+      });
+    }
+
+    return slides;
+  }, [noticias, eventosFuturos]);
+
   return (
     <SiteLayout>
-      {/* HERO */}
-      <section className="relative min-h-[88vh] flex items-center overflow-hidden">
-        <img
-          src={hero}
-          alt="Atleta de natação cearense"
-          width={1920}
-          height={1080}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-deep/95 via-deep/80 to-deep/60" />
-        <div className="relative mx-auto max-w-7xl px-6 flex items-center">
-          <div className="max-w-2xl">
-            <div className="text-xs uppercase tracking-[0.2em] text-gold font-bold">
-              Federação Cearense de Desportos Aquáticos
-            </div>
-            <h1 className="mt-4 text-5xl md:text-7xl font-bold text-primary-foreground leading-tight">
-              Formando Campeões no Ceará desde 1958
-            </h1>
-            <p className="mt-6 text-lg text-primary-foreground/80 leading-relaxed">
-              A FCDA é a instituição oficial que organiza e regulamenta todas as competições de
-              natação, pólo aquático, nado artístico e saltos ornamentais no estado do Ceará.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                to="/filie-se"
-                className="inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-bold text-deep hover:opacity-90 transition"
-              >
-                Filie-se <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                to="/sobre"
-                className="inline-flex items-center gap-2 rounded-full border border-gold px-6 py-3 text-sm font-bold text-gold hover:bg-gold/10 transition"
-              >
-                Conheça a FCDA
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* HERO BANNER */}
+      {bannerSlides.length > 0 ? (
+        <HeroBanner slides={bannerSlides} autoPlay={true} interval={5000} />
+      ) : (
+        <SkeletonHero />
+      )}
 
       {/* LINKS RÁPIDOS */}
-      <section className="py-24">
+      <section className="py-24 animate-fade-in-up">
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center mb-12">
             <div className="text-xs uppercase tracking-[0.2em] text-primary font-bold">
@@ -110,33 +133,33 @@ function Home() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Link
               to="/clubes"
-              className="group rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-8 hover:shadow-elegant transition-all hover:-translate-y-1"
+              className="group rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-8 hover:shadow-elegant transition-all duration-300 hover:-translate-y-1"
             >
-              <Users className="h-10 w-10 text-primary mb-4" />
+              <Users className="h-10 w-10 text-primary mb-4 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="text-xl font-bold text-deep mb-2">Conheça os Clubes</h3>
               <p className="text-sm text-muted-foreground">Encontre clubes de natação no Ceará</p>
             </Link>
             <Link
               to="/cursos"
-              className="group rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-8 hover:shadow-elegant transition-all hover:-translate-y-1"
+              className="group rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-8 hover:shadow-elegant transition-all duration-300 hover:-translate-y-1"
             >
-              <GraduationCap className="h-10 w-10 text-primary mb-4" />
+              <GraduationCap className="h-10 w-10 text-primary mb-4 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="text-xl font-bold text-deep mb-2">Cursos e Capacitações</h3>
               <p className="text-sm text-muted-foreground">Formação em desportos aquáticos</p>
             </Link>
             <Link
               to="/filie-se"
-              className="group rounded-2xl bg-gradient-to-br from-gold/20 to-gold/10 border border-gold/30 p-8 hover:shadow-elegant transition-all hover:-translate-y-1"
+              className="group rounded-2xl bg-gradient-to-br from-gold/20 to-gold/10 border border-gold/30 p-8 hover:shadow-elegant transition-all duration-300 hover:-translate-y-1"
             >
-              <Award className="h-10 w-10 text-gold mb-4" />
+              <Award className="h-10 w-10 text-gold mb-4 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="text-xl font-bold text-deep mb-2">Filiação</h3>
               <p className="text-sm text-muted-foreground">Fili seu clube à FCDA</p>
             </Link>
             <Link
               to="/transparencia"
-              className="group rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-8 hover:shadow-elegant transition-all hover:-translate-y-1"
+              className="group rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-8 hover:shadow-elegant transition-all duration-300 hover:-translate-y-1"
             >
-              <FileText className="h-10 w-10 text-primary mb-4" />
+              <FileText className="h-10 w-10 text-primary mb-4 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="text-xl font-bold text-deep mb-2">Portal da Transparência</h3>
               <p className="text-sm text-muted-foreground">Acesse documentos e informações</p>
             </Link>
@@ -145,7 +168,7 @@ function Home() {
       </section>
 
       {/* MODALIDADES */}
-      <section className="py-24 bg-secondary/30">
+      <section className="py-24 bg-secondary/30 animate-fade-in-up">
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center mb-12">
             <div className="text-xs uppercase tracking-[0.2em] text-primary font-bold">
@@ -153,61 +176,64 @@ function Home() {
             </div>
             <h2 className="mt-3 text-4xl md:text-5xl font-bold text-deep">Desportos Aquáticos</h2>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {modalidades.map((mod) => (
-              <Link
-                key={mod.id}
-                to="/modalidades"
-                className="group rounded-2xl bg-card border border-border/60 shadow-card hover:shadow-elegant transition-all hover:-translate-y-1"
-              >
-                <div className="aspect-square rounded-t-2xl overflow-hidden bg-gradient-to-br from-secondary to-secondary/50">
-                  <img
-                    src={modalidadeImg(mod)}
-                    alt={mod.nome}
-                    className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-lg font-bold text-deep group-hover:text-primary transition-colors">
-                    {mod.nome}
-                  </h3>
-                </div>
-              </Link>
-            ))}
-          </div>
+          {modalidades.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {modalidades.map((mod) => (
+                <Link
+                  key={mod.id}
+                  to="/modalidades"
+                  className="group rounded-2xl bg-card border border-border/60 shadow-card hover:shadow-elegant transition-all duration-300 hover:-translate-y-1"
+                >
+                  <div className="aspect-square rounded-t-2xl overflow-hidden bg-gradient-to-br from-secondary to-secondary/50">
+                    <img
+                      src={modalidadeImg(mod)}
+                      alt={mod.nome}
+                      className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold text-deep group-hover:text-primary transition-colors">
+                      {mod.nome}
+                    </h3>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <SkeletonGrid count={4} />
+          )}
         </div>
       </section>
 
       {/* NOTÍCIAS */}
-      {noticias.length > 0 && (
-        <section className="py-24">
-          <div className="mx-auto max-w-7xl px-6">
-            <div className="flex items-center justify-between mb-12">
-              <div>
-                <div className="text-xs uppercase tracking-[0.2em] text-primary font-bold">
-                  Notícias
-                </div>
-                <h2 className="mt-3 text-4xl md:text-5xl font-bold text-deep">
-                  Últimas Informações
-                </h2>
+      <section className="py-24 animate-fade-in-up">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="flex items-center justify-between mb-12">
+            <div>
+              <div className="text-xs uppercase tracking-[0.2em] text-primary font-bold">
+                Notícias
               </div>
-              <Link
-                to="/noticias"
-                className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-              >
-                Ver todas <ArrowRight className="h-4 w-4" />
-              </Link>
+              <h2 className="mt-3 text-4xl md:text-5xl font-bold text-deep">Últimas Informações</h2>
             </div>
+            <Link
+              to="/noticias"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+            >
+              Ver todas <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+          {noticias.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {noticias.slice(0, 3).map((n) => (
                 <Link
                   key={n.id}
-                  to={`/noticias/${n.id}`}
-                  className="group rounded-2xl bg-card border border-border/60 shadow-card hover:shadow-elegant transition-all hover:-translate-y-1"
+                  to="/noticias/$id"
+                  params={{ id: n.slug }}
+                  className="group rounded-2xl bg-card border border-border/60 shadow-card hover:shadow-elegant transition-all duration-300 hover:-translate-y-1"
                 >
                   <div className="aspect-[16/9] rounded-t-2xl overflow-hidden bg-gradient-to-br from-secondary to-secondary/50">
                     <img
-                      src={n.imagem_url}
+                      src={n.imagem_url ?? hero}
                       alt={n.titulo}
                       className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300"
                     />
@@ -222,9 +248,11 @@ function Home() {
                 </Link>
               ))}
             </div>
-          </div>
-        </section>
-      )}
+          ) : (
+            <SkeletonGrid count={3} />
+          )}
+        </div>
+      </section>
 
       {/* CALENDÁRIO */}
       {eventosFuturos.length > 0 && (
