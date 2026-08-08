@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { eventosQuery, eventosPdfsQuery, type Evento, type EventoPdf } from "@/lib/site-queries";
 import { Calendar, MapPin, FileText, Download, ExternalLink, Filter } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const PDF_TIPOS = [
   { value: "resultados", label: "Resultados" },
@@ -69,7 +69,13 @@ function getTipoLabel(tipo: EventoPdf["tipo"]) {
 }
 
 function Eventos() {
-  const [anoFilter, setAnoFilter] = useState<number | undefined>(undefined);
+  // Detectar temporada atual automaticamente
+  const getCurrentSeason = () => {
+    const now = new Date();
+    return now.getFullYear();
+  };
+
+  const [anoFilter, setAnoFilter] = useState<number>(getCurrentSeason());
   const eventos = useSuspenseQuery(eventosQuery(anoFilter)).data;
   const pdfs = useSuspenseQuery(eventosPdfsQuery).data;
   const hoje = new Date();
@@ -87,6 +93,14 @@ function Eventos() {
   const anos = Array.from(
     new Set(eventos.map((e) => e.ano).filter((a): a is number => a !== null)),
   ).sort((a, b) => b - a);
+
+  // Atualizar temporada automaticamente na virada do ano
+  useEffect(() => {
+    const currentSeason = getCurrentSeason();
+    if (anoFilter !== currentSeason) {
+      setAnoFilter(currentSeason);
+    }
+  }, [anoFilter]);
 
   // Group PDFs by evento_id
   const pdfsByEvento = pdfs.reduce(
@@ -197,11 +211,10 @@ function Eventos() {
             <div className="mb-8 flex items-center gap-3">
               <Filter className="h-5 w-5 text-muted-foreground" />
               <select
-                value={anoFilter ?? ""}
-                onChange={(e) => setAnoFilter(e.target.value ? Number(e.target.value) : undefined)}
+                value={anoFilter}
+                onChange={(e) => setAnoFilter(Number(e.target.value))}
                 className="rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-deep"
               >
-                <option value="">Todas as temporadas</option>
                 {anos.map((a) => (
                   <option key={a} value={a}>
                     Temporada {a}

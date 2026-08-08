@@ -311,6 +311,108 @@ export type Database = {
         };
         Relationships: [];
       };
+      atletas: {
+        Row: {
+          id: string;
+          data_nascimento: string;
+          cpf: string | null;
+          telefone: string | null;
+          clube_id: string | null;
+          categoria: string | null;
+          ativo: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          data_nascimento: string;
+          cpf?: string | null;
+          telefone?: string | null;
+          clube_id?: string | null;
+          categoria?: string | null;
+          ativo?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          data_nascimento?: string;
+          cpf?: string | null;
+          telefone?: string | null;
+          clube_id?: string | null;
+          categoria?: string | null;
+          ativo?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      treinadores: {
+        Row: {
+          id: string;
+          cpf: string | null;
+          telefone: string | null;
+          clube_id: string | null;
+          credencial: string | null;
+          especialidade: string | null;
+          ativo: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          cpf?: string | null;
+          telefone?: string | null;
+          clube_id?: string | null;
+          credencial?: string | null;
+          especialidade?: string | null;
+          ativo?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          cpf?: string | null;
+          telefone?: string | null;
+          clube_id?: string | null;
+          credencial?: string | null;
+          especialidade?: string | null;
+          ativo?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      gestores_clube: {
+        Row: {
+          id: string;
+          cpf: string | null;
+          telefone: string | null;
+          clube_id: string | null;
+          cargo: string | null;
+          ativo: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          cpf?: string | null;
+          telefone?: string | null;
+          clube_id?: string | null;
+          cargo?: string | null;
+          ativo?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          cpf?: string | null;
+          telefone?: string | null;
+          clube_id?: string | null;
+          cargo?: string | null;
+          ativo?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -325,7 +427,7 @@ export type Database = {
       };
     };
     Enums: {
-      app_role: "admin" | "editor";
+      app_role: "admin" | "editor" | "atleta" | "treinador" | "gestor_clube";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -447,7 +549,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "editor"],
+      app_role: ["admin", "editor", "atleta", "treinador", "gestor_clube"],
     },
   },
 } as const;

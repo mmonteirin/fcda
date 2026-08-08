@@ -1,19 +1,41 @@
 import { type ReactNode } from "react";
-import { Pencil, Trash2, Plus, X } from "lucide-react";
+import { Pencil, Trash2, Plus, X, ChevronRight, Home } from "lucide-react";
 import { inputClass } from "./utils";
+import { Link } from "@tanstack/react-router";
 
-export function AdminToolbar({ title, onNew }: { title: string; onNew?: () => void }) {
+export function AdminToolbar({ title, onNew, breadcrumbs }: { title: string; onNew?: () => void; breadcrumbs?: Array<{ label: string; to?: string }> }) {
   return (
-    <div className="flex items-center justify-between mb-6">
-      <h1 className="text-3xl font-bold text-deep">{title}</h1>
-      {onNew && (
-        <button
-          onClick={onNew}
-          className="inline-flex items-center gap-2 rounded-lg bg-deep text-deep-foreground font-bold text-sm px-4 py-2 hover:bg-primary"
-        >
-          <Plus className="h-4 w-4" /> Novo
-        </button>
+    <div className="mb-8">
+      {breadcrumbs && breadcrumbs.length > 0 && (
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <Link to="/admin" className="hover:text-primary transition-colors">
+            <Home className="h-4 w-4" />
+          </Link>
+          {breadcrumbs.map((crumb, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <ChevronRight className="h-4 w-4" />
+              {crumb.to ? (
+                <Link to={crumb.to} className="hover:text-primary transition-colors">
+                  {crumb.label}
+                </Link>
+              ) : (
+                <span className="text-deep font-medium">{crumb.label}</span>
+              )}
+            </div>
+          ))}
+        </nav>
       )}
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-deep">{title}</h1>
+        {onNew && (
+          <button
+            onClick={onNew}
+            className="inline-flex items-center gap-2 rounded-xl bg-deep text-deep-foreground font-bold text-sm px-5 py-2.5 hover:bg-primary transition-all hover:shadow-lg"
+          >
+            <Plus className="h-4 w-4" /> Novo
+          </button>
+        )}
+      </div>
     </div>
   );
 }

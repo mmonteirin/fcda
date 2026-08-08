@@ -5,7 +5,7 @@ import { useState } from "react";
 import { usersQuery, type UserWithRoles } from "@/lib/site-queries";
 import { addUserRole, removeUserRole, createUser } from "@/lib/admin.functions";
 import { AdminToolbar, AdminTable, Modal, Field } from "@/components/admin/ui";
-import { Shield, ShieldCheck, X } from "lucide-react";
+import { Shield, ShieldCheck, X, User, Dumbbell, Building2 } from "lucide-react";
 import { useInvalidate, inputClass } from "@/components/admin/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/usuarios")({
@@ -27,7 +27,7 @@ function AdminUsuarios() {
   const [createBusy, setCreateBusy] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
-  async function handleAddRole(userId: string, role: "admin" | "editor") {
+  async function handleAddRole(userId: string, role: "admin" | "editor" | "atleta" | "treinador" | "gestor_clube") {
     setBusy(`${userId}-${role}`);
     try {
       await addRole({ data: { user_id: userId, role } });
@@ -39,7 +39,7 @@ function AdminUsuarios() {
     }
   }
 
-  async function handleRemoveRole(userId: string, role: "admin" | "editor") {
+  async function handleRemoveRole(userId: string, role: "admin" | "editor" | "atleta" | "treinador" | "gestor_clube") {
     setBusy(`${userId}-${role}`);
     try {
       await removeRole({ data: { user_id: userId, role } });
@@ -100,13 +100,28 @@ function AdminUsuarios() {
                       <Shield className="h-3 w-3" /> Editor
                     </span>
                   )}
+                  {user.roles.includes("atleta") && (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold uppercase rounded-full px-2.5 py-1 bg-blue-500/15 text-blue-700 dark:text-blue-400">
+                      <User className="h-3 w-3" /> Atleta
+                    </span>
+                  )}
+                  {user.roles.includes("treinador") && (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold uppercase rounded-full px-2.5 py-1 bg-orange-500/15 text-orange-700 dark:text-orange-400">
+                      <Dumbbell className="h-3 w-3" /> Treinador
+                    </span>
+                  )}
+                  {user.roles.includes("gestor_clube") && (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold uppercase rounded-full px-2.5 py-1 bg-purple-500/15 text-purple-700 dark:text-purple-400">
+                      <Building2 className="h-3 w-3" /> Gestor
+                    </span>
+                  )}
                   {user.roles.length === 0 && (
                     <span className="text-xs text-muted-foreground italic">Sem funções</span>
                   )}
                 </div>
               </td>
               <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {!user.roles.includes("admin") && (
                     <button
                       onClick={() => handleAddRole(user.id, "admin")}
@@ -125,6 +140,33 @@ function AdminUsuarios() {
                       + Editor
                     </button>
                   )}
+                  {!user.roles.includes("atleta") && (
+                    <button
+                      onClick={() => handleAddRole(user.id, "atleta")}
+                      disabled={busy !== null}
+                      className="text-xs font-semibold text-blue-700 dark:text-blue-400 hover:underline disabled:opacity-60"
+                    >
+                      + Atleta
+                    </button>
+                  )}
+                  {!user.roles.includes("treinador") && (
+                    <button
+                      onClick={() => handleAddRole(user.id, "treinador")}
+                      disabled={busy !== null}
+                      className="text-xs font-semibold text-orange-700 dark:text-orange-400 hover:underline disabled:opacity-60"
+                    >
+                      + Treinador
+                    </button>
+                  )}
+                  {!user.roles.includes("gestor_clube") && (
+                    <button
+                      onClick={() => handleAddRole(user.id, "gestor_clube")}
+                      disabled={busy !== null}
+                      className="text-xs font-semibold text-purple-700 dark:text-purple-400 hover:underline disabled:opacity-60"
+                    >
+                      + Gestor
+                    </button>
+                  )}
                   {user.roles.includes("admin") && (
                     <button
                       onClick={() => handleRemoveRole(user.id, "admin")}
@@ -141,6 +183,33 @@ function AdminUsuarios() {
                       className="text-xs font-semibold text-destructive hover:underline disabled:opacity-60 flex items-center gap-1"
                     >
                       <X className="h-3 w-3" /> Editor
+                    </button>
+                  )}
+                  {user.roles.includes("atleta") && (
+                    <button
+                      onClick={() => handleRemoveRole(user.id, "atleta")}
+                      disabled={busy !== null}
+                      className="text-xs font-semibold text-destructive hover:underline disabled:opacity-60 flex items-center gap-1"
+                    >
+                      <X className="h-3 w-3" /> Atleta
+                    </button>
+                  )}
+                  {user.roles.includes("treinador") && (
+                    <button
+                      onClick={() => handleRemoveRole(user.id, "treinador")}
+                      disabled={busy !== null}
+                      className="text-xs font-semibold text-destructive hover:underline disabled:opacity-60 flex items-center gap-1"
+                    >
+                      <X className="h-3 w-3" /> Treinador
+                    </button>
+                  )}
+                  {user.roles.includes("gestor_clube") && (
+                    <button
+                      onClick={() => handleRemoveRole(user.id, "gestor_clube")}
+                      disabled={busy !== null}
+                      className="text-xs font-semibold text-destructive hover:underline disabled:opacity-60 flex items-center gap-1"
+                    >
+                      <X className="h-3 w-3" /> Gestor
                     </button>
                   )}
                 </div>

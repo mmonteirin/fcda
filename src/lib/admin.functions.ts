@@ -427,7 +427,7 @@ export async function saveBanner(supabase: SupabaseClient, userId: string, data:
 // ============ USUÁRIOS ============
 const userRoleSchema = z.object({
   user_id: z.string().uuid(),
-  role: z.enum(["admin", "editor"]),
+  role: z.enum(["admin", "editor", "atleta", "treinador", "gestor_clube"]),
 });
 
 const createUserSchema = z.object({
@@ -435,6 +435,102 @@ const createUserSchema = z.object({
   password: z.string().min(6),
   nome: z.string().min(1).max(120),
 });
+
+// ============ CADASTRO PÚBLICO ============
+const publicRegisterSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  nome: z.string().min(1).max(120),
+  userType: z.enum(["atleta", "treinador", "gestor_clube"]),
+  cpf: z.string().optional(),
+  telefone: z.string().optional(),
+  data_nascimento: z.string().optional(),
+  clube_id: z.string().uuid().optional(),
+  categoria: z.string().optional(),
+  especialidade: z.string().optional(),
+  credencial: z.string().optional(),
+  cargo: z.string().optional(),
+});
+
+export const publicRegister = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => publicRegisterSchema.parse(d))
+  .handler(async ({ data }) => {
+    const supabase = createClient<Database>(
+      process.env.VITE_SUPABASE_URL!,
+      process.env.VITE_SUPABASE_ANON_KEY!,
+    );
+
+    // Create user in Supabase Auth
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: {
+          nome: data.nome,
+          userType: data.userType,
+        },
+      },
+    });
+
+    if (signUpError) {
+      throw new Error(`Erro ao criar usuário: ${signUpError.message}`);
+    }
+
+    if (!signUpData.user) {
+      throw new Error("Erro ao criar usuário: usuário não criado");
+    }
+
+    // Create profile record
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .insert({ id: signUpData.user.id, email: data.email, nome: data.nome });
+
+    if (profileError) throw new Error(profileError.message);
+
+    // Assign role based on user type
+    const { error: roleError } = await supabase.from("user_roles").insert({
+      user_id: signUpData.user.id,
+      role: data.userType,
+    });
+
+    if (roleError) throw new Error(roleError.message);
+
+    // Create specific profile based on user type
+    const sb = asDynamicSupabase(supabase);
+
+    if (data.userType === "atleta") {
+      const { error: atletaError } = await sb.from("atletas").insert({
+        id: signUpData.user.id,
+        data_nascimento: data.data_nascimento || null,
+        cpf: data.cpf || null,
+        telefone: data.telefone || null,
+        clube_id: data.clube_id || null,
+        categoria: data.categoria || null,
+      });
+      if (atletaError) throw new Error(atletaError.message);
+    } else if (data.userType === "treinador") {
+      const { error: treinadorError } = await sb.from("treinadores").insert({
+        id: signUpData.user.id,
+        cpf: data.cpf || null,
+        telefone: data.telefone || null,
+        clube_id: data.clube_id || null,
+        especialidade: data.especialidade || null,
+        credencial: data.credencial || null,
+      });
+      if (treinadorError) throw new Error(treinadorError.message);
+    } else if (data.userType === "gestor_clube") {
+      const { error: gestorError } = await sb.from("gestores_clube").insert({
+        id: signUpData.user.id,
+        cpf: data.cpf || null,
+        telefone: data.telefone || null,
+        clube_id: data.clube_id || null,
+        cargo: data.cargo || null,
+      });
+      if (gestorError) throw new Error(gestorError.message);
+    }
+
+    return { ok: true, userId: signUpData.user.id };
+  });
 
 export const createUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

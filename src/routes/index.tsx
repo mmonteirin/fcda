@@ -116,7 +116,12 @@ function Home() {
     <SiteLayout>
       {/* HERO BANNER */}
       {bannerSlides.length > 0 ? (
-        <HeroBanner slides={bannerSlides} autoPlay={true} interval={5000} />
+        <HeroBanner
+          slides={bannerSlides}
+          eventos={eventosFuturos}
+          autoPlay={true}
+          interval={5000}
+        />
       ) : (
         <SkeletonHero />
       )}
