@@ -630,3 +630,81 @@ export async function deleteParceiro(supabase: SupabaseClient, userId: string, i
   if (error) throw new Error(error.message);
   return { ok: true };
 }
+
+// Clubes CRUD
+const clubeSchema = z.object({
+  id: z.string().optional(),
+  nome: z.string().min(1).max(200),
+  sigla: z.string().max(20).nullable().optional(),
+  logo_url: z.string().url().nullable().optional(),
+  cidade: z.string().max(100).nullable().optional(),
+  estado: z.string().max(2).nullable().optional(),
+  fundacao: z.string().nullable().optional(),
+  email: z.string().email().nullable().optional(),
+  telefone: z.string().max(20).nullable().optional(),
+  site_url: z.string().url().nullable().optional(),
+  endereco: z.string().max(200).nullable().optional(),
+  ordem: z.number().int().min(0).default(0),
+  ativo: z.boolean().default(true),
+});
+
+export async function saveClube(supabase: SupabaseClient, userId: string, data: unknown) {
+  const validated = clubeSchema.parse(data);
+  await assertEditor(supabase, userId);
+  const { id, ...rest } = validated;
+  const sb = asDynamicSupabase(supabase);
+  if (id) {
+    const { error } = await sb.from("clubes").update(rest).eq("id", id);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await sb.from("clubes").insert(rest);
+    if (error) throw new Error(error.message);
+  }
+  return { ok: true };
+}
+
+export async function deleteClube(supabase: SupabaseClient, userId: string, id: string) {
+  await assertEditor(supabase, userId);
+  const sb = asDynamicSupabase(supabase);
+  const { error } = await sb.from("clubes").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
+
+// Upload de imagens para parceiros
+export async function uploadParceiroLogo(supabase: SupabaseClient, file: File) {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("O arquivo deve ser uma imagem");
+  }
+
+  const extension = file.name.split(".").pop() || "jpg";
+  const path = `parceiros/${crypto.randomUUID()}.${extension}`;
+
+  const { error } = await supabase.storage.from("site-images").upload(path, file, {
+    upsert: false,
+  });
+
+  if (error) throw new Error(error.message);
+
+  const { data } = supabase.storage.from("site-images").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// Upload de imagens para clubes
+export async function uploadClubeLogo(supabase: SupabaseClient, file: File) {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("O arquivo deve ser uma imagem");
+  }
+
+  const extension = file.name.split(".").pop() || "jpg";
+  const path = `clubes/${crypto.randomUUID()}.${extension}`;
+
+  const { error } = await supabase.storage.from("site-images").upload(path, file, {
+    upsert: false,
+  });
+
+  if (error) throw new Error(error.message);
+
+  const { data } = supabase.storage.from("site-images").getPublicUrl(path);
+  return data.publicUrl;
+}

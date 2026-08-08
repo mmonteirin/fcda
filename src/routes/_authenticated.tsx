@@ -88,6 +88,7 @@ function AuthenticatedLayout() {
     { to: "/admin/mensagens", label: "Mensagens", icon: Mail },
     { to: "/admin/transparencia", label: "Transparência", icon: Newspaper },
     { to: "/admin/parceiros", label: "Parceiros", icon: Building2 },
+    { to: "/admin/clubes", label: "Clubes", icon: Building2 },
     { to: "/admin/categorias-modalidades", label: "Categorias", icon: WavesIcon },
     { to: "/admin/modalidades", label: "Modalidades", icon: WavesIcon },
     { to: "/admin/diretores", label: "Diretoria", icon: Users },
