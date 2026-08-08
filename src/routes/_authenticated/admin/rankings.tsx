@@ -108,9 +108,13 @@ function AdminRankings() {
     setBusy(false);
   };
   return (
-    <div>
-      <AdminToolbar
-        title="Rankings"
+    <div className="space-y-6">
+      <AdminToolbar 
+        title="Rankings" 
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin" },
+          { label: "Rankings", to: "/admin/rankings" }
+        ]}
         onNew={() => {
           setForm(initial);
           setOpen(true);

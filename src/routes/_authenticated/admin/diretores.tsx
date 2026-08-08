@@ -46,9 +46,13 @@ function AdminDiretores() {
   }
 
   return (
-    <div>
-      <AdminToolbar
-        title="Diretoria"
+    <div className="space-y-6">
+      <AdminToolbar 
+        title="Diretoria" 
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin" },
+          { label: "Diretoria", to: "/admin/diretores" }
+        ]}
         onNew={() => setEditing({ nome: "", cargo: "", ordem: diretores.length + 1 })}
       />
 

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { AdminToolbar } from "@/components/admin/ui";
 import {
   noticiasQuery,
   eventosQuery,
@@ -99,13 +100,7 @@ function AdminIndex() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-4xl font-bold text-deep">Dashboard FCDA</h1>
-        <p className="mt-2 text-muted-foreground">
-          Visão geral da gestão de competições, inscrições, documentos e comunicação institucional.
-        </p>
-      </div>
+      <AdminToolbar title="Dashboard" breadcrumbs={[{ label: "Dashboard", to: "/admin" }]} />
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

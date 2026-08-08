@@ -68,9 +68,13 @@ function AdminUsuarios() {
   }
 
   return (
-    <div>
-      <AdminToolbar
-        title="Usuários"
+    <div className="space-y-6">
+      <AdminToolbar 
+        title="Usuários" 
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin" },
+          { label: "Usuários", to: "/admin/usuarios" }
+        ]}
         onNew={() => setNewUser({ email: "", password: "", nome: "" })}
       />
 

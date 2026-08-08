@@ -95,9 +95,13 @@ function AdminNoticias() {
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       <AdminToolbar
         title="Notícias"
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin" },
+          { label: "Notícias", to: "/admin/noticias" }
+        ]}
         onNew={() =>
           setEditing({
             slug: "",

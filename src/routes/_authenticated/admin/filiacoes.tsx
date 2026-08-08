@@ -55,8 +55,14 @@ function AdminFiliacoes() {
   }
 
   return (
-    <div>
-      <AdminToolbar title="Solicitações de Filiação" />
+    <div className="space-y-6">
+      <AdminToolbar 
+        title="Inscrições" 
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin" },
+          { label: "Inscrições", to: "/admin/filiacoes" }
+        ]} 
+      />
 
       {err && <div className="text-sm text-destructive mb-4">{err}</div>}
 

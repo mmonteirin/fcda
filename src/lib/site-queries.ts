@@ -34,10 +34,15 @@ export type Evento = {
   id: string;
   data_texto: string;
   data_inicio: string | null;
+  data_fim?: string | null;
   nome: string;
   local: string;
   modalidade: string;
   ano: number | null;
+  descricao?: string | null;
+  status?: string | null;
+  link_inscricao?: string | null;
+  imagem_url?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -128,7 +133,7 @@ export const eventosQuery = (ano?: number) =>
     queryFn: async (): Promise<Evento[]> => {
       let query = supabase
         .from("eventos")
-        .select("*, ano")
+        .select("*")
         .order("data_inicio", { ascending: true, nullsFirst: false });
       if (ano) {
         query = query.eq("ano", ano);
@@ -407,6 +412,138 @@ export const cursosQuery = (onlyPublished = true) =>
       const { data, error } = await query;
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+// ============ PERFIS DE USUÁRIO ============
+export type AtletaProfile = {
+  id: string;
+  data_nascimento: string;
+  cpf: string | null;
+  telefone: string | null;
+  clube_id: string | null;
+  categoria: string | null;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TreinadorProfile = {
+  id: string;
+  cpf: string | null;
+  telefone: string | null;
+  clube_id: string | null;
+  credencial: string | null;
+  especialidade: string | null;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type GestorProfile = {
+  id: string;
+  cpf: string | null;
+  telefone: string | null;
+  clube_id: string | null;
+  cargo: string | null;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserProfile = {
+  id: string;
+  email: string;
+  nome: string | null;
+  roles: string[];
+};
+
+export const userProfileQuery = (userId: string) =>
+  queryOptions({
+    queryKey: ["userProfile", userId],
+    queryFn: async (): Promise<UserProfile> => {
+      const sb = asDynamicSupabase(supabase);
+      
+      // Buscar profile básico
+      const { data: profile, error: profileError } = await sb
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      
+      if (profileError) throw profileError;
+      
+      // Buscar roles do usuário
+      const { data: roles, error: rolesError } = await sb
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+      
+      if (rolesError) throw rolesError;
+      
+      return {
+        id: profile.id,
+        email: profile.email,
+        nome: profile.nome,
+        roles: roles?.map((r: { role: string }) => r.role) || [],
+      };
+    },
+  });
+
+export const atletaProfileQuery = (userId: string) =>
+  queryOptions({
+    queryKey: ["atletaProfile", userId],
+    queryFn: async (): Promise<AtletaProfile | null> => {
+      const sb = asDynamicSupabase(supabase);
+      const { data, error } = await sb
+        .from("atletas")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      
+      if (error) {
+        if (error.code === "PGRST116") return null; // Not found
+        throw error;
+      }
+      return data;
+    },
+  });
+
+export const treinadorProfileQuery = (userId: string) =>
+  queryOptions({
+    queryKey: ["treinadorProfile", userId],
+    queryFn: async (): Promise<TreinadorProfile | null> => {
+      const sb = asDynamicSupabase(supabase);
+      const { data, error } = await sb
+        .from("treinadores")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      
+      if (error) {
+        if (error.code === "PGRST116") return null; // Not found
+        throw error;
+      }
+      return data;
+    },
+  });
+
+export const gestorProfileQuery = (userId: string) =>
+  queryOptions({
+    queryKey: ["gestorProfile", userId],
+    queryFn: async (): Promise<GestorProfile | null> => {
+      const sb = asDynamicSupabase(supabase);
+      const { data, error } = await sb
+        .from("gestores_clube")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      
+      if (error) {
+        if (error.code === "PGRST116") return null; // Not found
+        throw error;
+      }
+      return data;
     },
   });
 

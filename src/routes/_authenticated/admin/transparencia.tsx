@@ -84,9 +84,13 @@ function AdminTransparencia() {
   }
 
   return (
-    <div>
-      <AdminToolbar
-        title="Painel da Transparência"
+    <div className="space-y-6">
+      <AdminToolbar 
+        title="Documentos" 
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin" },
+          { label: "Documentos", to: "/admin/transparencia" }
+        ]}
         onNew={() =>
           setEditing({
             tipo: "boletim",
