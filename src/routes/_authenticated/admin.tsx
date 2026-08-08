@@ -7,10 +7,12 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 function AdminLayout() {
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <AdminSidebar />
       <main className="flex-1 overflow-auto">
-        <Outlet />
+        <div className="p-6 md:p-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

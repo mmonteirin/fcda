@@ -103,47 +103,47 @@ function AdminIndex() {
       <AdminToolbar title="Dashboard" breadcrumbs={[{ label: "Dashboard", to: "/admin" }]} />
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-6">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-primary grid place-items-center text-primary-foreground">
-              <Activity className="h-6 w-6" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-primary to-primary/80 grid place-items-center text-white shadow-lg shadow-primary/25">
+              <Activity className="h-7 w-7" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-deep">{eventos.length}</div>
+              <div className="text-3xl font-bold text-deep dark:text-white">{eventos.length}</div>
               <div className="text-sm text-muted-foreground">Competições</div>
             </div>
           </div>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20 p-6">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-emerald-500 grid place-items-center text-white">
-              <Users className="h-6 w-6" />
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 grid place-items-center text-white shadow-lg shadow-emerald-500/25">
+              <Users className="h-7 w-7" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-deep">{users.length}</div>
+              <div className="text-3xl font-bold text-deep dark:text-white">{users.length}</div>
               <div className="text-sm text-muted-foreground">Usuários</div>
             </div>
           </div>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-gold/20 to-gold/10 border border-gold/30 p-6">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-gold grid place-items-center text-deep">
-              <TrendingUp className="h-6 w-6" />
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-gold to-gold/80 grid place-items-center text-deep shadow-lg shadow-gold/25">
+              <TrendingUp className="h-7 w-7" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-deep">{publishedNews}</div>
+              <div className="text-3xl font-bold text-deep dark:text-white">{publishedNews}</div>
               <div className="text-sm text-muted-foreground">Notícias publicadas</div>
             </div>
           </div>
         </div>
-        <div className="rounded-2xl bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 p-6">
-          <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-purple-500 grid place-items-center text-white">
-              <Clock className="h-6 w-6" />
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-border p-6 shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-4">
+            <div className="h-14 w-14 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 grid place-items-center text-white shadow-lg shadow-purple-500/25">
+              <Clock className="h-7 w-7" />
             </div>
             <div>
-              <div className="text-2xl font-bold text-deep">{pendentesCount}</div>
+              <div className="text-3xl font-bold text-deep dark:text-white">{pendentesCount}</div>
               <div className="text-sm text-muted-foreground">Inscrições pendentes</div>
             </div>
           </div>
@@ -152,21 +152,21 @@ function AdminIndex() {
 
       {/* Main Navigation Cards */}
       <section>
-        <h2 className="text-lg font-bold text-deep mb-4">Áreas Principais</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <h2 className="text-xl font-bold text-deep dark:text-white mb-6">Áreas Principais</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {mainCards.map((c) => (
             <Link
               key={c.to}
               to={c.to}
-              className="group rounded-2xl bg-card border border-border p-6 shadow-card hover:shadow-elegant transition-all hover:-translate-y-1"
+              className="group rounded-2xl bg-white dark:bg-slate-900 border border-border p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className={`h-12 w-12 rounded-xl ${c.color} grid place-items-center text-white`}>
-                  <c.icon className="h-6 w-6" />
+                <div className={`h-14 w-14 rounded-xl ${c.color} grid place-items-center text-white shadow-lg`}>
+                  <c.icon className="h-7 w-7" />
                 </div>
                 <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-              <div className="text-3xl font-bold text-deep">{c.count}</div>
+              <div className="text-3xl font-bold text-deep dark:text-white">{c.count}</div>
               <div className="text-sm text-muted-foreground">{c.label}</div>
               {c.published !== undefined && (
                 <div className="mt-2 text-xs text-muted-foreground">
@@ -180,31 +180,31 @@ function AdminIndex() {
 
       {/* Secondary Navigation */}
       <section>
-        <h2 className="text-lg font-bold text-deep mb-4">Gestão Administrativa</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <h2 className="text-xl font-bold text-deep dark:text-white mb-6">Gestão Administrativa</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {secondaryCards.map((c) => (
             <Link
               key={c.to}
               to={c.to}
-              className={`group rounded-xl bg-card border p-5 hover:shadow-elegant transition-all hover:-translate-y-0.5 ${
+              className={`group rounded-2xl bg-white dark:bg-slate-900 border p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 ${
                 c.highlight ? "border-primary/50 bg-primary/5" : "border-border"
               }`}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   <div
-                    className={`h-10 w-10 rounded-lg grid place-items-center ${
-                      c.highlight ? "bg-primary text-primary-foreground" : "bg-secondary/50 text-deep"
+                    className={`h-12 w-12 rounded-xl grid place-items-center ${
+                      c.highlight ? "bg-gradient-to-br from-primary to-primary/80 text-white shadow-lg shadow-primary/25" : "bg-slate-100 dark:bg-slate-800 text-deep dark:text-white"
                     }`}
                   >
-                    <c.icon className="h-5 w-5" />
+                    <c.icon className="h-6 w-6" />
                   </div>
                   <div>
-                    <div className="text-xl font-bold text-deep">{c.count}</div>
+                    <div className="text-2xl font-bold text-deep dark:text-white">{c.count}</div>
                     <div className="text-sm text-muted-foreground">{c.label}</div>
                   </div>
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
             </Link>
           ))}
@@ -212,30 +212,30 @@ function AdminIndex() {
       </section>
 
       {/* Quick Actions */}
-      <section className="rounded-2xl bg-gradient-to-r from-deep/5 to-primary/5 border border-border p-6">
-        <h2 className="text-lg font-bold text-deep mb-4">Ações Rápidas</h2>
-        <div className="flex flex-wrap gap-3">
+      <section className="rounded-2xl bg-gradient-to-r from-primary/5 to-primary/10 border border-border p-6">
+        <h2 className="text-xl font-bold text-deep dark:text-white mb-6">Ações Rápidas</h2>
+        <div className="flex flex-wrap gap-4">
           <Link
             to="/admin/noticias"
-            className="inline-flex items-center gap-2 rounded-lg bg-deep text-deep-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-deep to-deep/90 text-white px-5 py-3 text-sm font-semibold hover:shadow-lg hover:shadow-deep/25 transition-all hover:-translate-y-0.5"
           >
             <Newspaper className="h-4 w-4" /> Nova notícia
           </Link>
           <Link
             to="/admin/eventos"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/90 text-white px-5 py-3 text-sm font-semibold hover:shadow-lg hover:shadow-primary/25 transition-all hover:-translate-y-0.5"
           >
             <Calendar className="h-4 w-4" /> Novo evento
           </Link>
           <Link
             to="/admin/cursos"
-            className="inline-flex items-center gap-2 rounded-lg bg-gold text-deep px-4 py-2 text-sm font-semibold hover:opacity-90 transition"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-gold to-gold/90 text-deep px-5 py-3 text-sm font-semibold hover:shadow-lg hover:shadow-gold/25 transition-all hover:-translate-y-0.5"
           >
             <GraduationCap className="h-4 w-4" /> Novo curso
           </Link>
           <Link
             to="/admin/filiacoes"
-            className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-secondary/50 transition"
+            className="inline-flex items-center gap-2 rounded-xl border-2 border-border bg-white dark:bg-slate-900 px-5 py-3 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
           >
             <Building2 className="h-4 w-4" /> Revisar inscrições
           </Link>

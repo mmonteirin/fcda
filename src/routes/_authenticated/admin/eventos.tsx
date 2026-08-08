@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
-import { Filter } from "lucide-react";
+import { Filter, Calendar } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/eventos")({
   loader: ({ context }) => context.queryClient.ensureQueryData(eventosQuery()),
@@ -102,25 +102,58 @@ function AdminEventos() {
       )}
 
       <AdminTable>
-        <thead className="bg-secondary/60 text-deep text-xs uppercase tracking-wider">
+        <thead className="bg-slate-100 dark:bg-slate-800 text-deep dark:text-white text-xs uppercase tracking-wider font-semibold">
           <tr>
-            <th className="text-left px-4 py-3">Data</th>
-            <th className="text-left px-4 py-3">Nome</th>
-            <th className="text-left px-4 py-3 hidden md:table-cell">Local</th>
-            <th className="text-left px-4 py-3 hidden md:table-cell">Modalidade</th>
-            <th />
+            <th className="text-left px-5 py-4">Data</th>
+            <th className="text-left px-5 py-4">Nome</th>
+            <th className="text-left px-5 py-4 hidden md:table-cell">Local</th>
+            <th className="text-left px-5 py-4 hidden md:table-cell">Modalidade</th>
+            <th className="text-left px-5 py-4">Status</th>
+            <th className="px-5 py-4" />
           </tr>
         </thead>
         <tbody>
           {eventos.map((e) => (
-            <tr key={e.id} className="border-t border-border">
-              <td className="px-4 py-3 font-bold text-deep">{e.data_texto}</td>
-              <td className="px-4 py-3">{e.nome}</td>
-              <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{e.local}</td>
-              <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">
+            <tr key={e.id} className="border-t border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <td className="px-5 py-4 font-bold text-deep dark:text-white">{e.data_texto}</td>
+              <td className="px-5 py-4">
+                <div className="font-semibold text-deep dark:text-white">{e.nome}</div>
+                {e.imagem_url && (
+                  <div className="mt-2">
+                    <img
+                      src={e.imagem_url}
+                      alt=""
+                      className="h-12 w-20 object-cover rounded-lg"
+                    />
+                  </div>
+                )}
+              </td>
+              <td className="px-5 py-4 hidden md:table-cell text-muted-foreground">{e.local}</td>
+              <td className="px-5 py-4 hidden md:table-cell text-muted-foreground">
                 {e.modalidade}
               </td>
-              <td className="px-4 py-3">
+              <td className="px-5 py-4">
+                {e.status && (
+                  <span className={`inline-flex text-xs font-bold uppercase rounded-full px-3 py-1.5 ${
+                    e.status === 'planejado'
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                      : e.status === 'confirmado'
+                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                      : e.status === 'inscricoes_abertas'
+                      ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                      : e.status === 'inscricoes_fechadas'
+                      ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                      : e.status === 'em_andamento'
+                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+                      : e.status === 'finalizado'
+                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                  }`}>
+                    {e.status.replace(/_/g, ' ')}
+                  </span>
+                )}
+              </td>
+              <td className="px-5 py-4">
                 <RowActions
                   onEdit={() => setEditing(e)}
                   onDelete={async () => {
@@ -133,8 +166,11 @@ function AdminEventos() {
           ))}
           {eventos.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
-                Nenhum evento cadastrado.
+              <td colSpan={6} className="px-5 py-16 text-center text-muted-foreground">
+                <div className="flex flex-col items-center gap-2">
+                  <Calendar className="h-12 w-12 text-muted-foreground/50" />
+                  <p>Nenhum evento cadastrado.</p>
+                </div>
               </td>
             </tr>
           )}

@@ -66,43 +66,43 @@ function AdminFiliacoes() {
 
       {err && <div className="text-sm text-destructive mb-4">{err}</div>}
 
-      <div className="mb-6 flex gap-2">
+      <div className="mb-6 flex gap-3">
         <button
           onClick={() => setFilter("todas")}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+          className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
             filter === "todas"
-              ? "bg-deep text-deep-foreground"
-              : "bg-card text-foreground/70 hover:text-deep"
+              ? "bg-gradient-to-r from-deep to-deep/90 text-white shadow-lg shadow-deep/25"
+              : "bg-white dark:bg-slate-900 border border-border text-muted-foreground hover:text-deep dark:hover:text-white hover:border-primary/50"
           }`}
         >
           Todas ({solicitacoes.length})
         </button>
         <button
           onClick={() => setFilter("pendentes")}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+          className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
             filter === "pendentes"
-              ? "bg-deep text-deep-foreground"
-              : "bg-card text-foreground/70 hover:text-deep"
+              ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-lg shadow-primary/25"
+              : "bg-white dark:bg-slate-900 border border-border text-muted-foreground hover:text-deep dark:hover:text-white hover:border-primary/50"
           }`}
         >
           Pendentes ({pendentesCount})
         </button>
         <button
           onClick={() => setFilter("aprovadas")}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+          className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
             filter === "aprovadas"
-              ? "bg-deep text-deep-foreground"
-              : "bg-card text-foreground/70 hover:text-deep"
+              ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25"
+              : "bg-white dark:bg-slate-900 border border-border text-muted-foreground hover:text-deep dark:hover:text-white hover:border-primary/50"
           }`}
         >
           Aprovadas ({solicitacoes.filter((s) => s.status === "aprovado").length})
         </button>
         <button
           onClick={() => setFilter("rejeitadas")}
-          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+          className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
             filter === "rejeitadas"
-              ? "bg-deep text-deep-foreground"
-              : "bg-card text-foreground/70 hover:text-deep"
+              ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25"
+              : "bg-white dark:bg-slate-900 border border-border text-muted-foreground hover:text-deep dark:hover:text-white hover:border-primary/50"
           }`}
         >
           Rejeitadas ({solicitacoes.filter((s) => s.status === "rejeitado").length})
@@ -112,35 +112,36 @@ function AdminFiliacoes() {
       <div className="grid lg:grid-cols-[1fr_1.5fr] gap-6">
         <div className="space-y-3">
           {filteredSolicitacoes.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              Nenhuma solicitação encontrada.
-            </p>
+            <div className="text-center py-16">
+              <Building2 className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+              <p className="text-muted-foreground">Nenhuma solicitação encontrada.</p>
+            </div>
           ) : (
             filteredSolicitacoes.map((soli) => (
               <div
                 key={soli.id}
                 onClick={() => setSelectedFiliacao(soli)}
-                className={`p-4 rounded-xl border cursor-pointer transition-colors ${
+                className={`p-5 rounded-2xl border cursor-pointer transition-all hover:shadow-md ${
                   selectedFiliacao?.id === soli.id
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
+                    ? "border-primary bg-primary/5 shadow-md"
+                    : "border-border bg-white dark:bg-slate-900 hover:border-primary/50"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="font-semibold text-deep truncate">{soli.razao_social}</h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Building2 className="h-5 w-5 text-muted-foreground" />
+                      <h3 className="font-bold text-deep dark:text-white truncate">{soli.razao_social}</h3>
                     </div>
                     <p className="text-sm text-muted-foreground">{soli.cnpj}</p>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2 mt-3">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold ${
                           soli.status === "pendente"
-                            ? "bg-amber-100 text-amber-800"
+                            ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400"
                             : soli.status === "aprovado"
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-destructive/10 text-destructive"
+                              ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400"
+                              : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400"
                         }`}
                       >
                         {soli.status === "pendente" && <Clock className="h-3 w-3" />}
@@ -159,18 +160,18 @@ function AdminFiliacoes() {
           )}
         </div>
 
-        <div className="rounded-2xl bg-card border border-border p-6 shadow-card">
+        <div className="rounded-2xl bg-white dark:bg-slate-900 border border-border p-6 shadow-sm">
           {selectedFiliacao ? (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-deep">Detalhes da Solicitação</h2>
+                <h2 className="text-xl font-bold text-deep dark:text-white">Detalhes da Solicitação</h2>
                 <span
                   className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold ${
                     selectedFiliacao.status === "pendente"
-                      ? "bg-amber-100 text-amber-800"
+                      ? "bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400"
                       : selectedFiliacao.status === "aprovado"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-destructive/10 text-destructive"
+                        ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400"
+                        : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400"
                   }`}
                 >
                   {selectedFiliacao.status === "pendente" && <Clock className="h-4 w-4" />}
@@ -183,55 +184,55 @@ function AdminFiliacoes() {
 
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-semibold text-deep mb-2">Tipo de Processo</h3>
+                  <h3 className="font-semibold text-deep dark:text-white mb-2">Tipo de Processo</h3>
                   <p className="text-sm text-muted-foreground">
                     {selectedFiliacao.tipo === "filiacao" ? "Filiação" : "Vinculação"}
                   </p>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-deep mb-2">Dados da Entidade</h3>
+                  <h3 className="font-semibold text-deep dark:text-white mb-2">Dados da Entidade</h3>
                   <div className="space-y-2 text-sm">
                     <div>
                       <span className="text-muted-foreground">Razão Social:</span>{" "}
-                      <span className="text-deep">{selectedFiliacao.razao_social}</span>
+                      <span className="text-deep dark:text-white">{selectedFiliacao.razao_social}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">CNPJ:</span>{" "}
-                      <span className="text-deep">{selectedFiliacao.cnpj}</span>
+                      <span className="text-deep dark:text-white">{selectedFiliacao.cnpj}</span>
                     </div>
                     {selectedFiliacao.inscricao_estadual && (
                       <div>
                         <span className="text-muted-foreground">Inscrição Estadual:</span>{" "}
-                        <span className="text-deep">{selectedFiliacao.inscricao_estadual}</span>
+                        <span className="text-deep dark:text-white">{selectedFiliacao.inscricao_estadual}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-deep mb-2">Endereço</h3>
+                  <h3 className="font-semibold text-deep dark:text-white mb-2">Endereço</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-start gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <span className="text-deep">{selectedFiliacao.endereco}</span>
+                      <span className="text-deep dark:text-white">{selectedFiliacao.endereco}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <span className="text-muted-foreground">CEP:</span>{" "}
-                        <span className="text-deep">{selectedFiliacao.cep}</span>
+                        <span className="text-deep dark:text-white">{selectedFiliacao.cep}</span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Bairro:</span>{" "}
-                        <span className="text-deep">{selectedFiliacao.bairro}</span>
+                        <span className="text-deep dark:text-white">{selectedFiliacao.bairro}</span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Cidade:</span>{" "}
-                        <span className="text-deep">{selectedFiliacao.cidade}</span>
+                        <span className="text-deep dark:text-white">{selectedFiliacao.cidade}</span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">UF:</span>{" "}
-                        <span className="text-deep">{selectedFiliacao.uf}</span>
+                        <span className="text-deep dark:text-white">{selectedFiliacao.uf}</span>
                       </div>
                     </div>
                   </div>
@@ -239,20 +240,20 @@ function AdminFiliacoes() {
 
                 {selectedFiliacao.fone && (
                   <div>
-                    <h3 className="font-semibold text-deep mb-2">Contato</h3>
+                    <h3 className="font-semibold text-deep dark:text-white mb-2">Contato</h3>
                     <div className="flex items-center gap-2 text-sm">
                       <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-deep">{selectedFiliacao.fone}</span>
+                      <span className="text-deep dark:text-white">{selectedFiliacao.fone}</span>
                     </div>
                   </div>
                 )}
 
                 {selectedFiliacao.data_fundacao && (
                   <div>
-                    <h3 className="font-semibold text-deep mb-2">Data da Fundação</h3>
+                    <h3 className="font-semibold text-deep dark:text-white mb-2">Data da Fundação</h3>
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-deep">
+                      <span className="text-deep dark:text-white">
                         {new Date(selectedFiliacao.data_fundacao).toLocaleDateString("pt-BR")}
                       </span>
                     </div>
@@ -260,10 +261,10 @@ function AdminFiliacoes() {
                 )}
 
                 <div>
-                  <h3 className="font-semibold text-deep mb-2">Data da Solicitação</h3>
+                  <h3 className="font-semibold text-deep dark:text-white mb-2">Data da Solicitação</h3>
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-deep">
+                    <span className="text-deep dark:text-white">
                       {new Date(selectedFiliacao.created_at).toLocaleString("pt-BR")}
                     </span>
                   </div>

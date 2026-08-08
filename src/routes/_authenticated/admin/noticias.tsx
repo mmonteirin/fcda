@@ -6,7 +6,7 @@ import { noticiasQuery, type Noticia } from "@/lib/site-queries";
 import { saveNoticia, deleteNoticia, uploadImage } from "@/lib/admin.functions";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Newspaper } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/noticias")({
   loader: ({ context }) => context.queryClient.ensureQueryData(noticiasQuery(false)),
@@ -115,33 +115,46 @@ function AdminNoticias() {
       />
 
       <AdminTable>
-        <thead className="bg-secondary/60 text-deep text-xs uppercase tracking-wider">
+        <thead className="bg-slate-100 dark:bg-slate-800 text-deep dark:text-white text-xs uppercase tracking-wider font-semibold">
           <tr>
-            <th className="text-left px-4 py-3">Título</th>
-            <th className="text-left px-4 py-3 hidden md:table-cell">Categoria</th>
-            <th className="text-left px-4 py-3 hidden md:table-cell">Data</th>
-            <th className="text-left px-4 py-3">Status</th>
-            <th className="px-4 py-3" />
+            <th className="text-left px-5 py-4">Título</th>
+            <th className="text-left px-5 py-4 hidden md:table-cell">Categoria</th>
+            <th className="text-left px-5 py-4 hidden md:table-cell">Data</th>
+            <th className="text-left px-5 py-4">Status</th>
+            <th className="px-5 py-4" />
           </tr>
         </thead>
         <tbody>
           {noticias.map((n) => (
-            <tr key={n.id} className="border-t border-border">
-              <td className="px-4 py-3 font-semibold text-deep">{n.titulo}</td>
-              <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">
+            <tr key={n.id} className="border-t border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <td className="px-5 py-4">
+                <div className="font-semibold text-deep dark:text-white">{n.titulo}</div>
+                {n.imagem_url && (
+                  <div className="mt-2">
+                    <img
+                      src={n.imagem_url}
+                      alt=""
+                      className="h-12 w-20 object-cover rounded-lg"
+                    />
+                  </div>
+                )}
+              </td>
+              <td className="px-5 py-4 hidden md:table-cell text-muted-foreground">
                 {n.categoria}
               </td>
-              <td className="px-4 py-3 hidden md:table-cell text-muted-foreground">{n.data}</td>
-              <td className="px-4 py-3">
+              <td className="px-5 py-4 hidden md:table-cell text-muted-foreground">{n.data}</td>
+              <td className="px-5 py-4">
                 <span
-                  className={`text-xs font-bold uppercase rounded-full px-2.5 py-1 ${
-                    n.publicado ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                  className={`inline-flex text-xs font-bold uppercase rounded-full px-3 py-1.5 ${
+                    n.publicado
+                      ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                   }`}
                 >
                   {n.publicado ? "Publicada" : "Rascunho"}
                 </span>
               </td>
-              <td className="px-4 py-3">
+              <td className="px-5 py-4">
                 <RowActions
                   onEdit={() => setEditing(n)}
                   onDelete={async () => {
@@ -154,8 +167,11 @@ function AdminNoticias() {
           ))}
           {noticias.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-4 py-10 text-center text-muted-foreground">
-                Nenhuma notícia cadastrada.
+              <td colSpan={5} className="px-5 py-16 text-center text-muted-foreground">
+                <div className="flex flex-col items-center gap-2">
+                  <Newspaper className="h-12 w-12 text-muted-foreground/50" />
+                  <p>Nenhuma notícia cadastrada.</p>
+                </div>
               </td>
             </tr>
           )}
