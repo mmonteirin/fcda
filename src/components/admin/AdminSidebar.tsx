@@ -1,4 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
+import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   Newspaper,
@@ -14,47 +15,108 @@ import {
   Trophy,
   Award,
   Settings,
-  ChevronRight,
+  Bell,
+  History,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
   to: string;
   label: string;
-  icon: any;
-  badge?: number;
-  highlight?: boolean;
+  icon: LucideIcon;
 }
 
-const navItems: NavItem[] = [
-  { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/admin/noticias", label: "Notícias", icon: Newspaper },
-  { to: "/admin/eventos", label: "Competições", icon: Calendar },
-  { to: "/admin/cursos", label: "Cursos", icon: GraduationCap },
-  { to: "/admin/clubes", label: "Clubes", icon: Building2 },
-  { to: "/admin/modalidades", label: "Modalidades", icon: Waves },
-  { to: "/admin/diretores", label: "Diretoria", icon: Users },
-  { to: "/admin/usuarios", label: "Usuários", icon: UserCog },
-  { to: "/admin/parceiros", label: "Parceiros", icon: Handshake },
-  { to: "/admin/mensagens", label: "Mensagens", icon: Mail },
-  { to: "/admin/filiacoes", label: "Inscrições", icon: Building2 },
-  { to: "/admin/transparencia", label: "Documentos", icon: FileText },
-  { to: "/admin/rankings", label: "Rankings", icon: Trophy },
-  { to: "/admin/recordes", label: "Recordes", icon: Award },
+const navGroups: Array<{ label: string; items: NavItem[] }> = [
+  {
+    label: "Visão geral",
+    items: [{ to: "/admin", label: "Dashboard", icon: LayoutDashboard }],
+  },
+  {
+    label: "Conteúdo e competições",
+    items: [
+      { to: "/admin/banner", label: "Banner", icon: Newspaper },
+      { to: "/admin/noticias", label: "Notícias", icon: Newspaper },
+      { to: "/admin/eventos", label: "Competições", icon: Calendar },
+      { to: "/admin/eventos-pdfs", label: "Documentos de eventos", icon: FileText },
+      { to: "/admin/rankings", label: "Rankings", icon: Trophy },
+      { to: "/admin/recordes", label: "Recordes", icon: Award },
+      { to: "/admin/cursos", label: "Cursos", icon: GraduationCap },
+    ],
+  },
+  {
+    label: "Cadastros",
+    items: [
+      { to: "/admin/clubes", label: "Clubes", icon: Building2 },
+      { to: "/admin/modalidades", label: "Modalidades", icon: Waves },
+      { to: "/admin/categorias-modalidades", label: "Categorias", icon: Waves },
+      { to: "/admin/diretores", label: "Diretoria", icon: Users },
+      { to: "/admin/parceiros", label: "Parceiros", icon: Handshake },
+    ],
+  },
+  {
+    label: "Gestão",
+    items: [
+      { to: "/admin/filiacoes", label: "Inscrições", icon: Building2 },
+      { to: "/admin/mensagens", label: "Mensagens", icon: Mail },
+      { to: "/admin/transparencia", label: "Transparência", icon: FileText },
+      { to: "/admin/usuarios", label: "Usuários", icon: UserCog },
+      { to: "/admin/permissoes", label: "Permissões", icon: ShieldCheck },
+      { to: "/admin/notificacoes", label: "Notificações", icon: Bell },
+      { to: "/admin/historico", label: "Histórico", icon: History },
+    ],
+  },
 ];
 
-export function AdminSidebar() {
+function isActivePath(pathname: string, to: string) {
+  return to === "/admin"
+    ? pathname === "/admin" || pathname === "/admin/"
+    : pathname.startsWith(to);
+}
+
+function NavigationLinks({ compact = false }: { compact?: boolean }) {
   const location = useLocation();
 
-  const isActive = (to: string) => {
-    if (to === "/admin") {
-      return location.pathname === "/admin" || location.pathname === "/_authenticated/admin";
-    }
-    return location.pathname.startsWith(to);
-  };
-
   return (
-    <aside className="w-64 bg-white dark:bg-slate-900 border-r border-border h-screen sticky top-0 overflow-y-auto shadow-lg">
+    <>
+      {navGroups.map((group) => (
+        <section key={group.label} className={compact ? "contents" : "mb-5"}>
+          {!compact && (
+            <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+              {group.label}
+            </p>
+          )}
+          <div className={compact ? "flex gap-2" : "space-y-1"}>
+            {group.items.map((item) => {
+              const active = isActivePath(location.pathname, item.to);
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  title={compact ? item.label : undefined}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl text-sm font-medium transition-all",
+                    compact ? "shrink-0 px-3 py-2" : "px-3 py-2.5",
+                    active
+                      ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md shadow-primary/20"
+                      : "text-muted-foreground hover:bg-slate-100 hover:text-deep dark:hover:bg-slate-800 dark:hover:text-white",
+                  )}
+                >
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  {!compact && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </>
+  );
+}
+
+export function AdminSidebar() {
+  return (
+    <aside className="hidden h-[calc(100vh-73px)] w-72 shrink-0 overflow-y-auto border-r border-border bg-white shadow-sm lg:block dark:bg-slate-900">
       <div className="p-6">
         <div className="flex items-center gap-3 mb-8">
           <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 grid place-items-center text-white shadow-lg">
@@ -66,27 +128,8 @@ export function AdminSidebar() {
           </div>
         </div>
 
-        <nav className="space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group",
-                isActive(item.to)
-                  ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md shadow-primary/25"
-                  : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-deep dark:hover:text-white"
-              )}
-            >
-              <item.icon className={cn("h-5 w-5", isActive(item.to) ? "text-white" : "text-muted-foreground group-hover:text-deep dark:group-hover:text-white")} />
-              <span className="flex-1">{item.label}</span>
-              {item.badge && item.badge > 0 && (
-                <span className="h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
-                  {item.badge}
-                </span>
-              )}
-            </Link>
-          ))}
+        <nav aria-label="Navegação administrativa">
+          <NavigationLinks />
         </nav>
 
         <div className="mt-8 pt-6 border-t border-border">
@@ -100,5 +143,16 @@ export function AdminSidebar() {
         </div>
       </div>
     </aside>
+  );
+}
+
+export function AdminMobileNavigation() {
+  return (
+    <nav
+      aria-label="Navegação administrativa"
+      className="flex gap-2 overflow-x-auto border-b border-border bg-white px-4 py-3 lg:hidden dark:bg-slate-900"
+    >
+      <NavigationLinks compact />
+    </nav>
   );
 }
