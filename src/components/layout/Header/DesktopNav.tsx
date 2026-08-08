@@ -255,12 +255,13 @@ export function DesktopNav() {
       >
         Notícias
       </Link>
-      <a
-        href="mailto:secretaria@fcda.org.br?subject=Informa%C3%A7%C3%B5es%20sobre%20cursos"
+      <Link
+        to="/cursos"
         className="rounded-md px-3 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        activeProps={{ className: "text-deep" }}
       >
         Cursos
-      </a>
+      </Link>
       <Link
         to="/transparencia"
         className="rounded-md px-3 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
