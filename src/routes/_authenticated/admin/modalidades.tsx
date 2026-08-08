@@ -87,9 +87,13 @@ function AdminModalidades() {
   }
 
   return (
-    <div>
-      <AdminToolbar
-        title="Modalidades"
+    <div className="space-y-6">
+      <AdminToolbar 
+        title="Modalidades" 
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin" },
+          { label: "Modalidades", to: "/admin/modalidades" }
+        ]}
         onNew={() =>
           setEditing({ slug: "", nome: "", descricao: "", ordem: modalidades.length + 1 })
         }

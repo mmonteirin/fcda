@@ -45,8 +45,14 @@ function AdminMensagens() {
   const unreadCount = mensagens.filter((m) => !m.lido).length;
 
   return (
-    <div>
-      <AdminToolbar title={`Mensagens ${unreadCount > 0 ? `(${unreadCount} não lidas)` : ""}`} />
+    <div className="space-y-6">
+      <AdminToolbar 
+        title={`Mensagens ${unreadCount > 0 ? `(${unreadCount} não lidas)` : ""}`}
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin" },
+          { label: "Mensagens", to: "/admin/mensagens" }
+        ]} 
+      />
 
       {err && <div className="text-sm text-destructive mb-4">{err}</div>}
 

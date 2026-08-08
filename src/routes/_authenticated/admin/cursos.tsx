@@ -91,9 +91,13 @@ function AdminCursos() {
   }
 
   return (
-    <div>
-      <AdminToolbar
-        title="Cursos"
+    <div className="space-y-6">
+      <AdminToolbar 
+        title="Cursos" 
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin" },
+          { label: "Cursos", to: "/admin/cursos" }
+        ]}
         onNew={() =>
           setEditing({
             titulo: "",

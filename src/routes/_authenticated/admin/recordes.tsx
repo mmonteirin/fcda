@@ -3,6 +3,17 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar } from "@/components/admin/ui";
 
+type Recorde = {
+  id: string;
+  prova: string;
+  tempo: string;
+  atleta: string;
+  clube: string;
+  data: string;
+  categoria: string;
+  piscina: string;
+};
+
 const provas = [
   "50m Livre",
   "100m Livre",
@@ -108,9 +119,13 @@ function AdminRecordes() {
     setUploading(false);
   };
   return (
-    <div>
-      <AdminToolbar
-        title="Recordes"
+    <div className="space-y-6">
+      <AdminToolbar 
+        title="Recordes" 
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin" },
+          { label: "Recordes", to: "/admin/recordes" }
+        ]}
         onNew={() => {
           setForm(vazio);
           setOpen(true);

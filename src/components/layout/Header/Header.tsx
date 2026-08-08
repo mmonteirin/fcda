@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Menu, X, LogIn, Shield, ChevronDown, ChevronRight } from "lucide-react";
+import { Menu, X, LogIn, Shield, ChevronDown, ChevronRight, User, GraduationCap } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
 import logoFCDA from "@/assets/logoFCDA.png";
 import { DesktopNav } from "./DesktopNav";
@@ -58,7 +58,7 @@ function MobileMenuItem({
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-between w-full px-4 py-3 text-base font-semibold text-foreground/80 hover:text-deep hover:bg-secondary/50 transition-colors text-left"
+      className="flex items-center justify-between w-full px-4 py-3 text-base font-semibold text-foreground/80 hover:text-deep hover:bg-secondary/50 transition-colors text-left rounded-lg"
     >
       {label}
       {children}
@@ -200,7 +200,15 @@ export function Header() {
             >
               <LogIn className="h-3.5 w-3.5" aria-hidden="true" /> Admin
             </Link>
-          ) : null}
+          ) : (
+            <Link
+              to="/_authenticated/perfil"
+              className="ml-2 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider text-deep/70 hover:text-deep transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              title="Meu perfil"
+            >
+              <User className="h-3.5 w-3.5" aria-hidden="true" /> Perfil
+            </Link>
+          )}
 
           <Link
             to="/filie-se"
@@ -229,13 +237,13 @@ export function Header() {
         aria-modal="true"
         aria-label="Menu de navegação"
       >
-        <div className="px-6 py-4 flex flex-col gap-1 max-h-[70vh] overflow-y-auto">
+        <div className="px-4 py-6 flex flex-col gap-2 max-h-[70vh] overflow-y-auto">
           {nav.map((item) => (
             <MobileMenuItem key={item.to} to={item.to} label={item.label} onClick={closeMenu} />
           ))}
 
           {/* Mobile Submenu - Modalidades */}
-          <div className="border-t border-border/50 mt-2">
+          <div className="border-t border-border/50 mt-4 pt-4">
             <MobileMenuItem label="Modalidades" onClick={toggleModalidades}>
               <ChevronDown
                 className={`h-4 w-4 transition-transform ${modalidadesOpen ? "rotate-180" : ""}`}
@@ -251,7 +259,7 @@ export function Header() {
           </div>
 
           {/* Mobile Submenu - Competições */}
-          <div className="border-t border-border/50">
+          <div className="border-t border-border/50 mt-4 pt-4">
             <MobileMenuItem label="Competições" onClick={toggleCompeticoes}>
               <ChevronDown
                 className={`h-4 w-4 transition-transform ${competicoesOpen ? "rotate-180" : ""}`}
@@ -267,40 +275,47 @@ export function Header() {
           </div>
 
           {/* Cursos Link */}
-          <div className="border-t border-border/50">
+          <div className="border-t border-border/50 mt-4 pt-4">
             <Link
               to="/cursos"
-              className="flex items-center justify-between px-4 py-3 text-base font-semibold text-foreground/80 hover:text-deep hover:bg-secondary/50 transition-colors"
+              onClick={closeMenu}
+              className="flex items-center gap-3 px-4 py-3 text-base font-semibold text-foreground/80 hover:text-deep hover:bg-secondary/50 transition-colors rounded-lg"
             >
+              <GraduationCap className="h-5 w-5" aria-hidden="true" />
               Cursos
             </Link>
           </div>
 
           {/* Admin Link */}
-          <div className="border-t border-border/50 mt-2">
+          <div className="border-t border-border/50 mt-4 pt-4">
             {isEditor ? (
               <Link
                 to="/admin"
                 onClick={closeMenu}
-                className="flex items-center justify-between px-4 py-3 text-base font-semibold text-deep hover:bg-secondary/50 transition-colors"
+                className="flex items-center gap-3 px-4 py-3 text-base font-semibold text-deep hover:bg-secondary/50 transition-colors rounded-lg"
               >
-                <span className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" aria-hidden="true" />
-                  Painel admin
-                </span>
+                <Shield className="h-5 w-5" aria-hidden="true" />
+                Painel admin
               </Link>
             ) : !user ? (
               <Link
                 to="/login"
                 onClick={closeMenu}
-                className="flex items-center justify-between px-4 py-3 text-base font-semibold text-deep/70 hover:bg-secondary/50 transition-colors"
+                className="flex items-center gap-3 px-4 py-3 text-base font-semibold text-deep/70 hover:bg-secondary/50 transition-colors rounded-lg"
               >
-                <span className="flex items-center gap-2">
-                  <LogIn className="h-4 w-4" aria-hidden="true" />
-                  Acesso admin
-                </span>
+                <LogIn className="h-5 w-5" aria-hidden="true" />
+                Acesso admin
               </Link>
-            ) : null}
+            ) : (
+              <Link
+                to="/_authenticated/perfil"
+                onClick={closeMenu}
+                className="flex items-center gap-3 px-4 py-3 text-base font-semibold text-deep hover:bg-secondary/50 transition-colors rounded-lg"
+              >
+                <User className="h-5 w-5" aria-hidden="true" />
+                Meu perfil
+              </Link>
+            )}
           </div>
 
           {/* Filie-se Button */}

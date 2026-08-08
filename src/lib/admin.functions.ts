@@ -452,6 +452,102 @@ const publicRegisterSchema = z.object({
   cargo: z.string().optional(),
 });
 
+// ============ ATUALIZAÇÃO DE PERFIL ============
+const updateProfileSchema = z.object({
+  nome: z.string().min(1).max(120).optional(),
+  telefone: z.string().optional(),
+});
+
+const updateAtletaProfileSchema = z.object({
+  data_nascimento: z.string().optional(),
+  cpf: z.string().optional(),
+  telefone: z.string().optional(),
+  clube_id: z.string().uuid().optional(),
+  categoria: z.string().optional(),
+});
+
+const updateTreinadorProfileSchema = z.object({
+  cpf: z.string().optional(),
+  telefone: z.string().optional(),
+  clube_id: z.string().uuid().optional(),
+  especialidade: z.string().optional(),
+  credencial: z.string().optional(),
+});
+
+const updateGestorProfileSchema = z.object({
+  cpf: z.string().optional(),
+  telefone: z.string().optional(),
+  clube_id: z.string().uuid().optional(),
+  cargo: z.string().optional(),
+});
+
+export const updateProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => updateProfileSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = asDynamicSupabase(context.supabase);
+    
+    // Atualizar profile básico
+    if (data.nome) {
+      const { error: profileError } = await sb
+        .from("profiles")
+        .update({ nome: data.nome })
+        .eq("id", context.userId);
+      
+      if (profileError) throw new Error(profileError.message);
+    }
+    
+    return { ok: true };
+  });
+
+export const updateAtletaProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => updateAtletaProfileSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = asDynamicSupabase(context.supabase);
+    
+    const { error } = await sb
+      .from("atletas")
+      .update(data)
+      .eq("id", context.userId);
+    
+    if (error) throw new Error(error.message);
+    
+    return { ok: true };
+  });
+
+export const updateTreinadorProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => updateTreinadorProfileSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = asDynamicSupabase(context.supabase);
+    
+    const { error } = await sb
+      .from("treinadores")
+      .update(data)
+      .eq("id", context.userId);
+    
+    if (error) throw new Error(error.message);
+    
+    return { ok: true };
+  });
+
+export const updateGestorProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => updateGestorProfileSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = asDynamicSupabase(context.supabase);
+    
+    const { error } = await sb
+      .from("gestores_clube")
+      .update(data)
+      .eq("id", context.userId);
+    
+    if (error) throw new Error(error.message);
+    
+    return { ok: true };
+  });
+
 export const publicRegister = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => publicRegisterSchema.parse(d))
   .handler(async ({ data }) => {

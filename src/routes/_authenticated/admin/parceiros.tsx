@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/use-auth";
 import { Building2, Handshake, Medal, Plus, ExternalLink, X, Upload } from "lucide-react";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { createFileRoute } from "@tanstack/react-router";
+import { AdminToolbar } from "@/components/admin/ui";
 
 export const Route = createFileRoute("/_authenticated/admin/parceiros")({
   loader: ({ context }) => context.queryClient.ensureQueryData(parceirosQuery(false)),
@@ -117,20 +118,14 @@ function ParceirosAdmin() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-deep">Parceiros</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie apoios institucionais, patrocínios e parcerias
-          </p>
-        </div>
-        <button
-          onClick={handleNew}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4" /> Novo Parceiro
-        </button>
-      </div>
+      <AdminToolbar 
+        title="Parceiros" 
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin" },
+          { label: "Parceiros", to: "/admin/parceiros" }
+        ]}
+        onNew={handleNew}
+      />
 
       {err && <div className="bg-destructive/10 text-destructive p-4 rounded-lg">{err}</div>}
 

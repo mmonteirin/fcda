@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { eventosQuery, eventosPdfsQuery, type Evento, type EventoPdf } from "@/lib/site-queries";
-import { Calendar, MapPin, FileText, Download, ExternalLink, Filter } from "lucide-react";
+import { Calendar, MapPin, FileText, Download, ExternalLink, Filter, Clock, Link as LinkIcon, Image as ImageIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const PDF_TIPOS = [
@@ -62,6 +62,19 @@ function formatData(d: string) {
   } catch {
     return d;
   }
+}
+
+function getStatusLabel(status: string | null) {
+  const statusMap: Record<string, { label: string; color: string }> = {
+    planejado: { label: "Planejado", color: "bg-gray-100 text-gray-700" },
+    confirmado: { label: "Confirmado", color: "bg-blue-100 text-blue-700" },
+    inscricoes_abertas: { label: "Inscrições Abertas", color: "bg-green-100 text-green-700" },
+    inscricoes_fechadas: { label: "Inscrições Fechadas", color: "bg-yellow-100 text-yellow-700" },
+    em_andamento: { label: "Em Andamento", color: "bg-purple-100 text-purple-700" },
+    finalizado: { label: "Finalizado", color: "bg-slate-100 text-slate-700" },
+    cancelado: { label: "Cancelado", color: "bg-red-100 text-red-700" },
+  };
+  return statusMap[status || ""] || { label: status || "", color: "bg-gray-100 text-gray-700" };
 }
 
 function getTipoLabel(tipo: EventoPdf["tipo"]) {
@@ -152,16 +165,48 @@ function Eventos() {
             <p className="mt-4 text-muted-foreground">Nenhum evento futuro cadastrado.</p>
           ) : (
             <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {proximosEventos.map((evento) => (
-                <div
-                  key={evento.id}
-                  className="rounded-2xl border border-border bg-card p-5 shadow-card"
-                >
-                  <p className="text-sm font-bold text-primary">{evento.data_texto}</p>
-                  <h3 className="mt-2 text-lg font-bold text-deep">{evento.nome}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{evento.local}</p>
-                </div>
-              ))}
+              {proximosEventos.map((evento) => {
+                const statusInfo = getStatusLabel(evento.status || null);
+                return (
+                  <div
+                    key={evento.id}
+                    className="rounded-2xl border border-border bg-card p-5 shadow-card hover:shadow-elegant transition-all"
+                  >
+                    {evento.imagem_url && (
+                      <div className="aspect-[16/9] rounded-xl overflow-hidden mb-4 bg-secondary">
+                        <img
+                          src={evento.imagem_url}
+                          alt={evento.nome}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-bold text-primary">{evento.data_texto}</p>
+                      {evento.status && (
+                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${statusInfo.color}`}>
+                          {statusInfo.label}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-lg font-bold text-deep mb-2">{evento.nome}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">{evento.local}</p>
+                    {evento.descricao && (
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{evento.descricao}</p>
+                    )}
+                    {evento.link_inscricao && (
+                      <a
+                        href={evento.link_inscricao}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
+                      >
+                        <LinkIcon className="h-4 w-4" /> Inscrever-se
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -229,11 +274,21 @@ function Eventos() {
             <div className="space-y-8">
               {eventos.map((evento) => {
                 const eventoPdfs = pdfsByEvento[evento.id] || [];
+                const statusInfo = getStatusLabel(evento.status || null);
                 return (
                   <div
                     key={evento.id}
                     className="rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card"
                   >
+                    {evento.imagem_url && (
+                      <div className="aspect-[16/9] overflow-hidden bg-secondary">
+                        <img
+                          src={evento.imagem_url}
+                          alt={evento.nome}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
                     <div className="p-6 md:p-8">
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                         <div className="flex-1">
@@ -242,18 +297,38 @@ function Eventos() {
                               <Calendar className="h-4 w-4" />
                             </div>
                             <div className="font-bold text-deep">{evento.data_texto}</div>
+                            {evento.status && (
+                              <span className={`text-xs font-semibold px-2 py-1 rounded-full ${statusInfo.color}`}>
+                                {statusInfo.label}
+                              </span>
+                            )}
                           </div>
                           <h2 className="text-2xl font-bold text-deep mb-2">{evento.nome}</h2>
-                          <div className="text-sm text-muted-foreground flex items-center gap-1.5">
+                          <div className="text-sm text-muted-foreground flex items-center gap-1.5 mb-2">
                             <MapPin className="h-3.5 w-3.5" /> {evento.local}
                           </div>
-                          <div className="mt-2 text-sm text-muted-foreground">
+                          {evento.data_fim && (
+                            <div className="text-sm text-muted-foreground flex items-center gap-1.5 mb-2">
+                              <Clock className="h-3.5 w-3.5" /> Até {formatData(evento.data_fim)}
+                            </div>
+                          )}
+                          <div className="text-sm text-muted-foreground mb-3">
                             Modalidade: {evento.modalidade}
                           </div>
+                          {evento.descricao && (
+                            <p className="text-sm text-muted-foreground mb-4">{evento.descricao}</p>
+                          )}
+                          {evento.link_inscricao && (
+                            <a
+                              href={evento.link_inscricao}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline mb-4"
+                            >
+                              <LinkIcon className="h-4 w-4" /> Link de inscrição
+                            </a>
+                          )}
                         </div>
-                        <span className="text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-gold/15 text-deep border border-gold/30">
-                          {evento.modalidade}
-                        </span>
                       </div>
 
                       {eventoPdfs.length > 0 && (

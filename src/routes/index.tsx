@@ -158,7 +158,7 @@ function Home() {
             >
               <Award className="h-10 w-10 text-gold mb-4 transition-transform duration-300 group-hover:scale-110" />
               <h3 className="text-xl font-bold text-deep mb-2">Filiação</h3>
-              <p className="text-sm text-muted-foreground">Fili seu clube à FCDA</p>
+              <p className="text-sm text-muted-foreground">Filie-se seu clube à FCDA</p>
             </Link>
             <Link
               to="/transparencia"

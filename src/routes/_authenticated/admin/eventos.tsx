@@ -39,10 +39,15 @@ function AdminEventos() {
         id: editing.id,
         data_texto: editing.data_texto || "",
         data_inicio: editing.data_inicio || null,
+        data_fim: editing.data_fim || null,
         nome: editing.nome || "",
         local: editing.local || "",
         modalidade: editing.modalidade || "",
         ano: editing.ano ?? null,
+        descricao: editing.descricao || null,
+        status: editing.status || null,
+        link_inscricao: editing.link_inscricao || null,
+        imagem_url: editing.imagem_url || null,
       });
       invalidate();
       setEditing(null);
@@ -54,17 +59,26 @@ function AdminEventos() {
   }
 
   return (
-    <div>
-      <AdminToolbar
-        title="Eventos"
+    <div className="space-y-6">
+      <AdminToolbar 
+        title="Competições" 
+        breadcrumbs={[
+          { label: "Dashboard", to: "/admin" },
+          { label: "Competições", to: "/admin/eventos" }
+        ]}
         onNew={() =>
           setEditing({
             data_texto: "",
             data_inicio: new Date().toISOString().slice(0, 10),
+            data_fim: null,
             nome: "",
             local: "",
             modalidade: "Natação",
             ano: new Date().getFullYear(),
+            descricao: null,
+            status: "planejado",
+            link_inscricao: null,
+            imagem_url: null,
           })
         }
       />
@@ -142,7 +156,7 @@ function AdminEventos() {
                 required
               />
             </Field>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <Field label="Data (exibição, ex: 12—14 Jun)">
                 <input
                   className={inputClass}
@@ -151,12 +165,20 @@ function AdminEventos() {
                   required
                 />
               </Field>
-              <Field label="Data de início (ordenação)">
+              <Field label="Data de início">
                 <input
                   type="date"
                   className={inputClass}
                   value={editing.data_inicio ?? ""}
                   onChange={(e) => setEditing({ ...editing, data_inicio: e.target.value })}
+                />
+              </Field>
+              <Field label="Data de fim">
+                <input
+                  type="date"
+                  className={inputClass}
+                  value={editing.data_fim ?? ""}
+                  onChange={(e) => setEditing({ ...editing, data_fim: e.target.value })}
                 />
               </Field>
             </div>
@@ -168,21 +190,65 @@ function AdminEventos() {
                 required
               />
             </Field>
-            <Field label="Modalidade">
-              <input
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Field label="Modalidade">
+                <input
+                  className={inputClass}
+                  value={editing.modalidade ?? ""}
+                  onChange={(e) => setEditing({ ...editing, modalidade: e.target.value })}
+                  required
+                />
+              </Field>
+              <Field label="Ano (temporada)">
+                <input
+                  type="number"
+                  className={inputClass}
+                  value={editing.ano ?? ""}
+                  onChange={(e) => setEditing({ ...editing, ano: Number(e.target.value) })}
+                  placeholder="2024"
+                />
+              </Field>
+            </div>
+            <Field label="Status">
+              <select
                 className={inputClass}
-                value={editing.modalidade ?? ""}
-                onChange={(e) => setEditing({ ...editing, modalidade: e.target.value })}
-                required
+                value={editing.status ?? ""}
+                onChange={(e) => setEditing({ ...editing, status: e.target.value })}
+              >
+                <option value="planejado">Planejado</option>
+                <option value="confirmado">Confirmado</option>
+                <option value="inscricoes_abertas">Inscrições Abertas</option>
+                <option value="inscricoes_fechadas">Inscrições Fechadas</option>
+                <option value="em_andamento">Em Andamento</option>
+                <option value="finalizado">Finalizado</option>
+                <option value="cancelado">Cancelado</option>
+              </select>
+            </Field>
+            <Field label="Descrição">
+              <textarea
+                className={inputClass}
+                value={editing.descricao ?? ""}
+                onChange={(e) => setEditing({ ...editing, descricao: e.target.value })}
+                rows={3}
+                placeholder="Descrição detalhada do evento..."
               />
             </Field>
-            <Field label="Ano (temporada)">
+            <Field label="Link de inscrição">
               <input
-                type="number"
+                type="url"
                 className={inputClass}
-                value={editing.ano ?? ""}
-                onChange={(e) => setEditing({ ...editing, ano: Number(e.target.value) })}
-                placeholder="2024"
+                value={editing.link_inscricao ?? ""}
+                onChange={(e) => setEditing({ ...editing, link_inscricao: e.target.value })}
+                placeholder="https://..."
+              />
+            </Field>
+            <Field label="URL da imagem">
+              <input
+                type="url"
+                className={inputClass}
+                value={editing.imagem_url ?? ""}
+                onChange={(e) => setEditing({ ...editing, imagem_url: e.target.value })}
+                placeholder="https://..."
               />
             </Field>
 
