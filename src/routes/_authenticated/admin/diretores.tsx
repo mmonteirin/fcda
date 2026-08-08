@@ -6,6 +6,7 @@ import { diretoresQuery, type Diretor } from "@/lib/site-queries";
 import { saveDiretor, deleteDiretor } from "@/lib/admin.functions";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
+import { Users } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/diretores")({
   loader: ({ context }) => context.queryClient.ensureQueryData(diretoresQuery),
@@ -57,21 +58,21 @@ function AdminDiretores() {
       />
 
       <AdminTable>
-        <thead className="bg-secondary/60 text-deep text-xs uppercase tracking-wider">
+        <thead className="bg-slate-100 dark:bg-slate-800 text-deep dark:text-white text-xs uppercase tracking-wider font-semibold">
           <tr>
-            <th className="text-left px-4 py-3 w-16">#</th>
-            <th className="text-left px-4 py-3">Cargo</th>
-            <th className="text-left px-4 py-3">Nome</th>
-            <th />
+            <th className="text-left px-5 py-4 w-16">#</th>
+            <th className="text-left px-5 py-4">Cargo</th>
+            <th className="text-left px-5 py-4">Nome</th>
+            <th className="px-5 py-4" />
           </tr>
         </thead>
         <tbody>
           {diretores.map((d) => (
-            <tr key={d.id} className="border-t border-border">
-              <td className="px-4 py-3 font-bold text-deep">{d.ordem}</td>
-              <td className="px-4 py-3 text-muted-foreground">{d.cargo}</td>
-              <td className="px-4 py-3 font-semibold text-deep">{d.nome}</td>
-              <td className="px-4 py-3">
+            <tr key={d.id} className="border-t border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <td className="px-5 py-4 font-bold text-deep dark:text-white">{d.ordem}</td>
+              <td className="px-5 py-4 text-muted-foreground">{d.cargo}</td>
+              <td className="px-5 py-4 font-semibold text-deep dark:text-white">{d.nome}</td>
+              <td className="px-5 py-4">
                 <RowActions
                   onEdit={() => setEditing(d)}
                   onDelete={async () => {
@@ -82,6 +83,16 @@ function AdminDiretores() {
               </td>
             </tr>
           ))}
+          {diretores.length === 0 && (
+            <tr>
+              <td colSpan={4} className="px-5 py-16 text-center text-muted-foreground">
+                <div className="flex flex-col items-center gap-2">
+                  <Users className="h-12 w-12 text-muted-foreground/50" />
+                  <p>Nenhum membro da diretoria cadastrado.</p>
+                </div>
+              </td>
+            </tr>
+          )}
         </tbody>
       </AdminTable>
 

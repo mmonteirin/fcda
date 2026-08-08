@@ -11,7 +11,8 @@ import { useAuth } from "@/lib/use-auth";
 import { Building2, Handshake, Medal, Plus, ExternalLink, X, Upload } from "lucide-react";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { createFileRoute } from "@tanstack/react-router";
-import { AdminToolbar } from "@/components/admin/ui";
+import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
+import { inputClass, useInvalidate } from "@/components/admin/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/parceiros")({
   loader: ({ context }) => context.queryClient.ensureQueryData(parceirosQuery(false)),
@@ -25,8 +26,8 @@ function ParceirosAdmin() {
   const { data: parceiros } = useSuspenseQuery(parceirosQuery(false));
   const { user } = useAuth();
   const supabase = supabaseClient;
+  const invalidate = useInvalidate(["parceiros"]);
 
-  const [modalOpen, setModalOpen] = useState(false);
   const [editingParceiro, setEditingParceiro] = useState<Parceiro | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -55,7 +56,6 @@ function ParceirosAdmin() {
       ordem: 0,
       ativo: true,
     });
-    setModalOpen(true);
     setErr(null);
   };
 
@@ -69,7 +69,6 @@ function ParceirosAdmin() {
       ordem: parceiro.ordem,
       ativo: parceiro.ativo,
     });
-    setModalOpen(true);
     setErr(null);
   };
 
@@ -79,7 +78,7 @@ function ParceirosAdmin() {
     try {
       await assertEditor(supabase, user.id);
       await deleteParceiro(supabase, user.id, id);
-      window.location.reload();
+      invalidate();
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Erro ao excluir parceiro");
     }
@@ -93,8 +92,8 @@ function ParceirosAdmin() {
       const data = editingParceiro ? { ...formData, id: editingParceiro.id } : formData;
 
       await saveParceiro(supabase, user.id, data);
-      setModalOpen(false);
-      window.location.reload();
+      setEditingParceiro(null);
+      invalidate();
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Erro ao salvar parceiro");
     }
@@ -129,215 +128,197 @@ function ParceirosAdmin() {
 
       {err && <div className="bg-destructive/10 text-destructive p-4 rounded-lg">{err}</div>}
 
-      <div className="rounded-lg border border-border bg-card">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-border/50 bg-secondary/30">
-              <th className="px-4 py-3 text-left text-sm font-semibold">Nome</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Categoria</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Ordem</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold">Status</th>
-              <th className="px-4 py-3 text-right text-sm font-semibold">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {parceiros.map((parceiro) => (
-              <tr key={parceiro.id} className="border-b border-border/50 hover:bg-secondary/30">
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    {parceiro.logo_url && (
-                      <img
-                        src={parceiro.logo_url}
-                        alt={parceiro.nome}
-                        className="h-8 w-8 object-contain rounded"
-                      />
-                    )}
-                    <div>
-                      <div className="font-medium">{parceiro.nome}</div>
-                      {parceiro.site_url && (
-                        <a
-                          href={parceiro.site_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary flex items-center gap-1 hover:underline"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          Site
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  {(() => {
-                    const cat = categoriaOptions.find((c) => c.value === parceiro.categoria);
-                    return cat ? (
-                      <div className="flex items-center gap-2 text-sm">
-                        <cat.icon className="h-4 w-4 text-muted-foreground" />
-                        {cat.label}
-                      </div>
-                    ) : (
-                      parceiro.categoria
-                    );
-                  })()}
-                </td>
-                <td className="px-4 py-3">{parceiro.ordem}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs ${
-                      parceiro.ativo ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {parceiro.ativo ? "Ativo" : "Inativo"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  <button
-                    onClick={() => handleEdit(parceiro)}
-                    className="text-sm text-primary hover:underline mr-3"
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(parceiro.id)}
-                    className="text-sm text-destructive hover:underline"
-                  >
-                    Excluir
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-card rounded-lg border border-border p-6 w-full max-w-md mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">
-                {editingParceiro ? "Editar Parceiro" : "Novo Parceiro"}
-              </h2>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form onSubmit={onSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Nome *</label>
-                <input
-                  type="text"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  className="w-full rounded-md border border-input px-3 py-2 text-sm"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Logo</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])}
-                  className="w-full rounded-md border border-input px-3 py-2 text-sm"
-                  disabled={uploading}
-                />
-                {uploading && (
-                  <p className="mt-1 text-xs text-muted-foreground">Enviando logo...</p>
-                )}
-                {formData.logo_url && (
-                  <div className="mt-2">
+      <AdminTable>
+        <thead className="bg-slate-100 dark:bg-slate-800 text-deep dark:text-white text-xs uppercase tracking-wider font-semibold">
+          <tr>
+            <th className="text-left px-5 py-4">Nome</th>
+            <th className="text-left px-5 py-4">Categoria</th>
+            <th className="text-left px-5 py-4 hidden md:table-cell">Ordem</th>
+            <th className="text-left px-5 py-4">Status</th>
+            <th className="px-5 py-4" />
+          </tr>
+        </thead>
+        <tbody>
+          {parceiros.map((parceiro) => (
+            <tr key={parceiro.id} className="border-t border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+              <td className="px-5 py-4">
+                <div className="flex items-center gap-3">
+                  {parceiro.logo_url && (
                     <img
-                      src={formData.logo_url}
-                      alt="Logo do parceiro"
-                      className="h-16 w-auto object-contain rounded border"
+                      src={parceiro.logo_url}
+                      alt={parceiro.nome}
+                      className="h-10 w-10 object-contain rounded-lg bg-white dark:bg-slate-800 p-1"
                     />
+                  )}
+                  <div>
+                    <div className="font-semibold text-deep dark:text-white">{parceiro.nome}</div>
+                    {parceiro.site_url && (
+                      <a
+                        href={parceiro.site_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary flex items-center gap-1 hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Site
+                      </a>
+                    )}
                   </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">URL do Site</label>
-                <input
-                  type="url"
-                  value={formData.site_url}
-                  onChange={(e) => setFormData({ ...formData, site_url: e.target.value })}
-                  className="w-full rounded-md border border-input px-3 py-2 text-sm"
-                  placeholder="https://exemplo.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Categoria *</label>
-                <select
-                  value={formData.categoria}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      categoria: e.target.value as
-                        "apoio_institucional" | "patrocinio" | "parceria",
-                    })
-                  }
-                  className="w-full rounded-md border border-input px-3 py-2 text-sm"
-                >
-                  {categoriaOptions.map((cat) => (
-                    <option key={cat.value} value={cat.value}>
+                </div>
+              </td>
+              <td className="px-5 py-4">
+                {(() => {
+                  const cat = categoriaOptions.find((c) => c.value === parceiro.categoria);
+                  return cat ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <cat.icon className="h-4 w-4" />
                       {cat.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                    </div>
+                  ) : (
+                    parceiro.categoria
+                  );
+                })()}
+              </td>
+              <td className="px-5 py-4 hidden md:table-cell text-muted-foreground">{parceiro.ordem}</td>
+              <td className="px-5 py-4">
+                <span
+                  className={`inline-flex text-xs font-bold uppercase rounded-full px-3 py-1.5 ${
+                    parceiro.ativo
+                      ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  {parceiro.ativo ? "Ativo" : "Inativo"}
+                </span>
+              </td>
+              <td className="px-5 py-4">
+                <RowActions
+                  onEdit={() => handleEdit(parceiro)}
+                  onDelete={() => handleDelete(parceiro.id)}
+                />
+              </td>
+            </tr>
+          ))}
+          {parceiros.length === 0 && (
+            <tr>
+              <td colSpan={5} className="px-5 py-16 text-center text-muted-foreground">
+                <div className="flex flex-col items-center gap-2">
+                  <Handshake className="h-12 w-12 text-muted-foreground/50" />
+                  <p>Nenhum parceiro cadastrado.</p>
+                </div>
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </AdminTable>
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Ordem</label>
-                <input
-                  type="number"
-                  value={formData.ordem}
-                  onChange={(e) =>
-                    setFormData({ ...formData, ordem: parseInt(e.target.value) || 0 })
-                  }
-                  className="w-full rounded-md border border-input px-3 py-2 text-sm"
-                  min="0"
+      <Modal
+        open={!!editingParceiro}
+        onClose={() => setEditingParceiro(null)}
+        title={editingParceiro?.id ? "Editar Parceiro" : "Novo Parceiro"}
+      >
+        <form onSubmit={onSubmit} className="space-y-4">
+          <Field label="Nome">
+            <input
+              type="text"
+              value={formData.nome}
+              onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+              className={inputClass}
+              required
+            />
+          </Field>
+
+          <Field label="Logo">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])}
+              className={inputClass}
+              disabled={uploading}
+            />
+            {uploading && (
+              <p className="mt-1 text-xs text-muted-foreground">Enviando logo...</p>
+            )}
+            {formData.logo_url && (
+              <div className="mt-2">
+                <img
+                  src={formData.logo_url}
+                  alt="Logo do parceiro"
+                  className="h-16 w-auto object-contain rounded-lg border border-border"
                 />
               </div>
+            )}
+          </Field>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="ativo"
-                  checked={formData.ativo}
-                  onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
-                  className="rounded border-gray-300"
-                />
-                <label htmlFor="ativo" className="text-sm">
-                  Ativo
-                </label>
-              </div>
+          <Field label="URL do Site">
+            <input
+              type="url"
+              value={formData.site_url}
+              onChange={(e) => setFormData({ ...formData, site_url: e.target.value })}
+              className={inputClass}
+              placeholder="https://exemplo.com"
+            />
+          </Field>
 
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-lg border border-border hover:bg-secondary"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  Salvar
-                </button>
-              </div>
-            </form>
+          <Field label="Categoria">
+            <select
+              value={formData.categoria}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  categoria: e.target.value as
+                    "apoio_institucional" | "patrocinio" | "parceria",
+                })
+              }
+              className={inputClass}
+            >
+              {categoriaOptions.map((cat) => (
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="Ordem">
+            <input
+              type="number"
+              value={formData.ordem}
+              onChange={(e) =>
+                setFormData({ ...formData, ordem: parseInt(e.target.value) || 0 })
+              }
+              className={inputClass}
+              min="0"
+            />
+          </Field>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={formData.ativo}
+              onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
+              className="rounded border-border"
+            />
+            <span className="font-semibold text-deep dark:text-white">Ativo</span>
+          </label>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={() => setEditingParceiro(null)}
+              className="rounded-lg border border-border px-4 py-2 text-sm font-semibold"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="rounded-lg bg-deep text-deep-foreground px-4 py-2 text-sm font-bold"
+            >
+              Salvar
+            </button>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 }

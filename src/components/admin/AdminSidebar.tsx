@@ -54,14 +54,14 @@ export function AdminSidebar() {
   };
 
   return (
-    <aside className="w-64 bg-card border-r border-border h-screen sticky top-0 overflow-y-auto">
+    <aside className="w-64 bg-white dark:bg-slate-900 border-r border-border h-screen sticky top-0 overflow-y-auto shadow-lg">
       <div className="p-6">
-        <div className="flex items-center gap-2 mb-8">
-          <div className="h-8 w-8 rounded-lg bg-emerald-gradient grid place-items-center text-white">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 grid place-items-center text-white shadow-lg">
             <Award className="h-5 w-5" />
           </div>
           <div>
-            <div className="font-bold text-deep">FCDA Admin</div>
+            <div className="font-bold text-deep dark:text-white text-lg">FCDA Admin</div>
             <div className="text-xs text-muted-foreground">Painel Administrativo</div>
           </div>
         </div>
@@ -72,31 +72,30 @@ export function AdminSidebar() {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group",
                 isActive(item.to)
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-secondary/50 hover:text-deep"
+                  ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md shadow-primary/25"
+                  : "text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-deep dark:hover:text-white"
               )}
             >
-              <item.icon className="h-4 w-4" />
+              <item.icon className={cn("h-5 w-5", isActive(item.to) ? "text-white" : "text-muted-foreground group-hover:text-deep dark:group-hover:text-white")} />
               <span className="flex-1">{item.label}</span>
               {item.badge && item.badge > 0 && (
                 <span className="h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold">
                   {item.badge}
                 </span>
               )}
-              <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
             </Link>
           ))}
         </nav>
 
         <div className="mt-8 pt-6 border-t border-border">
           <Link
-            to="/admin/perfil"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary/50 hover:text-deep transition-all"
+            to="/"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-deep dark:hover:text-white transition-all group"
           >
-            <Settings className="h-4 w-4" />
-            <span>Configurações</span>
+            <Settings className="h-5 w-5 text-muted-foreground group-hover:text-deep dark:group-hover:text-white" />
+            <span>Voltar ao site</span>
           </Link>
         </div>
       </div>
