@@ -1,21 +1,7 @@
 import { createFileRoute, Outlet, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/use-auth";
-import {
-  Newspaper,
-  Calendar,
-  Waves as WavesIcon,
-  Users,
-  LogOut,
-  ExternalLink,
-  UserCog,
-  ChevronDown,
-  LayoutDashboard,
-  UserCircle,
-  Mail,
-  Trophy,
-  Building2,
-} from "lucide-react";
+import { Waves, LogOut, ChevronDown, LayoutDashboard, UserCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -76,24 +62,7 @@ function AuthenticatedLayout() {
     );
   }
 
-  const items = [
-    { to: "/admin", label: "Visão geral", icon: ExternalLink, exact: true },
-    { to: "/admin/banner", label: "Banner", icon: Newspaper },
-    { to: "/admin/noticias", label: "Notícias", icon: Newspaper },
-    { to: "/admin/eventos", label: "Eventos", icon: Calendar },
-    { to: "/admin/eventos-pdfs", label: "PDFs Eventos", icon: Newspaper },
-    { to: "/admin/recordes", label: "Recordes", icon: Trophy },
-    { to: "/admin/rankings", label: "Rankings", icon: Trophy },
-    { to: "/admin/filiacoes", label: "Inscrições", icon: Users },
-    { to: "/admin/mensagens", label: "Mensagens", icon: Mail },
-    { to: "/admin/transparencia", label: "Transparência", icon: Newspaper },
-    { to: "/admin/parceiros", label: "Parceiros", icon: Building2 },
-    { to: "/admin/clubes", label: "Clubes", icon: Building2 },
-    { to: "/admin/categorias-modalidades", label: "Categorias", icon: WavesIcon },
-    { to: "/admin/modalidades", label: "Modalidades", icon: WavesIcon },
-    { to: "/admin/diretores", label: "Diretoria", icon: Users },
-    { to: "/admin/usuarios", label: "Usuários", icon: UserCog },
-  ];
+  const isAdminRoute = path.startsWith("/admin");
 
   return (
     <div className="min-h-screen bg-secondary/40">
@@ -101,7 +70,7 @@ function AuthenticatedLayout() {
         <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-full bg-emerald-gradient grid place-items-center">
-              <WavesIcon className="h-4 w-4 text-primary-foreground" />
+              <Waves className="h-4 w-4 text-primary-foreground" />
             </div>
             <div>
               <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -161,31 +130,13 @@ function AuthenticatedLayout() {
           </div>
         </div>
       </header>
-      <div className="mx-auto max-w-7xl px-6 py-8 grid lg:grid-cols-[220px_1fr] gap-8">
-        <aside className="lg:sticky lg:top-8 lg:self-start">
-          <nav className="flex lg:flex-col gap-1 overflow-x-auto">
-            {items.map((it) => {
-              const active = it.exact ? path === it.to : path.startsWith(it.to);
-              return (
-                <Link
-                  key={it.to}
-                  to={it.to}
-                  className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap ${
-                    active
-                      ? "bg-deep text-deep-foreground"
-                      : "text-foreground/70 hover:bg-secondary"
-                  }`}
-                >
-                  <it.icon className="h-4 w-4" /> {it.label}
-                </Link>
-              );
-            })}
-          </nav>
-        </aside>
-        <main className="min-w-0">
+      {isAdminRoute ? (
+        <Outlet />
+      ) : (
+        <main className="mx-auto max-w-5xl px-6 py-8">
           <Outlet />
         </main>
-      </div>
+      )}
     </div>
   );
 }

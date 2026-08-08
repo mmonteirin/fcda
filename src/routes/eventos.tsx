@@ -2,7 +2,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { eventosQuery, eventosPdfsQuery, type Evento, type EventoPdf } from "@/lib/site-queries";
-import { Calendar, MapPin, FileText, Download, ExternalLink, Filter, Clock, Link as LinkIcon, Image as ImageIcon } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  FileText,
+  Download,
+  ExternalLink,
+  Filter,
+  Clock,
+  Link as LinkIcon,
+  Image as ImageIcon,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 
 const PDF_TIPOS = [
@@ -79,6 +89,23 @@ function getStatusLabel(status: string | null) {
 
 function getTipoLabel(tipo: EventoPdf["tipo"]) {
   return PDF_TIPOS.find((t) => t.value === tipo)?.label || tipo;
+}
+
+function InscricaoButton({ link }: { link: string | null | undefined }) {
+  const url = link?.trim();
+  if (!url) return null;
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-deep hover:shadow-md"
+    >
+      <LinkIcon className="h-4 w-4" /> Inscreva-se
+      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+    </a>
+  );
 }
 
 function Eventos() {
@@ -184,7 +211,9 @@ function Eventos() {
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm font-bold text-primary">{evento.data_texto}</p>
                       {evento.status && (
-                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${statusInfo.color}`}>
+                        <span
+                          className={`text-xs font-semibold px-2 py-1 rounded-full ${statusInfo.color}`}
+                        >
                           {statusInfo.label}
                         </span>
                       )}
@@ -192,18 +221,11 @@ function Eventos() {
                     <h3 className="text-lg font-bold text-deep mb-2">{evento.nome}</h3>
                     <p className="text-sm text-muted-foreground mb-3">{evento.local}</p>
                     {evento.descricao && (
-                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{evento.descricao}</p>
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                        {evento.descricao}
+                      </p>
                     )}
-                    {evento.link_inscricao && (
-                      <a
-                        href={evento.link_inscricao}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-                      >
-                        <LinkIcon className="h-4 w-4" /> Inscrever-se
-                      </a>
-                    )}
+                    <InscricaoButton link={evento.link_inscricao} />
                   </div>
                 );
               })}
@@ -298,7 +320,9 @@ function Eventos() {
                             </div>
                             <div className="font-bold text-deep">{evento.data_texto}</div>
                             {evento.status && (
-                              <span className={`text-xs font-semibold px-2 py-1 rounded-full ${statusInfo.color}`}>
+                              <span
+                                className={`text-xs font-semibold px-2 py-1 rounded-full ${statusInfo.color}`}
+                              >
                                 {statusInfo.label}
                               </span>
                             )}
@@ -318,16 +342,9 @@ function Eventos() {
                           {evento.descricao && (
                             <p className="text-sm text-muted-foreground mb-4">{evento.descricao}</p>
                           )}
-                          {evento.link_inscricao && (
-                            <a
-                              href={evento.link_inscricao}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline mb-4"
-                            >
-                              <LinkIcon className="h-4 w-4" /> Link de inscrição
-                            </a>
-                          )}
+                          <div className="mb-4">
+                            <InscricaoButton link={evento.link_inscricao} />
+                          </div>
                         </div>
                       </div>
 
