@@ -350,6 +350,37 @@ export const parceirosQuery = (onlyActive = true) =>
     },
   });
 
+export type Clube = {
+  id: string;
+  nome: string;
+  sigla: string | null;
+  logo_url: string | null;
+  cidade: string | null;
+  estado: string | null;
+  fundacao: string | null;
+  email: string | null;
+  telefone: string | null;
+  site_url: string | null;
+  endereco: string | null;
+  ativo: boolean;
+  ordem: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export const clubesQuery = (onlyActive = true) =>
+  queryOptions({
+    queryKey: ["clubes", onlyActive],
+    queryFn: async (): Promise<Clube[]> => {
+      const sb = asDynamicSupabase(supabase);
+      let query = sb.from("clubes").select("*").order("ordem", { ascending: true });
+      if (onlyActive) query = query.eq("ativo", true);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
 // Map slug de modalidade para imagem local fallback
 import imgNatacao from "@/assets/mod-natacao.jpg";
 import imgPolo from "@/assets/mod-polo.jpg";

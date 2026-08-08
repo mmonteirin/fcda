@@ -1,19 +1,19 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { parceirosQuery, type Parceiro } from "@/lib/site-queries";
-import { saveParceiro, deleteParceiro, assertEditor } from "@/lib/admin.functions";
+import {
+  saveParceiro,
+  deleteParceiro,
+  assertEditor,
+  uploadParceiroLogo,
+} from "@/lib/admin.functions";
 import { useAuth } from "@/lib/use-auth";
-import { Building2, Handshake, Medal, Plus, ExternalLink, X } from "lucide-react";
+import { Building2, Handshake, Medal, Plus, ExternalLink, X, Upload } from "lucide-react";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { createFileRoute } from "@tanstack/react-router";
 
-// @ts-expect-error - Route type is complex and expected to have this pattern
 export const Route = createFileRoute("/_authenticated/admin/parceiros")({
-  loader: ({
-    context,
-  }: {
-    context: { queryClient: { ensureQueryData: (query: unknown) => unknown } };
-  }) => context.queryClient.ensureQueryData(parceirosQuery(false)),
+  loader: ({ context }) => context.queryClient.ensureQueryData(parceirosQuery(false)),
   errorComponent: ({ error }: { error: { message: string } }) => (
     <div className="text-destructive">Erro: {error.message}</div>
   ),
@@ -28,6 +28,7 @@ function ParceirosAdmin() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingParceiro, setEditingParceiro] = useState<Parceiro | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     nome: "",
     logo_url: "",
@@ -95,6 +96,22 @@ function ParceirosAdmin() {
       window.location.reload();
     } catch (e: unknown) {
       setErr(e instanceof Error ? e.message : "Erro ao salvar parceiro");
+    }
+  };
+
+  const uploadLogo = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setErr("O arquivo deve ser uma imagem");
+      return;
+    }
+    setUploading(true);
+    try {
+      const url = await uploadParceiroLogo(supabase, file);
+      setFormData({ ...formData, logo_url: url });
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : "Erro ao fazer upload do logo");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -227,6 +244,40 @@ function ParceirosAdmin() {
               </div>
 
               <div>
+                <label className="block text-sm font-medium mb-1">Logo</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])}
+                  className="w-full rounded-md border border-input px-3 py-2 text-sm"
+                  disabled={uploading}
+                />
+                {uploading && (
+                  <p className="mt-1 text-xs text-muted-foreground">Enviando logo...</p>
+                )}
+                {formData.logo_url && (
+                  <div className="mt-2">
+                    <img
+                      src={formData.logo_url}
+                      alt="Logo do parceiro"
+                      className="h-16 w-auto object-contain rounded border"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">URL do Site</label>
+                <input
+                  type="url"
+                  value={formData.site_url}
+                  onChange={(e) => setFormData({ ...formData, site_url: e.target.value })}
+                  className="w-full rounded-md border border-input px-3 py-2 text-sm"
+                  placeholder="https://exemplo.com"
+                />
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium mb-1">Categoria *</label>
                 <select
                   value={formData.categoria}
@@ -245,28 +296,6 @@ function ParceirosAdmin() {
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">URL do Logo</label>
-                <input
-                  type="url"
-                  value={formData.logo_url}
-                  onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
-                  className="w-full rounded-md border border-input px-3 py-2 text-sm"
-                  placeholder="https://exemplo.com/logo.png"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">URL do Site</label>
-                <input
-                  type="url"
-                  value={formData.site_url}
-                  onChange={(e) => setFormData({ ...formData, site_url: e.target.value })}
-                  className="w-full rounded-md border border-input px-3 py-2 text-sm"
-                  placeholder="https://exemplo.com"
-                />
               </div>
 
               <div>

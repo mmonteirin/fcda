@@ -257,6 +257,60 @@ export type Database = {
         };
         Relationships: [];
       };
+      clubes: {
+        Row: {
+          id: string;
+          nome: string;
+          sigla: string | null;
+          logo_url: string | null;
+          cidade: string | null;
+          estado: string | null;
+          fundacao: string | null;
+          email: string | null;
+          telefone: string | null;
+          site_url: string | null;
+          endereco: string | null;
+          ativo: boolean;
+          ordem: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          nome: string;
+          sigla?: string | null;
+          logo_url?: string | null;
+          cidade?: string | null;
+          estado?: string | null;
+          fundacao?: string | null;
+          email?: string | null;
+          telefone?: string | null;
+          site_url?: string | null;
+          endereco?: string | null;
+          ativo?: boolean;
+          ordem?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          nome?: string;
+          sigla?: string | null;
+          logo_url?: string | null;
+          cidade?: string | null;
+          estado?: string | null;
+          fundacao?: string | null;
+          email?: string | null;
+          telefone?: string | null;
+          site_url?: string | null;
+          endereco?: string | null;
+          ativo?: boolean;
+          ordem?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
