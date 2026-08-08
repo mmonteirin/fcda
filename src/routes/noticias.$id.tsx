@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { noticiaByIdentifierQuery, noticiasQuery } from "@/lib/site-queries";
-import { Calendar, ArrowLeft, Tag, ArrowRight } from "lucide-react";
+import { Calendar, ArrowLeft, Tag, ArrowRight, Facebook, Linkedin, Share2 } from "lucide-react";
 
 export const Route = createFileRoute("/noticias/$id")({
   loader: ({ context, params }) =>
@@ -114,6 +114,7 @@ function NoticiaDetalhes() {
       </SiteLayout>
     );
   }
+  const url = typeof window === "undefined" ? "" : window.location.href;
 
   return (
     <SiteLayout>
@@ -204,6 +205,34 @@ function NoticiaDetalhes() {
               <span>·</span>
               <Calendar className="h-4 w-4" />
               {formatData(noticia.data)}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="mr-1 text-sm font-semibold text-muted-foreground">Compartilhar</span>
+              <a
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-border p-2 text-primary hover:bg-secondary"
+                aria-label="Compartilhar no Facebook"
+              >
+                <Facebook className="h-4 w-4" />
+              </a>
+              <a
+                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-border p-2 text-primary hover:bg-secondary"
+                aria-label="Compartilhar no LinkedIn"
+              >
+                <Linkedin className="h-4 w-4" />
+              </a>
+              <button
+                onClick={() => navigator.share?.({ title: noticia.titulo, url })}
+                className="rounded-full border border-border p-2 text-primary hover:bg-secondary"
+                aria-label="Compartilhar"
+              >
+                <Share2 className="h-4 w-4" />
+              </button>
             </div>
             <Link
               to="/noticias"

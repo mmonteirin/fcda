@@ -1,15 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import pictogramas from "@/assets/pictogramas/modalidades.png";
+import masters from "@/assets/pictogramas/masters.png";
 
 const modalidades = [
-  { label: "Natação", icon: "🏊" },
-  { label: "Polo Aquático", icon: "🤽" },
-  { label: "Águas Abertas", icon: "🌊" },
-  { label: "Nado Artístico", icon: "🎨" },
-  { label: "Saltos Ornamentais", icon: "🏊" },
-  { label: "Masters", icon: "🏅" },
-  { label: "Paralímpico", icon: "♿" },
+  { label: "Natação", position: "0% 0%" },
+  { label: "Polo Aquático", position: "50% 0%" },
+  { label: "Águas Abertas", position: "50% 100%" },
+  { label: "Nado Artístico", position: "0% 100%" },
+  { label: "Saltos Ornamentais", position: "100% 0%" },
+  { label: "Masters", position: "center", source: masters },
+  { label: "Paralímpico", position: "100% 100%" },
 ] as const;
 
 const competicoes = [
@@ -188,11 +190,14 @@ export function DesktopNav() {
                 tabIndex={-1}
               >
                 <span
-                  className="grid h-8 w-8 place-items-center rounded-lg bg-secondary text-base"
+                  className="h-8 w-8 shrink-0 rounded-lg bg-white bg-no-repeat"
+                  style={{
+                    backgroundImage: `url(${modalidade.source ?? pictogramas})`,
+                    backgroundPosition: modalidade.position,
+                    backgroundSize: modalidade.source ? "cover" : "300% 200%",
+                  }}
                   aria-hidden="true"
-                >
-                  {modalidade.icon}
-                </span>
+                />
                 {modalidade.label}
               </Link>
             ))}

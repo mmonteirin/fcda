@@ -1,7 +1,19 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Waves, Instagram, Facebook, Youtube, Mail, MapPin, Phone } from "lucide-react";
 
 export function Footer() {
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const subscribe = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const { error } = await (supabase as any).from("newsletter_inscritos").insert({ email });
+    setMessage(
+      error ? "Este e-mail já está cadastrado ou não pôde ser salvo." : "Inscrição confirmada!",
+    );
+    if (!error) setEmail("");
+  };
   return (
     <footer className="bg-hero text-primary-foreground mt-24">
       <div className="mx-auto max-w-7xl px-6 py-16 grid gap-12 md:grid-cols-4">
@@ -51,6 +63,26 @@ export function Footer() {
               </Link>
             </li>
           </ul>
+        </div>
+        <div>
+          <h4 className="text-xs uppercase tracking-[0.2em] text-gold mb-4">Newsletter</h4>
+          <p className="text-sm text-primary-foreground/70">
+            Receba notícias e competições da FCDA.
+          </p>
+          <form onSubmit={subscribe} className="mt-3 flex gap-2">
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Seu e-mail"
+              className="min-w-0 flex-1 rounded-lg bg-primary-foreground px-3 py-2 text-sm text-foreground"
+            />
+            <button className="rounded-lg bg-gold px-3 py-2 text-sm font-bold text-deep">
+              Enviar
+            </button>
+          </form>
+          {message && <p className="mt-2 text-xs text-gold">{message}</p>}
         </div>
         <div>
           <h4 className="text-xs uppercase tracking-[0.2em] text-gold mb-4">Contato</h4>
