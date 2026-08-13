@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
+import { ErrorMessage, getFriendlyErrorMessage } from "@/components/admin/error-message";
 
 export const Route = createFileRoute("/_authenticated/admin/categorias-modalidades")({
   loader: ({ context }) => context.queryClient.ensureQueryData(categoriasModalidadesQuery),
@@ -28,17 +29,25 @@ function AdminCategoriasModalidades() {
     setBusy(true);
     setErr(null);
     try {
+      // Gera ou valida o slug
+      let slug = editing.slug || slugify(editing.nome || "");
+      slug = validateAndFixSlug(slug);
+      
       await saveCategoriaModalidade(supabase, user!.id, {
         id: editing.id,
         nome: editing.nome || "",
-        slug: editing.slug || "",
+        slug: slug,
         descricao: editing.descricao || null,
         ordem: Number(editing.ordem ?? 0),
       });
       invalidate();
       setEditing(null);
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Erro desconhecido");
+      if (e instanceof Error) {
+        setErr(getFriendlyErrorMessage(e));
+      } else {
+        setErr("Ocorreu um erro inesperado. Tente novamente.");
+      }
     } finally {
       setBusy(false);
     }
@@ -52,6 +61,22 @@ function AdminCategoriasModalidades() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 100);
+  }
+
+  function validateAndFixSlug(slug: string): string {
+    const fixed = slug
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 100);
+    
+    if (!fixed) {
+      return `categoria-${Date.now()}`;
+    }
+    
+    return fixed;
   }
 
   return (
@@ -147,10 +172,22 @@ function AdminCategoriasModalidades() {
               <input
                 className={inputClass}
                 value={editing.slug ?? ""}
-                onChange={(e) => setEditing({ ...editing, slug: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const validValue = value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9-]/g, "-")
+                    .replace(/-+/g, "-")
+                    .slice(0, 100);
+                  setEditing({ ...editing, slug: validValue });
+                }}
                 required
                 placeholder="competitivo"
+                maxLength={100}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                {editing.slug?.length || 0}/100 caracteres • Apenas letras, números e hífens
+              </p>
             </Field>
             <Field label="Descrição (opcional)">
               <textarea
@@ -161,7 +198,7 @@ function AdminCategoriasModalidades() {
               />
             </Field>
 
-            {err && <div className="text-sm text-destructive">{err}</div>}
+            <ErrorMessage error={err} />
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"

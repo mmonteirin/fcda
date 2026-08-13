@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { createFileRoute } from "@tanstack/react-router";
+import { ErrorMessage, getFriendlyErrorMessage } from "@/components/admin/error-message";
 
 // @ts-expect-error - Route type is complex and expected to have this pattern
 export const Route = createFileRoute("/_authenticated/admin/clubes")({
@@ -98,7 +99,11 @@ function ClubesAdmin() {
       await deleteClube(supabase, user.id, id);
       window.location.reload();
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Erro ao excluir clube");
+      if (e instanceof Error) {
+        setErr(getFriendlyErrorMessage(e));
+      } else {
+        setErr("Erro ao excluir clube");
+      }
     }
   };
 
@@ -113,7 +118,11 @@ function ClubesAdmin() {
       setModalOpen(false);
       window.location.reload();
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Erro ao salvar clube");
+      if (e instanceof Error) {
+        setErr(getFriendlyErrorMessage(e));
+      } else {
+        setErr("Erro ao salvar clube");
+      }
     }
   };
 
@@ -127,7 +136,11 @@ function ClubesAdmin() {
       const url = await uploadClubeLogo(supabase, file);
       setFormData({ ...formData, logo_url: url });
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Erro ao fazer upload do logo");
+      if (e instanceof Error) {
+        setErr(getFriendlyErrorMessage(e));
+      } else {
+        setErr("Erro ao fazer upload do logo");
+      }
     } finally {
       setUploading(false);
     }
@@ -150,7 +163,7 @@ function ClubesAdmin() {
         </button>
       </div>
 
-      {err && <div className="bg-destructive/10 text-destructive p-4 rounded-lg">{err}</div>}
+      <ErrorMessage error={err} title="Erro" />
 
       <div className="rounded-lg border border-border bg-card">
         <table className="w-full">

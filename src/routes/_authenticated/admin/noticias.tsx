@@ -6,6 +6,7 @@ import { noticiasQuery, type Noticia } from "@/lib/site-queries";
 import { saveNoticia, deleteNoticia, uploadImage } from "@/lib/admin.functions";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
+import { ErrorMessage, getFriendlyErrorMessage } from "@/components/admin/error-message";
 import { Upload, X, Newspaper } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/noticias")({
@@ -21,7 +22,25 @@ function slugify(s: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
+    .slice(0, 120);
+}
+
+function validateAndFixSlug(slug: string): string {
+  // Remove caracteres inválidos e normaliza
+  const fixed = slug
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+  
+  // Se o resultado estiver vazio, gera um slug aleatório
+  if (!fixed) {
+    return `noticia-${Date.now()}`;
+  }
+  
+  return fixed;
 }
 
 function AdminNoticias() {
@@ -72,10 +91,14 @@ function AdminNoticias() {
     setBusy(true);
     setErr(null);
     try {
+      // Gera ou valida o slug
+      let slug = editing.slug || slugify(editing.titulo || "");
+      slug = validateAndFixSlug(slug);
+      
       await save({
         data: {
           id: editing.id,
-          slug: editing.slug || slugify(editing.titulo || ""),
+          slug: slug,
           categoria: editing.categoria || "Geral",
           data: editing.data || new Date().toISOString().slice(0, 10),
           titulo: editing.titulo || "",
@@ -88,7 +111,11 @@ function AdminNoticias() {
       invalidate();
       setEditing(null);
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Erro desconhecido");
+      if (e instanceof Error) {
+        setErr(getFriendlyErrorMessage(e));
+      } else {
+        setErr("Ocorreu um erro inesperado. Tente novamente.");
+      }
     } finally {
       setBusy(false);
     }
@@ -217,8 +244,21 @@ function AdminNoticias() {
                 className={inputClass}
                 placeholder="gerado-automaticamente"
                 value={editing.slug ?? ""}
-                onChange={(e) => setEditing({ ...editing, slug: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Valida em tempo real e previne caracteres inválidos
+                  const validValue = value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9-]/g, "-")
+                    .replace(/-+/g, "-")
+                    .slice(0, 120);
+                  setEditing({ ...editing, slug: validValue });
+                }}
+                maxLength={120}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                {editing.slug?.length || 0}/120 caracteres • Apenas letras, números e hífens
+              </p>
             </Field>
             <Field label="Resumo">
               <textarea
@@ -287,7 +327,7 @@ function AdminNoticias() {
               <span className="font-semibold text-deep">Publicada</span>
             </label>
 
-            {err && <div className="text-sm text-destructive">{err}</div>}
+            <ErrorMessage error={err} />
 
             <div className="flex justify-end gap-2 pt-2">
               <button

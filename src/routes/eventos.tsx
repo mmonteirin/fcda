@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { eventosQuery, eventosPdfsQuery, type Evento, type EventoPdf } from "@/lib/site-queries";
@@ -11,7 +11,6 @@ import {
   Filter,
   Clock,
   Link as LinkIcon,
-  Image as ImageIcon,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -195,9 +194,10 @@ function Eventos() {
               {proximosEventos.map((evento) => {
                 const statusInfo = getStatusLabel(evento.status || null);
                 return (
-                  <div
+                  <Link
                     key={evento.id}
-                    className="rounded-2xl border border-border bg-card p-5 shadow-card hover:shadow-elegant transition-all"
+                    to={`/eventos/${evento.id}`}
+                    className="rounded-2xl border border-border bg-card p-5 shadow-card hover:shadow-elegant transition-all block"
                   >
                     {evento.imagem_url && (
                       <div className="aspect-[16/9] rounded-xl overflow-hidden mb-4 bg-secondary">
@@ -226,7 +226,7 @@ function Eventos() {
                       </p>
                     )}
                     <InscricaoButton link={evento.link_inscricao} />
-                  </div>
+                  </Link>
                 );
               })}
             </div>
@@ -298,9 +298,10 @@ function Eventos() {
                 const eventoPdfs = pdfsByEvento[evento.id] || [];
                 const statusInfo = getStatusLabel(evento.status || null);
                 return (
-                  <div
+                  <Link
                     key={evento.id}
-                    className="rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card"
+                    to={`/eventos/${evento.id}`}
+                    className="rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card block hover:shadow-elegant transition-all"
                   >
                     {evento.imagem_url && (
                       <div className="aspect-[16/9] overflow-hidden bg-secondary">
@@ -342,48 +343,10 @@ function Eventos() {
                           {evento.descricao && (
                             <p className="text-sm text-muted-foreground mb-4">{evento.descricao}</p>
                           )}
-                          <div className="mb-4">
-                            <InscricaoButton link={evento.link_inscricao} />
-                          </div>
                         </div>
                       </div>
-
-                      {eventoPdfs.length > 0 && (
-                        <div
-                          id="documentos"
-                          className="mt-6 pt-6 border-t border-border scroll-mt-32"
-                        >
-                          <h3 className="text-sm font-semibold text-deep mb-3 flex items-center gap-2">
-                            <FileText className="h-4 w-4" /> Documentos disponíveis
-                          </h3>
-                          <div className="grid sm:grid-cols-2 gap-3">
-                            {eventoPdfs.map((pdf) => (
-                              <a
-                                key={pdf.id}
-                                href={pdf.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center justify-between gap-3 p-3 rounded-lg bg-secondary/50 hover:bg-secondary/80 transition-colors group"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <FileText className="h-4 w-4 text-primary" />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-semibold text-deep truncate">
-                                      {getTipoLabel(pdf.tipo)}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground truncate">
-                                      {pdf.nome_arquivo}
-                                    </div>
-                                  </div>
-                                </div>
-                                <Download className="h-4 w-4 text-muted-foreground group-hover:text-deep" />
-                              </a>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
+import { ErrorMessage, getFriendlyErrorMessage } from "@/components/admin/error-message";
 import { Filter, Calendar } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/eventos")({
@@ -52,7 +53,11 @@ function AdminEventos() {
       invalidate();
       setEditing(null);
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Erro desconhecido");
+      if (e instanceof Error) {
+        setErr(getFriendlyErrorMessage(e));
+      } else {
+        setErr("Ocorreu um erro inesperado. Tente novamente.");
+      }
     } finally {
       setBusy(false);
     }
@@ -288,7 +293,7 @@ function AdminEventos() {
               />
             </Field>
 
-            {err && <div className="text-sm text-destructive">{err}</div>}
+            <ErrorMessage error={err} />
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"

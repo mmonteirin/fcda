@@ -6,6 +6,7 @@ import { diretoresQuery, type Diretor } from "@/lib/site-queries";
 import { saveDiretor, deleteDiretor } from "@/lib/admin.functions";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
+import { ErrorMessage, getFriendlyErrorMessage } from "@/components/admin/error-message";
 import { Users } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/diretores")({
@@ -40,7 +41,11 @@ function AdminDiretores() {
       invalidate();
       setEditing(null);
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Erro desconhecido");
+      if (e instanceof Error) {
+        setErr(getFriendlyErrorMessage(e));
+      } else {
+        setErr("Ocorreu um erro inesperado. Tente novamente.");
+      }
     } finally {
       setBusy(false);
     }
@@ -130,7 +135,7 @@ function AdminDiretores() {
               />
             </Field>
 
-            {err && <div className="text-sm text-destructive">{err}</div>}
+            <ErrorMessage error={err} />
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
