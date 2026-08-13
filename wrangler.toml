@@ -1,0 +1,8 @@
+name = "fcda"
+compatibility_date = "2024-01-01"
+
+[vars]
+SUPABASE_URL = "https://ucesipxemhrugmqwxtei.supabase.co"
+SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Sf19DBS7HhDQRi4h1pxXWQ_pd-rjTSr"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjZXNpcHhlbWhydWdtcXd4dGVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNjAwOTAsImV4cCI6MjA5NTkzNjA5MH0.h4_gP9fH7RCmRLUmAOgcrzpKyyQWGMbxuIAjKwFfX_o"
+# SUPABASE_SERVICE_ROLE_KEY deve ser definido como variável de ambiente secreta no Cloudflare

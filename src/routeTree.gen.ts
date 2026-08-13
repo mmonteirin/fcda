@@ -27,6 +27,7 @@ import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as NoticiasIdRouteImport } from './routes/noticias.$id'
+import { Route as EventosIdRouteImport } from './routes/eventos.$id'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
@@ -139,6 +140,11 @@ const NoticiasIdRoute = NoticiasIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => NoticiasRoute,
+} as any)
+const EventosIdRoute = EventosIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => EventosRoute,
 } as any)
 const AuthenticatedPerfilRoute = AuthenticatedPerfilRouteImport.update({
   id: '/perfil',
@@ -282,7 +288,7 @@ export interface FileRoutesByFullPath {
   '/clubes': typeof ClubesRoute
   '/contato': typeof ContatoRoute
   '/cursos': typeof CursosRoute
-  '/eventos': typeof EventosRoute
+  '/eventos': typeof EventosRouteWithChildren
   '/filie-se': typeof FilieSeRoute
   '/inscricoes': typeof InscricoesRoute
   '/login': typeof LoginRoute
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/transparencia': typeof TransparenciaRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/perfil': typeof AuthenticatedPerfilRoute
+  '/eventos/$id': typeof EventosIdRoute
   '/noticias/$id': typeof NoticiasIdRoute
   '/admin/banner': typeof AuthenticatedAdminBannerRoute
   '/admin/categorias-modalidades': typeof AuthenticatedAdminCategoriasModalidadesRoute
@@ -324,7 +331,7 @@ export interface FileRoutesByTo {
   '/clubes': typeof ClubesRoute
   '/contato': typeof ContatoRoute
   '/cursos': typeof CursosRoute
-  '/eventos': typeof EventosRoute
+  '/eventos': typeof EventosRouteWithChildren
   '/filie-se': typeof FilieSeRoute
   '/inscricoes': typeof InscricoesRoute
   '/login': typeof LoginRoute
@@ -336,6 +343,7 @@ export interface FileRoutesByTo {
   '/sobre': typeof SobreRoute
   '/transparencia': typeof TransparenciaRoute
   '/perfil': typeof AuthenticatedPerfilRoute
+  '/eventos/$id': typeof EventosIdRoute
   '/noticias/$id': typeof NoticiasIdRoute
   '/admin/banner': typeof AuthenticatedAdminBannerRoute
   '/admin/categorias-modalidades': typeof AuthenticatedAdminCategoriasModalidadesRoute
@@ -367,7 +375,7 @@ export interface FileRoutesById {
   '/clubes': typeof ClubesRoute
   '/contato': typeof ContatoRoute
   '/cursos': typeof CursosRoute
-  '/eventos': typeof EventosRoute
+  '/eventos': typeof EventosRouteWithChildren
   '/filie-se': typeof FilieSeRoute
   '/inscricoes': typeof InscricoesRoute
   '/login': typeof LoginRoute
@@ -380,6 +388,7 @@ export interface FileRoutesById {
   '/transparencia': typeof TransparenciaRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
+  '/eventos/$id': typeof EventosIdRoute
   '/noticias/$id': typeof NoticiasIdRoute
   '/_authenticated/admin/banner': typeof AuthenticatedAdminBannerRoute
   '/_authenticated/admin/categorias-modalidades': typeof AuthenticatedAdminCategoriasModalidadesRoute
@@ -424,6 +433,7 @@ export interface FileRouteTypes {
     | '/transparencia'
     | '/admin'
     | '/perfil'
+    | '/eventos/$id'
     | '/noticias/$id'
     | '/admin/banner'
     | '/admin/categorias-modalidades'
@@ -465,6 +475,7 @@ export interface FileRouteTypes {
     | '/sobre'
     | '/transparencia'
     | '/perfil'
+    | '/eventos/$id'
     | '/noticias/$id'
     | '/admin/banner'
     | '/admin/categorias-modalidades'
@@ -508,6 +519,7 @@ export interface FileRouteTypes {
     | '/transparencia'
     | '/_authenticated/admin'
     | '/_authenticated/perfil'
+    | '/eventos/$id'
     | '/noticias/$id'
     | '/_authenticated/admin/banner'
     | '/_authenticated/admin/categorias-modalidades'
@@ -539,7 +551,7 @@ export interface RootRouteChildren {
   ClubesRoute: typeof ClubesRoute
   ContatoRoute: typeof ContatoRoute
   CursosRoute: typeof CursosRoute
-  EventosRoute: typeof EventosRoute
+  EventosRoute: typeof EventosRouteWithChildren
   FilieSeRoute: typeof FilieSeRoute
   InscricoesRoute: typeof InscricoesRoute
   LoginRoute: typeof LoginRoute
@@ -679,6 +691,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/noticias/$id'
       preLoaderRoute: typeof NoticiasIdRouteImport
       parentRoute: typeof NoticiasRoute
+    }
+    '/eventos/$id': {
+      id: '/eventos/$id'
+      path: '/$id'
+      fullPath: '/eventos/$id'
+      preLoaderRoute: typeof EventosIdRouteImport
+      parentRoute: typeof EventosRoute
     }
     '/_authenticated/perfil': {
       id: '/_authenticated/perfil'
@@ -910,6 +929,17 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface EventosRouteChildren {
+  EventosIdRoute: typeof EventosIdRoute
+}
+
+const EventosRouteChildren: EventosRouteChildren = {
+  EventosIdRoute: EventosIdRoute,
+}
+
+const EventosRouteWithChildren =
+  EventosRoute._addFileChildren(EventosRouteChildren)
+
 interface NoticiasRouteChildren {
   NoticiasIdRoute: typeof NoticiasIdRoute
 }
@@ -929,7 +959,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClubesRoute: ClubesRoute,
   ContatoRoute: ContatoRoute,
   CursosRoute: CursosRoute,
-  EventosRoute: EventosRoute,
+  EventosRoute: EventosRouteWithChildren,
   FilieSeRoute: FilieSeRoute,
   InscricoesRoute: InscricoesRoute,
   LoginRoute: LoginRoute,

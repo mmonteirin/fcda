@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
+import { ErrorMessage, getFriendlyErrorMessage } from "@/components/admin/error-message";
 import { Upload, X, Waves } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/modalidades")({
@@ -68,9 +69,23 @@ function AdminModalidades() {
     setBusy(true);
     setErr(null);
     try {
+      // Gera ou valida o slug
+      let slug = editing.slug || editing.nome?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "";
+      slug = slug
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+      
+      if (!slug) {
+        slug = `modalidade-${Date.now()}`;
+      }
+      
       await saveModalidade(supabase, user!.id, {
         id: editing.id,
-        slug: editing.slug || "",
+        slug: slug,
         nome: editing.nome || "",
         descricao: editing.descricao || "",
         img_url: editing.img_url || null,
@@ -80,7 +95,11 @@ function AdminModalidades() {
       invalidate();
       setEditing(null);
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Erro desconhecido");
+      if (e instanceof Error) {
+        setErr(getFriendlyErrorMessage(e));
+      } else {
+        setErr("Ocorreu um erro inesperado. Tente novamente.");
+      }
     } finally {
       setBusy(false);
     }
@@ -183,10 +202,22 @@ function AdminModalidades() {
               <input
                 className={inputClass}
                 value={editing.slug ?? ""}
-                onChange={(e) => setEditing({ ...editing, slug: e.target.value })}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  const validValue = value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9-]/g, "-")
+                    .replace(/-+/g, "-")
+                    .slice(0, 80);
+                  setEditing({ ...editing, slug: validValue });
+                }}
                 required
                 placeholder="natacao"
+                maxLength={80}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                {editing.slug?.length || 0}/80 caracteres • Apenas letras, números e hífens
+              </p>
             </Field>
             <Field label="Descrição">
               <textarea
@@ -258,7 +289,7 @@ function AdminModalidades() {
               </div>
             </Field>
 
-            {err && <div className="text-sm text-destructive">{err}</div>}
+            <ErrorMessage error={err} />
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"

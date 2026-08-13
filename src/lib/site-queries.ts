@@ -144,6 +144,23 @@ export const eventosQuery = (ano?: number) =>
     },
   });
 
+export const eventoByIdQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["evento", id],
+    queryFn: async (): Promise<Evento | null> => {
+      const { data, error } = await supabase
+        .from("eventos")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (error) {
+        if (error.code === "PGRST116") return null; // Not found
+        throw error;
+      }
+      return data;
+    },
+  });
+
 export const diretoresQuery = queryOptions({
   queryKey: ["diretores"],
   queryFn: async (): Promise<Diretor[]> => {
