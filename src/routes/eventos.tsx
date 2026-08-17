@@ -115,7 +115,8 @@ function Eventos() {
   };
 
   const [anoFilter, setAnoFilter] = useState<number>(getCurrentSeason());
-  const eventos = useSuspenseQuery(eventosQuery(anoFilter)).data;
+  const todosEventos = useSuspenseQuery(eventosQuery()).data;
+  const eventos = todosEventos.filter((evento) => evento.ano === anoFilter);
   const pdfs = useSuspenseQuery(eventosPdfsQuery).data;
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
@@ -130,7 +131,7 @@ function Eventos() {
 
   // Get unique years from events
   const anos = Array.from(
-    new Set(eventos.map((e) => e.ano).filter((a): a is number => a !== null)),
+    new Set(todosEventos.map((e) => e.ano).filter((a): a is number => a !== null)),
   ).sort((a, b) => b - a);
 
   // Atualizar temporada automaticamente na virada do ano

@@ -2,13 +2,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { eventosQuery, type Evento } from "@/lib/site-queries";
-import { saveEvento, deleteEvento } from "@/lib/admin.functions";
+import { saveEvento, deleteEvento, uploadEventoCapa } from "@/lib/admin.functions";
 import { useAuth } from "@/lib/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
 import { ErrorMessage, getFriendlyErrorMessage } from "@/components/admin/error-message";
-import { Filter, Calendar } from "lucide-react";
+import { Filter, Calendar, ImagePlus, LoaderCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/eventos")({
   loader: ({ context }) => context.queryClient.ensureQueryData(eventosQuery()),
@@ -22,6 +22,7 @@ function AdminEventos() {
   const [editing, setEditing] = useState<Partial<Evento> | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
   const invalidate = useInvalidate(["eventos"]);
 
@@ -47,7 +48,7 @@ function AdminEventos() {
         ano: editing.ano ?? null,
         descricao: editing.descricao || null,
         status: editing.status || null,
-        link_inscricao: editing.link_inscricao || null,
+        link_inscricao: editing.link_inscricao?.trim() || null,
         imagem_url: editing.imagem_url || null,
       });
       invalidate();
@@ -63,13 +64,30 @@ function AdminEventos() {
     }
   }
 
+  async function uploadCapa(file: File) {
+    setUploading(true);
+    setErr(null);
+    try {
+      const imagem_url = await uploadEventoCapa(supabase, file);
+      setEditing((current) => (current ? { ...current, imagem_url } : current));
+    } catch (error: unknown) {
+      setErr(
+        error instanceof Error
+          ? getFriendlyErrorMessage(error)
+          : "Não foi possível enviar a imagem.",
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <AdminToolbar 
-        title="Competições" 
+      <AdminToolbar
+        title="Competições"
         breadcrumbs={[
           { label: "Dashboard", to: "/admin" },
-          { label: "Competições", to: "/admin/eventos" }
+          { label: "Competições", to: "/admin/eventos" },
         ]}
         onNew={() =>
           setEditing({
@@ -119,17 +137,16 @@ function AdminEventos() {
         </thead>
         <tbody>
           {eventos.map((e) => (
-            <tr key={e.id} className="border-t border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+            <tr
+              key={e.id}
+              className="border-t border-border hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+            >
               <td className="px-5 py-4 font-bold text-deep dark:text-white">{e.data_texto}</td>
               <td className="px-5 py-4">
                 <div className="font-semibold text-deep dark:text-white">{e.nome}</div>
                 {e.imagem_url && (
                   <div className="mt-2">
-                    <img
-                      src={e.imagem_url}
-                      alt=""
-                      className="h-12 w-20 object-cover rounded-lg"
-                    />
+                    <img src={e.imagem_url} alt="" className="h-12 w-20 object-cover rounded-lg" />
                   </div>
                 )}
               </td>
@@ -139,22 +156,24 @@ function AdminEventos() {
               </td>
               <td className="px-5 py-4">
                 {e.status && (
-                  <span className={`inline-flex text-xs font-bold uppercase rounded-full px-3 py-1.5 ${
-                    e.status === 'planejado'
-                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                      : e.status === 'confirmado'
-                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                      : e.status === 'inscricoes_abertas'
-                      ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
-                      : e.status === 'inscricoes_fechadas'
-                      ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                      : e.status === 'em_andamento'
-                      ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
-                      : e.status === 'finalizado'
-                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                  }`}>
-                    {e.status.replace(/_/g, ' ')}
+                  <span
+                    className={`inline-flex text-xs font-bold uppercase rounded-full px-3 py-1.5 ${
+                      e.status === "planejado"
+                        ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                        : e.status === "confirmado"
+                          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                          : e.status === "inscricoes_abertas"
+                            ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                            : e.status === "inscricoes_fechadas"
+                              ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
+                              : e.status === "em_andamento"
+                                ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                                : e.status === "finalizado"
+                                  ? "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                                  : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                    }`}
+                  >
+                    {e.status.replace(/_/g, " ")}
                   </span>
                 )}
               </td>
@@ -282,8 +301,54 @@ function AdminEventos() {
                 onChange={(e) => setEditing({ ...editing, link_inscricao: e.target.value })}
                 placeholder="https://..."
               />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Ao preencher, o botão “Inscreva-se” será exibido na página pública do evento.
+              </p>
             </Field>
-            <Field label="URL da imagem">
+            <Field label="Capa do evento">
+              <div className="mt-1 overflow-hidden rounded-xl border border-dashed border-border bg-secondary/40">
+                {editing.imagem_url ? (
+                  <div className="relative aspect-[16/7]">
+                    <img
+                      src={editing.imagem_url}
+                      alt="Prévia da capa do evento"
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEditing({ ...editing, imagem_url: null })}
+                      className="absolute right-3 top-3 rounded-lg bg-deep/85 px-3 py-2 text-xs font-bold text-white"
+                    >
+                      Remover capa
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center gap-2 p-4 text-center text-sm font-semibold text-muted-foreground hover:bg-secondary">
+                    {uploading ? (
+                      <LoaderCircle className="h-6 w-6 animate-spin text-primary" />
+                    ) : (
+                      <ImagePlus className="h-7 w-7 text-primary" />
+                    )}
+                    <span>{uploading ? "Enviando capa..." : "Enviar imagem de capa"}</span>
+                    <span className="text-xs font-normal">
+                      Proporção recomendada: 16:7 · Máximo 5 MB
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      disabled={uploading}
+                      onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void uploadCapa(file);
+                        event.currentTarget.value = "";
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+            </Field>
+            <Field label="URL alternativa da capa">
               <input
                 type="url"
                 className={inputClass}
@@ -291,6 +356,9 @@ function AdminEventos() {
                 onChange={(e) => setEditing({ ...editing, imagem_url: e.target.value })}
                 placeholder="https://..."
               />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Use somente se a imagem já estiver hospedada em outro local.
+              </p>
             </Field>
 
             <ErrorMessage error={err} />
@@ -303,7 +371,7 @@ function AdminEventos() {
                 Cancelar
               </button>
               <button
-                disabled={busy}
+                disabled={busy || uploading}
                 className="rounded-lg bg-deep text-deep-foreground px-4 py-2 text-sm font-bold disabled:opacity-60"
               >
                 {busy ? "Salvando..." : "Salvar"}

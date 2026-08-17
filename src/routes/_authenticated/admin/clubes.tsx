@@ -18,7 +18,6 @@ import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { createFileRoute } from "@tanstack/react-router";
 import { ErrorMessage, getFriendlyErrorMessage } from "@/components/admin/error-message";
 
-// @ts-expect-error - Route type is complex and expected to have this pattern
 export const Route = createFileRoute("/_authenticated/admin/clubes")({
   loader: ({ context }) => context.queryClient.ensureQueryData(clubesQuery(false)),
   errorComponent: ({ error }: { error: { message: string } }) => (
