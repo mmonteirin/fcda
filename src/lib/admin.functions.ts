@@ -83,10 +83,26 @@ const eventoSchema = z.object({
   id: z.string().uuid().optional(),
   data_texto: z.string().min(1).max(40),
   data_inicio: z.string().optional().nullable(),
+  data_fim: z.string().optional().nullable(),
   nome: z.string().min(1).max(200),
   local: z.string().min(1).max(200),
   modalidade: z.string().min(1).max(60),
   ano: z.number().int().min(2000).max(2100).optional().nullable(),
+  descricao: z.string().max(5000).optional().nullable(),
+  status: z
+    .enum([
+      "planejado",
+      "confirmado",
+      "inscricoes_abertas",
+      "inscricoes_fechadas",
+      "em_andamento",
+      "finalizado",
+      "cancelado",
+    ])
+    .optional()
+    .nullable(),
+  link_inscricao: z.string().url().optional().nullable(),
+  imagem_url: z.string().url().optional().nullable(),
 });
 
 export async function saveEvento(supabase: SupabaseClient, userId: string, data: unknown) {
@@ -109,6 +125,19 @@ export async function deleteEvento(supabase: SupabaseClient, userId: string, id:
   const { error } = await supabase.from("eventos").delete().eq("id", id);
   if (error) throw new Error(error.message);
   return { ok: true };
+}
+
+export async function uploadEventoCapa(supabase: SupabaseClient, file: File) {
+  if (!file.type.startsWith("image/")) throw new Error("Selecione um arquivo de imagem válido.");
+  if (file.size > 5 * 1024 * 1024) throw new Error("A imagem de capa deve ter no máximo 5 MB.");
+
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `eventos/${crypto.randomUUID()}.${extension}`;
+  const { error } = await supabase.storage
+    .from("site-images")
+    .upload(path, file, { upsert: false });
+  if (error) throw new Error(error.message);
+  return supabase.storage.from("site-images").getPublicUrl(path).data.publicUrl;
 }
 
 // ============ CATEGORIAS DE MODALIDADES ============
@@ -486,17 +515,17 @@ export const updateProfile = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => updateProfileSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = asDynamicSupabase(context.supabase);
-    
+
     // Atualizar profile básico
     if (data.nome) {
       const { error: profileError } = await sb
         .from("profiles")
         .update({ nome: data.nome })
         .eq("id", context.userId);
-      
+
       if (profileError) throw new Error(profileError.message);
     }
-    
+
     return { ok: true };
   });
 
@@ -505,14 +534,11 @@ export const updateAtletaProfile = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => updateAtletaProfileSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = asDynamicSupabase(context.supabase);
-    
-    const { error } = await sb
-      .from("atletas")
-      .update(data)
-      .eq("id", context.userId);
-    
+
+    const { error } = await sb.from("atletas").update(data).eq("id", context.userId);
+
     if (error) throw new Error(error.message);
-    
+
     return { ok: true };
   });
 
@@ -521,14 +547,11 @@ export const updateTreinadorProfile = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => updateTreinadorProfileSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = asDynamicSupabase(context.supabase);
-    
-    const { error } = await sb
-      .from("treinadores")
-      .update(data)
-      .eq("id", context.userId);
-    
+
+    const { error } = await sb.from("treinadores").update(data).eq("id", context.userId);
+
     if (error) throw new Error(error.message);
-    
+
     return { ok: true };
   });
 
@@ -537,14 +560,11 @@ export const updateGestorProfile = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => updateGestorProfileSchema.parse(d))
   .handler(async ({ data, context }) => {
     const sb = asDynamicSupabase(context.supabase);
-    
-    const { error } = await sb
-      .from("gestores_clube")
-      .update(data)
-      .eq("id", context.userId);
-    
+
+    const { error } = await sb.from("gestores_clube").update(data).eq("id", context.userId);
+
     if (error) throw new Error(error.message);
-    
+
     return { ok: true };
   });
 

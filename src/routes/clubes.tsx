@@ -4,7 +4,6 @@ import { SiteLayout } from "@/components/layout/SiteLayout";
 import { clubesQuery, type Clube } from "@/lib/site-queries";
 import { Building2, MapPin, Phone, Mail, Calendar, ExternalLink, Users } from "lucide-react";
 
-// @ts-expect-error - Route type is complex and expected to have this pattern
 export const Route = createFileRoute("/clubes")({
   loader: ({ context }) => context.queryClient.ensureQueryData(clubesQuery(true)),
   errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,

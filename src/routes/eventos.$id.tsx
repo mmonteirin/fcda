@@ -1,7 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { eventoByIdQuery, eventosQuery, eventosPdfsQuery, type Evento, type EventoPdf } from "@/lib/site-queries";
+import {
+  eventoByIdQuery,
+  eventosQuery,
+  eventosPdfsQuery,
+  type Evento,
+  type EventoPdf,
+} from "@/lib/site-queries";
 import {
   Calendar,
   MapPin,
@@ -56,7 +62,7 @@ export const Route = createFileRoute("/eventos/$id")({
         { title: evento ? `${evento.nome} — FCDA` : "Evento — FCDA" },
         {
           name: "description",
-          content: evento?.descricao ?? `Informações sobre ${evento?.nome || 'evento'} da FCDA.`,
+          content: evento?.descricao ?? `Informações sobre ${evento?.nome || "evento"} da FCDA.`,
         },
         { property: "og:title", content: evento?.nome ?? "FCDA" },
         { property: "og:description", content: evento?.descricao ?? "" },
@@ -148,11 +154,11 @@ function EventoDetalhes() {
     <SiteLayout>
       {/* ── HERO ── */}
       {evento.imagem_url ? (
-        <div className="relative h-[55vh] min-h-[400px] overflow-hidden">
+        <div className="relative aspect-[16/7] min-h-[360px] max-h-[560px] overflow-hidden">
           <img
             src={evento.imagem_url}
             alt={evento.nome}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover object-center"
           />
           {/* gradiente sobre a imagem */}
           <div className="absolute inset-0 bg-gradient-to-t from-deep via-deep/60 to-deep/10" />
@@ -167,7 +173,9 @@ function EventoDetalhes() {
               </Link>
 
               {evento.status && (
-                <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider mb-4 ${statusInfo.color}`}>
+                <div
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider mb-4 ${statusInfo.color}`}
+                >
                   {statusInfo.label}
                 </div>
               )}
@@ -205,7 +213,9 @@ function EventoDetalhes() {
             </Link>
 
             {evento.status && (
-              <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider mb-4 ${statusInfo.color}`}>
+              <div
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider mb-4 ${statusInfo.color}`}
+              >
                 {statusInfo.label}
               </div>
             )}
@@ -230,8 +240,25 @@ function EventoDetalhes() {
         </section>
       )}
 
+      <nav
+        className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur"
+        aria-label="Seções do evento"
+      >
+        <div className="mx-auto flex max-w-4xl gap-6 overflow-x-auto px-6 py-4 text-sm font-bold text-muted-foreground">
+          <a href="#informacoes" className="whitespace-nowrap hover:text-primary">
+            Informações
+          </a>
+          <a href="#documentos" className="whitespace-nowrap hover:text-primary">
+            Documentos ({eventoPdfs.length})
+          </a>
+          <a href="#links" className="whitespace-nowrap hover:text-primary">
+            Links
+          </a>
+        </div>
+      </nav>
+
       {/* ── CONTEÚDO PRINCIPAL ── */}
-      <article className="py-16">
+      <article id="informacoes" className="scroll-mt-24 py-16">
         <div className="mx-auto max-w-4xl px-6">
           {/* Botão de inscrição */}
           <div className="mb-8">
@@ -305,7 +332,7 @@ function EventoDetalhes() {
 
           {/* Documentos do evento */}
           {eventoPdfs.length > 0 && (
-            <div className="mb-12">
+            <div id="documentos" className="scroll-mt-24 mb-12">
               <h2 className="text-2xl font-bold text-deep mb-6">Documentos da competição</h2>
               <div className="grid gap-4">
                 {eventoPdfs.map((pdf) => (
@@ -331,7 +358,7 @@ function EventoDetalhes() {
           )}
 
           {/* Links importantes */}
-          <div className="mb-12">
+          <div id="links" className="scroll-mt-24 mb-12">
             <h2 className="text-2xl font-bold text-deep mb-6">Links importantes</h2>
             <div className="flex flex-wrap gap-3">
               {evento.link_inscricao && (
@@ -406,11 +433,7 @@ function EventoDetalhes() {
                 >
                   {e.imagem_url && (
                     <div className="aspect-[16/9] rounded-lg overflow-hidden mb-3 bg-secondary">
-                      <img
-                        src={e.imagem_url}
-                        alt={e.nome}
-                        className="w-full h-full object-cover"
-                      />
+                      <img src={e.imagem_url} alt={e.nome} className="w-full h-full object-cover" />
                     </div>
                   )}
                   <p className="text-sm font-bold text-primary mb-1">{e.data_texto}</p>

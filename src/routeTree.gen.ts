@@ -26,6 +26,7 @@ import { Route as ClubesRouteImport } from './routes/clubes'
 import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TransparenciaAtletasRouteImport } from './routes/transparencia.atletas'
 import { Route as NoticiasIdRouteImport } from './routes/noticias.$id'
 import { Route as EventosIdRouteImport } from './routes/eventos.$id'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
@@ -135,6 +136,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const TransparenciaAtletasRoute = TransparenciaAtletasRouteImport.update({
+  id: '/atletas',
+  path: '/atletas',
+  getParentRoute: () => TransparenciaRoute,
 } as any)
 const NoticiasIdRoute = NoticiasIdRouteImport.update({
   id: '/$id',
@@ -298,11 +304,12 @@ export interface FileRoutesByFullPath {
   '/recordes': typeof RecordesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sobre': typeof SobreRoute
-  '/transparencia': typeof TransparenciaRoute
+  '/transparencia': typeof TransparenciaRouteWithChildren
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/perfil': typeof AuthenticatedPerfilRoute
   '/eventos/$id': typeof EventosIdRoute
   '/noticias/$id': typeof NoticiasIdRoute
+  '/transparencia/atletas': typeof TransparenciaAtletasRoute
   '/admin/banner': typeof AuthenticatedAdminBannerRoute
   '/admin/categorias-modalidades': typeof AuthenticatedAdminCategoriasModalidadesRoute
   '/admin/clubes': typeof AuthenticatedAdminClubesRoute
@@ -341,10 +348,11 @@ export interface FileRoutesByTo {
   '/recordes': typeof RecordesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sobre': typeof SobreRoute
-  '/transparencia': typeof TransparenciaRoute
+  '/transparencia': typeof TransparenciaRouteWithChildren
   '/perfil': typeof AuthenticatedPerfilRoute
   '/eventos/$id': typeof EventosIdRoute
   '/noticias/$id': typeof NoticiasIdRoute
+  '/transparencia/atletas': typeof TransparenciaAtletasRoute
   '/admin/banner': typeof AuthenticatedAdminBannerRoute
   '/admin/categorias-modalidades': typeof AuthenticatedAdminCategoriasModalidadesRoute
   '/admin/clubes': typeof AuthenticatedAdminClubesRoute
@@ -385,11 +393,12 @@ export interface FileRoutesById {
   '/recordes': typeof RecordesRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sobre': typeof SobreRoute
-  '/transparencia': typeof TransparenciaRoute
+  '/transparencia': typeof TransparenciaRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/perfil': typeof AuthenticatedPerfilRoute
   '/eventos/$id': typeof EventosIdRoute
   '/noticias/$id': typeof NoticiasIdRoute
+  '/transparencia/atletas': typeof TransparenciaAtletasRoute
   '/_authenticated/admin/banner': typeof AuthenticatedAdminBannerRoute
   '/_authenticated/admin/categorias-modalidades': typeof AuthenticatedAdminCategoriasModalidadesRoute
   '/_authenticated/admin/clubes': typeof AuthenticatedAdminClubesRoute
@@ -435,6 +444,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/eventos/$id'
     | '/noticias/$id'
+    | '/transparencia/atletas'
     | '/admin/banner'
     | '/admin/categorias-modalidades'
     | '/admin/clubes'
@@ -477,6 +487,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/eventos/$id'
     | '/noticias/$id'
+    | '/transparencia/atletas'
     | '/admin/banner'
     | '/admin/categorias-modalidades'
     | '/admin/clubes'
@@ -521,6 +532,7 @@ export interface FileRouteTypes {
     | '/_authenticated/perfil'
     | '/eventos/$id'
     | '/noticias/$id'
+    | '/transparencia/atletas'
     | '/_authenticated/admin/banner'
     | '/_authenticated/admin/categorias-modalidades'
     | '/_authenticated/admin/clubes'
@@ -561,7 +573,7 @@ export interface RootRouteChildren {
   RecordesRoute: typeof RecordesRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SobreRoute: typeof SobreRoute
-  TransparenciaRoute: typeof TransparenciaRoute
+  TransparenciaRoute: typeof TransparenciaRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -684,6 +696,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/transparencia/atletas': {
+      id: '/transparencia/atletas'
+      path: '/atletas'
+      fullPath: '/transparencia/atletas'
+      preLoaderRoute: typeof TransparenciaAtletasRouteImport
+      parentRoute: typeof TransparenciaRoute
     }
     '/noticias/$id': {
       id: '/noticias/$id'
@@ -952,6 +971,18 @@ const NoticiasRouteWithChildren = NoticiasRoute._addFileChildren(
   NoticiasRouteChildren,
 )
 
+interface TransparenciaRouteChildren {
+  TransparenciaAtletasRoute: typeof TransparenciaAtletasRoute
+}
+
+const TransparenciaRouteChildren: TransparenciaRouteChildren = {
+  TransparenciaAtletasRoute: TransparenciaAtletasRoute,
+}
+
+const TransparenciaRouteWithChildren = TransparenciaRoute._addFileChildren(
+  TransparenciaRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -969,7 +1000,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecordesRoute: RecordesRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SobreRoute: SobreRoute,
-  TransparenciaRoute: TransparenciaRoute,
+  TransparenciaRoute: TransparenciaRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
