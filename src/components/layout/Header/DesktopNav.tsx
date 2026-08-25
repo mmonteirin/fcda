@@ -16,7 +16,8 @@ const modalidades = [
 
 const competicoes = [
   { label: "Calendário", to: "/eventos" },
-  { label: "Ranking", to: "/rankings" },
+  { label: "Ranking Temporada 2026", to: "/ranking-temporada-2026" },
+  { label: "Rankings Anteriores", to: "/rankings" },
   { label: "Recordes", to: "/recordes" },
   { label: "Fotos", to: "/eventos" },
 ] as const;
