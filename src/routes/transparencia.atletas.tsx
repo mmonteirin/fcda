@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { asDynamicSupabase } from "@/lib/supabase-helpers";
 import { Users, Building2 } from "lucide-react";
 
 type Atleta = {
@@ -20,7 +21,7 @@ function AtletasTransparencia() {
   const [busca, setBusca] = useState("");
   useEffect(() => {
     void (async () => {
-      const { data } = await (supabase as any)
+      const { data } = await asDynamicSupabase(supabase)
         .from("atletas_transparencia")
         .select("*")
         .order("nome");

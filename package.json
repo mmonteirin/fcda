@@ -17,6 +17,7 @@
     "format": "prettier --write .",
     "deploy": "bun run build && wrangler deploy",
     "import:clubes": "tsx scripts/import-clubes.ts",
+    "import:atletas": "tsx scripts/import-atletas-transparencia.ts",
     "start": "npm run dev:all"
   },
   "dependencies": {

@@ -426,7 +426,8 @@ function EventoDetalhes() {
               {outrosEventos.map((e) => (
                 <Link
                   key={e.id}
-                  to={`/eventos/${e.id}`}
+                  to="/eventos/$id"
+                  params={{ id: e.id }}
                   className="rounded-xl border border-border bg-card p-5 hover:shadow-card transition-all block"
                 >
                   {e.imagem_url && (
