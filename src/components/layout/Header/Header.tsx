@@ -203,7 +203,7 @@ export function Header() {
             </Link>
           ) : (
             <Link
-              to="/_authenticated/perfil"
+              to="/perfil"
               className="ml-2 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider text-deep/70 hover:text-deep transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               title="Meu perfil"
             >
@@ -309,7 +309,7 @@ export function Header() {
               </Link>
             ) : (
               <Link
-                to="/_authenticated/perfil"
+                to="/perfil"
                 onClick={closeMenu}
                 className="flex items-center gap-3 px-4 py-3 text-base font-semibold text-deep hover:bg-secondary/50 transition-colors rounded-lg"
               >

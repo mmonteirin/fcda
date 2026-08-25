@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import pictogramas from "@/assets/pictogramas/modalidades.png";
 import masters from "@/assets/pictogramas/masters.png";
 
-const modalidades = [
+type ModalidadeMenu = { label: string; position: string; source?: string };
+
+const modalidades: readonly ModalidadeMenu[] = [
   { label: "Natação", position: "0% 0%" },
   { label: "Polo Aquático", position: "50% 0%" },
   { label: "Águas Abertas", position: "50% 100%" },
@@ -12,7 +14,7 @@ const modalidades = [
   { label: "Saltos Ornamentais", position: "100% 0%" },
   { label: "Masters", position: "center", source: masters },
   { label: "Paralímpico", position: "100% 100%" },
-] as const;
+];
 
 const competicoes = [
   { label: "Calendário", to: "/eventos" },

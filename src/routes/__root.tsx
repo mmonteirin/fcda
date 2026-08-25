@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth.tsx";
+import { Toaster } from "@/components/ui/sonner";
 import logoFCDA from "@/assets/logoFCDA.png";
 import "@/lib/sentry";
 
@@ -123,6 +124,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Outlet />
+        <Toaster richColors position="top-right" />
       </AuthProvider>
     </QueryClientProvider>
   );

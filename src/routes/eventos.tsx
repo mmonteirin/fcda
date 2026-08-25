@@ -197,7 +197,8 @@ function Eventos() {
                 return (
                   <Link
                     key={evento.id}
-                    to={`/eventos/${evento.id}`}
+                    to="/eventos/$id"
+                    params={{ id: evento.id }}
                     className="rounded-2xl border border-border bg-card p-5 shadow-card hover:shadow-elegant transition-all block"
                   >
                     {evento.imagem_url && (
@@ -301,7 +302,8 @@ function Eventos() {
                 return (
                   <Link
                     key={evento.id}
-                    to={`/eventos/${evento.id}`}
+                    to="/eventos/$id"
+                    params={{ id: evento.id }}
                     className="rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card block hover:shadow-elegant transition-all"
                   >
                     {evento.imagem_url && (

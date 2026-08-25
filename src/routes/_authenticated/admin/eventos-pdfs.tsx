@@ -8,6 +8,7 @@ import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components
 import { inputClass, useInvalidate } from "@/components/admin/utils";
 import { Upload, X, FileText, Download, Plus } from "lucide-react";
 import { asDynamicSupabase } from "@/lib/supabase-helpers";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/eventos-pdfs")({
   loader: ({ context }) =>
@@ -68,7 +69,8 @@ function AdminEventosPdfs() {
       const reader = new FileReader();
       reader.onload = async () => {
         const base64 = reader.result as string;
-        await upload({
+        try {
+          await upload({
           data: {
             fileName: file.name,
             fileType: file.type,
@@ -76,16 +78,25 @@ function AdminEventosPdfs() {
             eventoId: selectedEventoId,
             tipo: selectedTipo,
           },
-        });
-        invalidate();
-        setUploadModalOpen(false);
-        setSelectedEventoId(null);
-        setSelectedTipo(null);
+          });
+          invalidate();
+          toast.success("Documento enviado com sucesso.");
+          setUploadModalOpen(false);
+          setSelectedEventoId(null);
+          setSelectedTipo(null);
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : "Erro ao fazer upload";
+          setErr(message);
+          toast.error(message);
+        } finally {
+          setUploading(false);
+        }
       };
       reader.readAsDataURL(file);
     } catch (e: unknown) {
-      setErr(e instanceof Error ? e.message : "Erro ao fazer upload");
-    } finally {
+      const message = e instanceof Error ? e.message : "Erro ao preparar o upload";
+      setErr(message);
+      toast.error(message);
       setUploading(false);
     }
   }
@@ -97,9 +108,11 @@ function AdminEventosPdfs() {
     const { error } = await sb.from("eventos_pdfs").delete().eq("id", id);
     if (error) {
       setErr(error.message);
+      toast.error(error.message);
       return;
     }
     invalidate();
+    toast.success("Documento excluído.");
   }
 
   function getTipoLabel(tipo: EventoPdf["tipo"]) {
