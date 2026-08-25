@@ -295,17 +295,15 @@ function EventoDetalhes() {
                   <MapPin className="h-5 w-5 text-primary" />
                   <h3 className="font-bold text-deep">Local</h3>
                 </div>
-                <p className="text-muted-foreground">{evento.local}</p>
-                {evento.local && (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(evento.local)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 mt-2 text-sm text-primary hover:underline"
-                  >
-                    Ver no mapa <ExternalLink className="h-3 w-3" />
-                  </a>
-                )}
+                <p className="text-muted-foreground mb-2">{evento.local}</p>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(evento.local)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                >
+                  Ver no mapa <ExternalLink className="h-3 w-3" />
+                </a>
               </div>
             )}
 
@@ -429,20 +427,20 @@ function EventoDetalhes() {
                 <Link
                   key={e.id}
                   to={`/eventos/${e.id}`}
-                  className="rounded-xl border border-border bg-card p-5 hover:shadow-card transition-all"
+                  className="rounded-xl border border-border bg-card p-5 hover:shadow-card transition-all block"
                 >
                   {e.imagem_url && (
                     <div className="aspect-[16/9] rounded-lg overflow-hidden mb-3 bg-secondary">
                       <img src={e.imagem_url} alt={e.nome} className="w-full h-full object-cover" />
                     </div>
                   )}
-                  <p className="text-sm font-bold text-primary mb-1">{e.data_texto}</p>
+                  <div className="text-sm font-bold text-primary mb-1">{e.data_texto}</div>
                   <h3 className="font-semibold text-deep line-clamp-2">{e.nome}</h3>
                   {e.local && (
-                    <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                    <div className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
                       {e.local}
-                    </p>
+                    </div>
                   )}
                 </Link>
               ))}

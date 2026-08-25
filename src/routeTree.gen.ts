@@ -14,6 +14,7 @@ import { Route as SobreRouteImport } from './routes/sobre'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RecordesRouteImport } from './routes/recordes'
 import { Route as RankingsRouteImport } from './routes/rankings'
+import { Route as RankingTemporada2026RouteImport } from './routes/ranking-temporada-2026'
 import { Route as NoticiasRouteImport } from './routes/noticias'
 import { Route as ModalidadesRouteImport } from './routes/modalidades'
 import { Route as LoginRouteImport } from './routes/login'
@@ -76,6 +77,11 @@ const RecordesRoute = RecordesRouteImport.update({
 const RankingsRoute = RankingsRouteImport.update({
   id: '/rankings',
   path: '/rankings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RankingTemporada2026Route = RankingTemporada2026RouteImport.update({
+  id: '/ranking-temporada-2026',
+  path: '/ranking-temporada-2026',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NoticiasRoute = NoticiasRouteImport.update({
@@ -300,6 +306,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/noticias': typeof NoticiasRouteWithChildren
+  '/ranking-temporada-2026': typeof RankingTemporada2026Route
   '/rankings': typeof RankingsRoute
   '/recordes': typeof RecordesRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -344,6 +351,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/noticias': typeof NoticiasRouteWithChildren
+  '/ranking-temporada-2026': typeof RankingTemporada2026Route
   '/rankings': typeof RankingsRoute
   '/recordes': typeof RecordesRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -389,6 +397,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/modalidades': typeof ModalidadesRoute
   '/noticias': typeof NoticiasRouteWithChildren
+  '/ranking-temporada-2026': typeof RankingTemporada2026Route
   '/rankings': typeof RankingsRoute
   '/recordes': typeof RecordesRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -435,6 +444,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/modalidades'
     | '/noticias'
+    | '/ranking-temporada-2026'
     | '/rankings'
     | '/recordes'
     | '/reset-password'
@@ -479,6 +489,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/modalidades'
     | '/noticias'
+    | '/ranking-temporada-2026'
     | '/rankings'
     | '/recordes'
     | '/reset-password'
@@ -523,6 +534,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/modalidades'
     | '/noticias'
+    | '/ranking-temporada-2026'
     | '/rankings'
     | '/recordes'
     | '/reset-password'
@@ -569,6 +581,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ModalidadesRoute: typeof ModalidadesRoute
   NoticiasRoute: typeof NoticiasRouteWithChildren
+  RankingTemporada2026Route: typeof RankingTemporada2026Route
   RankingsRoute: typeof RankingsRoute
   RecordesRoute: typeof RecordesRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -611,6 +624,13 @@ declare module '@tanstack/react-router' {
       path: '/rankings'
       fullPath: '/rankings'
       preLoaderRoute: typeof RankingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ranking-temporada-2026': {
+      id: '/ranking-temporada-2026'
+      path: '/ranking-temporada-2026'
+      fullPath: '/ranking-temporada-2026'
+      preLoaderRoute: typeof RankingTemporada2026RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/noticias': {
@@ -996,6 +1016,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ModalidadesRoute: ModalidadesRoute,
   NoticiasRoute: NoticiasRouteWithChildren,
+  RankingTemporada2026Route: RankingTemporada2026Route,
   RankingsRoute: RankingsRoute,
   RecordesRoute: RecordesRoute,
   ResetPasswordRoute: ResetPasswordRoute,
