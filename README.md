@@ -139,6 +139,8 @@ npm run deploy
 
 O arquivo `wrangler.jsonc` define a configuração do Worker. Consulte [`DEPLOYMENT.md`](DEPLOYMENT.md) para detalhes específicos do ambiente.
 
+O plano de migração tecnológica prevista para 2027 está em [`docs/MIGRACAO_NEXTJS_2027.md`](docs/MIGRACAO_NEXTJS_2027.md). A migração não está em execução; o documento serve como referência para inventário, spike e decisão técnica.
+
 ## Scripts de dados
 
 ```bash
