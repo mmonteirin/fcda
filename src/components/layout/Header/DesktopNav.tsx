@@ -24,7 +24,7 @@ const competicoes = [
   { label: "Sistemas de Inscrição", to: "/inscricoes" },
 ] as const;
 
-type MegaMenuName = "modalidades" | "competicoes";
+type MegaMenuName = "federacao" | "competicoes";
 
 function MenuTrigger({
   label,
@@ -154,35 +154,37 @@ export function DesktopNav() {
   }, []);
 
   return (
-    <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Navegação principal">
+    <nav className="hidden min-w-0 items-center gap-0.5 xl:flex" aria-label="Navegação principal">
       <Link
         to="/"
-        className="rounded-md px-3 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         activeOptions={{ exact: true }}
         activeProps={{ className: "text-deep" }}
       >
         Início
       </Link>
-      <Link
-        to="/sobre"
-        className="rounded-md px-3 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        activeProps={{ className: "text-deep" }}
-      >
-        A FCDA
-      </Link>
-
       <div
         className="relative"
-        onMouseEnter={() => handleMenuEnter("modalidades")}
+        onMouseEnter={() => handleMenuEnter("federacao")}
         onMouseLeave={handleMenuLeave}
       >
         <MenuTrigger
-          label="Modalidades"
-          isOpen={openMenu === "modalidades"}
-          onClick={() => handleMenuClick("modalidades")}
-          onKeyDown={(e) => handleKeyDown(e, "modalidades")}
+          label="Federação"
+          isOpen={openMenu === "federacao"}
+          onClick={() => handleMenuClick("federacao")}
+          onKeyDown={(e) => handleKeyDown(e, "federacao")}
         />
-        <MegaMenuContent isOpen={openMenu === "modalidades"} className="w-[34rem]">
+        <MegaMenuContent isOpen={openMenu === "federacao"} className="w-[34rem]">
+          <div className="mb-3 grid grid-cols-2 gap-2 border-b border-border pb-3" role="none">
+            <Link to="/sobre" className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary" role="menuitem" tabIndex={-1}>
+              A FCDA
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">Conheça a federação</span>
+            </Link>
+            <Link to="/cursos" className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary" role="menuitem" tabIndex={-1}>
+              Cursos
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">Capacitação esportiva</span>
+            </Link>
+          </div>
           <div className="grid grid-cols-2 gap-1" role="none">
             {modalidades.map((modalidade) => (
               <Link
@@ -258,35 +260,28 @@ export function DesktopNav() {
 
       <Link
         to="/clubes"
-        className="rounded-md px-3 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         activeProps={{ className: "text-deep" }}
       >
         Clubes
       </Link>
       <Link
         to="/noticias"
-        className="rounded-md px-3 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         activeProps={{ className: "text-deep" }}
       >
         Notícias
       </Link>
       <Link
-        to="/cursos"
-        className="rounded-md px-3 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        activeProps={{ className: "text-deep" }}
-      >
-        Cursos
-      </Link>
-      <Link
         to="/transparencia"
-        className="rounded-md px-3 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         activeProps={{ className: "text-deep" }}
       >
         Transparência
       </Link>
       <Link
         to="/contato"
-        className="rounded-md px-3 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         activeProps={{ className: "text-deep" }}
       >
         Contato

@@ -32,13 +32,13 @@ for (const [key, value] of Object.entries(_env)) {
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
   plugins: [
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
     tanstackStart({
       server: { entry: "server" },
     }),
     react(),
     tailwindcss(),
     tsConfigPaths(),
-    cloudflare(),
     vendorChunkPlugin(),
   ],
   environments: {
