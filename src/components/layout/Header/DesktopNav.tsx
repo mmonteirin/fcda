@@ -17,11 +17,11 @@ const modalidades: readonly ModalidadeMenu[] = [
 ];
 
 const competicoes = [
-  { label: "Calendário", to: "/eventos" },
+  { label: "Calendário de Eventos", to: "/eventos" },
   { label: "Ranking Temporada 2026", to: "/ranking-temporada-2026" },
   { label: "Rankings Anteriores", to: "/rankings" },
-  { label: "Recordes", to: "/recordes" },
-  { label: "Fotos", to: "/eventos" },
+  { label: "Recordes Cearenses", to: "/recordes" },
+  { label: "Sistemas de Inscrição", to: "/inscricoes" },
 ] as const;
 
 type MegaMenuName = "modalidades" | "competicoes";
@@ -256,6 +256,13 @@ export function DesktopNav() {
         </MegaMenuContent>
       </div>
 
+      <Link
+        to="/clubes"
+        className="rounded-md px-3 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        activeProps={{ className: "text-deep" }}
+      >
+        Clubes
+      </Link>
       <Link
         to="/noticias"
         className="rounded-md px-3 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"

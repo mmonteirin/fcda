@@ -19,8 +19,10 @@ import {
   Share2,
   Facebook,
   Linkedin,
-  Youtube,
+  MessageCircle,
+  Copy,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const PDF_TIPOS = [
   { value: "resultados", label: "Resultados" },
@@ -364,24 +366,24 @@ function EventoDetalhes() {
                   href={evento.link_inscricao}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-secondary"
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-secondary text-primary"
                 >
                   <LinkIcon className="h-4 w-4" /> Inscrições
                   <ExternalLink className="h-3 w-3" />
                 </a>
               )}
-              <a
-                href="/transparencia"
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-secondary"
+              <Link
+                to="/transparencia"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-secondary text-deep"
               >
-                <FileText className="h-4 w-4" /> Transparência
-              </a>
-              <a
-                href="/noticias"
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-secondary"
+                <FileText className="h-4 w-4 text-primary" /> Transparência
+              </Link>
+              <Link
+                to="/noticias"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold hover:bg-secondary text-deep"
               >
-                <FileText className="h-4 w-4" /> Notícias
-              </a>
+                <FileText className="h-4 w-4 text-primary" /> Notícias
+              </Link>
             </div>
           </div>
 
@@ -394,11 +396,22 @@ function EventoDetalhes() {
               </div>
               <div className="flex items-center gap-2">
                 <a
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${evento.nome} - FCDA: ${url}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full border border-border p-2 text-emerald-600 hover:bg-emerald-50 transition-colors"
+                  aria-label="Compartilhar no WhatsApp"
+                  title="Compartilhar no WhatsApp"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </a>
+                <a
                   href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-border p-2 text-primary hover:bg-secondary"
+                  className="rounded-full border border-border p-2 text-blue-600 hover:bg-blue-50 transition-colors"
                   aria-label="Compartilhar no Facebook"
+                  title="Compartilhar no Facebook"
                 >
                   <Facebook className="h-4 w-4" />
                 </a>
@@ -406,11 +419,28 @@ function EventoDetalhes() {
                   href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-border p-2 text-designated hover:bg-secondary"
+                  className="rounded-full border border-border p-2 text-blue-700 hover:bg-blue-50 transition-colors"
                   aria-label="Compartilhar no LinkedIn"
+                  title="Compartilhar no LinkedIn"
                 >
                   <Linkedin className="h-4 w-4" />
                 </a>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (navigator.clipboard) {
+                      navigator.clipboard.writeText(url);
+                      toast.success("Link copiado para a área de transferência!");
+                    } else if (navigator.share) {
+                      navigator.share({ title: evento.nome, url });
+                    }
+                  }}
+                  className="rounded-full border border-border p-2 text-foreground/70 hover:bg-secondary transition-colors"
+                  aria-label="Copiar link"
+                  title="Copiar link"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
               </div>
             </div>
           </div>

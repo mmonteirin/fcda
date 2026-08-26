@@ -64,6 +64,21 @@ export type TransparenciaDocumento = {
   publicado: boolean;
 };
 
+export type AtletaBusca = {
+  registro: string;
+  nome: string;
+  clube: string;
+  vinculo: string;
+};
+
+export type RecordeBusca = {
+  id: string;
+  prova: string;
+  atleta_nome: string;
+  piscina: string;
+  sexo: string;
+};
+
 export type UserWithRoles = {
   id: string;
   email: string;
@@ -188,6 +203,35 @@ export const transparenciaQuery = (onlyPublished = true) =>
       return data ?? [];
     },
   });
+
+export const atletasBuscaQuery = queryOptions({
+  queryKey: ["busca-atletas"],
+  queryFn: async (): Promise<AtletaBusca[]> => {
+    const sb = asDynamicSupabase(supabase);
+    const { data, error } = await sb
+      .from("atletas_transparencia")
+      .select("registro, nome, clube, vinculo")
+      .order("nome")
+      .limit(500);
+    if (error) throw error;
+    return data ?? [];
+  },
+});
+
+export const recordesBuscaQuery = queryOptions({
+  queryKey: ["busca-recordes"],
+  queryFn: async (): Promise<RecordeBusca[]> => {
+    const sb = asDynamicSupabase(supabase);
+    const { data, error } = await sb
+      .from("recordes")
+      .select("id, prova, atleta_nome, piscina, sexo")
+      .eq("publicado", true)
+      .order("prova")
+      .limit(500);
+    if (error) throw error;
+    return data ?? [];
+  },
+});
 
 export const usersQuery = queryOptions({
   queryKey: ["users"],

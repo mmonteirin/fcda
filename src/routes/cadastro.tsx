@@ -1,9 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { User, Dumbbell, Building2, ArrowRight, Check, X } from "lucide-react";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { publicRegister } from "@/lib/admin.functions";
+import { clubesQuery } from "@/lib/site-queries";
 
 export const Route = createFileRoute("/cadastro")({
   head: () => ({
@@ -129,12 +131,12 @@ function Cadastro() {
                 Sua conta foi criada e você receberá um e-mail de confirmação. Após confirmar, você
                 poderá acessar sua conta e completar seu perfil.
               </p>
-              <a
-                href="/login"
+              <Link
+                to="/login"
                 className="inline-flex items-center gap-2 rounded-xl bg-deep text-deep-foreground font-bold px-6 py-3 hover:bg-primary transition-colors"
               >
                 Ir para login <ArrowRight className="h-4 w-4" />
-              </a>
+              </Link>
             </div>
           )}
         </div>
@@ -145,6 +147,8 @@ function Cadastro() {
 
 function RegistrationForm({ userType, onSuccess }: { userType: UserType; onSuccess: () => void }) {
   const register = useServerFn(publicRegister);
+  const { data: clubes = [] } = useQuery(clubesQuery(true));
+
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
@@ -329,18 +333,37 @@ function RegistrationForm({ userType, onSuccess }: { userType: UserType; onSucce
             </div>
 
             <div>
+              <label className="block text-sm font-semibold text-deep mb-2">Clube</label>
+              <select
+                name="clube"
+                value={formData.clube}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-border px-4 py-3 text-sm focus:border-primary focus:outline-none bg-card text-foreground"
+              >
+                <option value="">Selecione seu clube (ou Avulso)</option>
+                {clubes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome} {c.sigla ? `(${c.sigla})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="block text-sm font-semibold text-deep mb-2">Categoria</label>
               <select
                 name="categoria"
                 value={formData.categoria}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-border px-4 py-3 text-sm focus:border-primary focus:outline-none"
+                className="w-full rounded-xl border border-border px-4 py-3 text-sm focus:border-primary focus:outline-none bg-card text-foreground"
               >
-                <option value="">Selecione</option>
+                <option value="">Selecione a categoria</option>
+                <option value="mirim">Mirim</option>
+                <option value="petiz">Petiz</option>
                 <option value="infantil">Infantil</option>
                 <option value="juvenil">Juvenil</option>
                 <option value="junior">Junior</option>
-                <option value="adulto">Adulto</option>
+                <option value="senior">Sênior / Absoluto</option>
                 <option value="master">Master</option>
               </select>
             </div>
@@ -354,11 +377,14 @@ function RegistrationForm({ userType, onSuccess }: { userType: UserType; onSucce
               name="clube"
               value={formData.clube}
               onChange={handleChange}
-              className={`w-full rounded-xl border px-4 py-3 text-sm ${errors.clube ? "border-destructive" : "border-border"} focus:border-primary focus:outline-none`}
+              className={`w-full rounded-xl border px-4 py-3 text-sm bg-card text-foreground ${errors.clube ? "border-destructive" : "border-border"} focus:border-primary focus:outline-none`}
             >
-              <option value="">Selecione seu clube</option>
-              <option value="clube1">Clube Exemplo 1</option>
-              <option value="clube2">Clube Exemplo 2</option>
+              <option value="">Selecione o clube filiado</option>
+              {clubes.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome} {c.sigla ? `(${c.sigla})` : ""}
+                </option>
+              ))}
             </select>
             {errors.clube && <p className="text-sm text-destructive mt-1">{errors.clube}</p>}
           </div>

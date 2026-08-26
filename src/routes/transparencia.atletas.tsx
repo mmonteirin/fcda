@@ -6,13 +6,27 @@ import { clubesQuery, type Clube } from "@/lib/site-queries";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { asDynamicSupabase } from "@/lib/supabase-helpers";
-import { Users, Building2, Search, Filter, AlertCircle } from "lucide-react";
+import { Users, Building2, Search, Filter, AlertCircle, Download } from "lucide-react";
+import { exportToCSV } from "@/lib/export-csv";
+import { exportToXLSX } from "@/lib/export-xlsx";
 
 type Atleta = AtletaTransparencia & {
   vinculoCalculado: "confederado" | "vinculado";
 };
 
-export const Route = createFileRoute("/transparencia/atletas")({ component: AtletasTransparencia });
+export const Route = createFileRoute("/transparencia/atletas")({
+  head: () => ({
+    meta: [
+      { title: "Atletas Cadastrados — Transparência FCDA" },
+      {
+        name: "description",
+        content:
+          "Relação oficial de atletas confederados e vinculados à Federação Cearense de Desportos Aquáticos.",
+      },
+    ],
+  }),
+  component: AtletasTransparencia,
+});
 
 function AtletasTransparencia() {
   const [items, setItems] = useState<Atleta[]>([]);
@@ -31,68 +45,71 @@ function AtletasTransparencia() {
         setLoading(true);
         setError(null);
         setUsingFallback(false);
-        
+
         // Tentar buscar da API do Google Apps Script primeiro
         const { atletas } = await transparenciaAPI.getAtletas();
-        
+
         // Calcular vínculo baseado nos tipos de natação e águas abertas
-        const atletasComVinculo = atletas.map(atleta => {
-          const ehConfederado = atleta.tipoNatacao === 'Confederado' || atleta.tipoAguasAbertas === 'Confederado';
+        const atletasComVinculo = atletas.map((atleta) => {
+          const ehConfederado =
+            atleta.tipoNatacao === "Confederado" || atleta.tipoAguasAbertas === "Confederado";
           return {
             ...atleta,
-            vinculoCalculado: ehConfederado ? 'confederado' : 'vinculado'
+            vinculoCalculado: (ehConfederado ? "confederado" : "vinculado") as
+              | "confederado"
+              | "vinculado",
           };
         });
-        
+
         setItems(atletasComVinculo);
       } catch (err) {
-        console.error('Erro ao carregar atletas da API, usando fallback do Supabase:', err);
-        
+        console.error("Erro ao carregar atletas da API, usando fallback do Supabase:", err);
+
         // Fallback: buscar dados do Supabase
         try {
           const { data } = await asDynamicSupabase(supabase)
             .from("atletas_transparencia")
             .select("*")
             .order("nome");
-          
+
           if (data && data.length > 0) {
             // Converter dados do Supabase para o formato esperado
-            const atletasFallback = data.map(atleta => ({
+            const atletasFallback: Atleta[] = data.map((atleta: any) => ({
               registro: atleta.registro,
               nome: atleta.nome,
-              apelido: '',
+              apelido: "",
               clube: atleta.clube,
-              dataNascimento: atleta.data_nascimento || '',
-              modalidades: 'Natação',
-              tipoNatacao: atleta.vinculo === 'confederado' ? 'Confederado' : 'Vinculado',
-              tipoAguasAbertas: '',
+              dataNascimento: atleta.data_nascimento || "",
+              modalidades: "Natação",
+              tipoNatacao: atleta.vinculo === "confederado" ? "Confederado" : "Vinculado",
+              tipoAguasAbertas: "",
               statusNatacao: atleta.status,
-              statusAguasAbertas: '',
+              statusAguasAbertas: "",
               statusGeral: atleta.status,
               idadeReferencia: 0,
-              classe: '',
-              vinculoCalculado: atleta.vinculo
+              classe: "",
+              vinculoCalculado: atleta.vinculo === "confederado" ? "confederado" : "vinculado",
             }));
-            
+
             setItems(atletasFallback);
             setUsingFallback(true);
           } else {
-            throw new Error('Nenhum dado encontrado no Supabase');
+            throw new Error("Nenhum dado encontrado no Supabase");
           }
         } catch (fallbackErr) {
-          console.error('Erro no fallback do Supabase:', fallbackErr);
-          setError('Erro ao carregar dados dos atletas. Tente novamente mais tarde.');
+          console.error("Erro no fallback do Supabase:", fallbackErr);
+          setError("Erro ao carregar dados dos atletas. Tente novamente mais tarde.");
         }
       } finally {
         setLoading(false);
       }
     })();
   }, []);
+
   // Criar mapa de clubes com logos para fácil acesso
   const clubesMap = useMemo(() => {
     const map = new Map<string, Clube>();
-    clubes.forEach(clube => {
-      // Normalizar nome do clube para comparação
+    clubes.forEach((clube) => {
       const normalizedName = clube.nome.toLowerCase().trim();
       map.set(normalizedName, clube);
     });
@@ -112,22 +129,24 @@ function AtletasTransparencia() {
 
   // Função para obter logo do clube
   const getClubeLogo = (nomeClube: string) => {
-    const normalizedName = nomeClube.toLowerCase().trim();
+    const normalizedName = (nomeClube || "").toLowerCase().trim();
     const clube = clubesMap.get(normalizedName);
     return clube?.logo_url || null;
   };
 
   // Função para obter sigla do clube
   const getClubeSigla = (nomeClube: string) => {
-    const normalizedName = nomeClube.toLowerCase().trim();
+    const normalizedName = (nomeClube || "").toLowerCase().trim();
     const clube = clubesMap.get(normalizedName);
     return clube?.sigla || null;
   };
+
   const lista = items.filter(
     (x) =>
       (tipo === "todos" || x.vinculoCalculado === tipo) &&
       `${x.nome} ${x.apelido} ${x.clube}`.toLowerCase().includes(busca.toLowerCase()),
   );
+
   return (
     <SiteLayout>
       <section className="bg-hero py-16 text-primary-foreground">
@@ -137,8 +156,7 @@ function AtletasTransparencia() {
           </p>
           <h1 className="mt-3 text-4xl font-bold md:text-5xl">Atletas da FCDA</h1>
           <p className="mt-4 text-primary-foreground/80">
-            Relação de atletas confederados e vinculados à Federação Cearense de Desportos
-            Aquáticos.
+            Relação de atletas confederados e vinculados à Federação Cearense de Desportos Aquáticos.
           </p>
         </div>
       </section>
@@ -167,7 +185,7 @@ function AtletasTransparencia() {
                 </div>
               </div>
             )}
-          <>
+
             <section className="grid gap-4 sm:grid-cols-3">
               <div className="rounded-2xl border border-border bg-card p-5">
                 <Users className="text-primary" />
@@ -187,6 +205,7 @@ function AtletasTransparencia() {
                 <span className="text-sm text-muted-foreground">Vinculados</span>
               </div>
             </section>
+
             <section>
               <h2 className="text-2xl font-bold text-deep">Dashboard por clube</h2>
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -199,8 +218,8 @@ function AtletasTransparencia() {
                       className="flex items-center gap-3 rounded-xl border border-border bg-card p-4"
                     >
                       {logoUrl ? (
-                        <img 
-                          src={logoUrl} 
+                        <img
+                          src={logoUrl}
                           alt={clube}
                           className="h-10 w-10 rounded-full object-cover"
                         />
@@ -217,6 +236,7 @@ function AtletasTransparencia() {
                 })}
               </div>
             </section>
+
             <section className="rounded-2xl border border-border bg-card p-5">
               <div className="flex flex-col gap-3 md:flex-row">
                 <div className="relative flex-1">
@@ -233,13 +253,57 @@ function AtletasTransparencia() {
                   <select
                     value={tipo}
                     onChange={(e) => setTipo(e.target.value)}
-                    className="rounded-lg border border-border px-3 py-2"
+                    className="rounded-lg border border-border px-3 py-2 bg-card text-foreground text-sm"
                   >
                     <option value="todos">Todos os vínculos</option>
                     <option value="confederado">Confederados</option>
                     <option value="vinculado">Vinculados</option>
                   </select>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportToCSV(
+                      "fcda_relacao_atletas",
+                      [
+                        { key: "registro", label: "Registro CBDA/FCDA" },
+                        { key: "nome", label: "Nome do Atleta" },
+                        { key: "apelido", label: "Apelido" },
+                        { key: "clube", label: "Clube" },
+                        { key: "vinculoCalculado", label: "Tipo de Vínculo" },
+                        { key: "classe", label: "Classe/Categoria" },
+                        { key: "modalidades", label: "Modalidades" },
+                        { key: "dataNascimento", label: "Data de Nascimento" },
+                      ],
+                      lista,
+                    );
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary/80 hover:bg-secondary px-4 py-2 text-sm font-semibold text-deep transition-colors shrink-0"
+                  title="Exportar dados filtrados para planilha Excel/CSV"
+                >
+                  <Download className="h-4 w-4 text-primary" />
+                  <span>Exportar CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    exportToXLSX("fcda_relacao_atletas", [
+                      { key: "registro", label: "Registro CBDA/FCDA" },
+                      { key: "nome", label: "Nome do Atleta" },
+                      { key: "apelido", label: "Apelido" },
+                      { key: "clube", label: "Clube" },
+                      { key: "vinculoCalculado", label: "Tipo de Vínculo" },
+                      { key: "classe", label: "Classe/Categoria" },
+                      { key: "modalidades", label: "Modalidades" },
+                      { key: "dataNascimento", label: "Data de Nascimento" },
+                    ], lista)
+                  }
+                  className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 hover:bg-primary/20 px-4 py-2 text-sm font-semibold text-deep transition-colors shrink-0"
+                  title="Exportar dados filtrados para Excel"
+                >
+                  <Download className="h-4 w-4 text-primary" />
+                  <span>Exportar Excel</span>
+                </button>
               </div>
               <div className="mt-5 overflow-x-auto">
                 <table className="w-full text-sm">
@@ -261,14 +325,16 @@ function AtletasTransparencia() {
                           <td className="p-3">
                             <div>
                               <div className="font-semibold text-deep">{x.nome}</div>
-                              {x.apelido && <div className="text-xs text-muted-foreground">"{x.apelido}"</div>}
+                              {x.apelido && (
+                                <div className="text-xs text-muted-foreground">"{x.apelido}"</div>
+                              )}
                             </div>
                           </td>
                           <td>
                             <div className="flex items-center gap-2">
                               {logoUrl ? (
-                                <img 
-                                  src={logoUrl} 
+                                <img
+                                  src={logoUrl}
                                   alt={x.clube}
                                   className="h-6 w-6 rounded-full object-cover"
                                 />
@@ -278,26 +344,25 @@ function AtletasTransparencia() {
                           </td>
                           <td className="capitalize">{x.vinculoCalculado}</td>
                           <td>
-                            <div className="text-xs">
-                              {x.modalidades}
-                            </div>
+                            <div className="text-xs">{x.modalidades}</div>
                           </td>
                           <td>
                             <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                              {x.classe || '—'}
+                              {x.classe || "—"}
                             </span>
                           </td>
-                          <td>
-                            {x.dataNascimento
-                              ? x.dataNascimento // Já vem formatado dd/MM/yyyy da API
-                              : "—"}
-                          </td>
+                          <td>{x.dataNascimento ? x.dataNascimento : "—"}</td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
               </div>
+              {lista.length === 0 && (
+                <p className="mt-6 text-center text-muted-foreground py-4">
+                  Nenhum atleta encontrado para a busca selecionada.
+                </p>
+              )}
             </section>
           </>
         )}

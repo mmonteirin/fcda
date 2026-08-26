@@ -1,17 +1,15 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
-// or the app will break with duplicate plugins:
-//   - tanstackStart, viteReact, tailwindcss, tsConfigPaths, cloudflare (build-only),
-//     componentTagger (dev-only), VITE_* env injection, @ path alias, React/TanStack dedupe,
-//     error logger plugins, and sandbox detection (port/host/strictPort).
-// You can pass additional config via defineConfig({ vite: { ... } }) if needed.
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig } from "vite";
 import { loadEnv } from "vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import tsConfigPaths from "vite-tsconfig-paths";
+import { cloudflare } from "@cloudflare/vite-plugin";
 import type { Plugin } from "vite";
 
 // ── Env vars ────────────────────────────────────────────────────────────────
 // TanStack Start uses Rolldown for the client environment build.
-// Rolldown does NOT pick up Vite's top-level `define` substitutions from the
-// Lovable config, so we inject VITE_* vars explicitly via rolldownOptions.define.
+// Rolldown does NOT pick up Vite's top-level `define` substitutions, so we inject VITE_* vars explicitly via rolldownOptions.define.
 //
 // loadEnv reads .env / .env.local / .env.production from the project root.
 // We use "" as prefix to capture every variable, then filter to VITE_* below.
@@ -33,20 +31,24 @@ for (const [key, value] of Object.entries(_env)) {
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
-  tanstackStart: {
-    server: { entry: "server" },
-  },
-  vite: {
-    environments: {
-      client: {
-        build: {
-          rolldownOptions: {
-            define: clientRolldownDefine,
-          },
+  plugins: [
+    tanstackStart({
+      server: { entry: "server" },
+    }),
+    react(),
+    tailwindcss(),
+    tsConfigPaths(),
+    cloudflare(),
+    vendorChunkPlugin(),
+  ],
+  environments: {
+    client: {
+      build: {
+        rolldownOptions: {
+          define: clientRolldownDefine,
         },
       },
     },
-    plugins: [vendorChunkPlugin()],
   },
 });
 
