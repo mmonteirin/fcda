@@ -174,19 +174,8 @@ export function Header() {
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-xl">
       <TopBar />
       <div className="mx-auto flex h-[4.75rem] max-w-7xl items-center justify-between gap-6 px-4 sm:px-6">
-        <Link to="/" className="flex w-[9.5rem] shrink-0 items-center gap-2.5 group" onClick={closeMenu}>
+        <Link to="/" className="flex w-14 shrink-0 items-center group" onClick={closeMenu}>
           <img src={logoFCDA} alt="FCDA Logo" className="h-12 w-12 shrink-0 object-contain" />
-          <div className="min-w-0 leading-none">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              Federação Cearense
-            </div>
-            <div className="mt-1 text-lg font-bold text-deep">
-              FCDA <span className="text-gold">Ceará</span>
-            </div>
-            <div className="mt-1 text-[9px] uppercase tracking-[0.12em] text-muted-foreground">
-              Desportos aquáticos
-            </div>
-          </div>
         </Link>
 
         <div className="hidden min-w-0 flex-1 items-center justify-end gap-2 xl:flex">
