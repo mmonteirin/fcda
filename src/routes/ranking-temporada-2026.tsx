@@ -5,9 +5,17 @@ import { rankingAPI, RankingData, RankingCategoria, RankingAtleta, RankingClube 
 import { Trophy, Users, Award, TrendingUp, Medal, Filter, ChevronDown } from "lucide-react";
 
 export const Route = createFileRoute("/ranking-temporada-2026")({
+  head: () => ({
+    meta: [
+      { title: "Ranking Temporada 2026 — FCDA" },
+      {
+        name: "description",
+        content:
+          "Classificação oficial e pontuação atualizada da Temporada 2026 da Federação Cearense de Desportos Aquáticos.",
+      },
+    ],
+  }),
   component: RankingTemporada2026,
-  // Desabilitar SSR para evitar problemas de hydration
-  ssr: false,
 });
 
 function RankingTemporada2026() {

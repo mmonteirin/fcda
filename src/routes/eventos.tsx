@@ -12,7 +12,7 @@ import {
   Clock,
   Link as LinkIcon,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 const PDF_TIPOS = [
   { value: "resultados", label: "Resultados" },
@@ -108,48 +108,72 @@ function InscricaoButton({ link }: { link: string | null | undefined }) {
 }
 
 function Eventos() {
-  // Detectar temporada atual automaticamente
-  const getCurrentSeason = () => {
-    const now = new Date();
-    return now.getFullYear();
-  };
+  const todosEventos: Evento[] = useSuspenseQuery(eventosQuery()).data;
+  const pdfs: EventoPdf[] = useSuspenseQuery(eventosPdfsQuery).data;
 
-  const [anoFilter, setAnoFilter] = useState<number>(getCurrentSeason());
-  const todosEventos = useSuspenseQuery(eventosQuery()).data;
-  const eventos = todosEventos.filter((evento) => evento.ano === anoFilter);
-  const pdfs = useSuspenseQuery(eventosPdfsQuery).data;
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  const proximosEventos = eventos
-    .filter((evento) => evento.data_inicio && new Date(evento.data_inicio) >= hoje)
-    .slice(0, 3);
-  const resultados = pdfs.filter((pdf) =>
-    ["resultados", "resultados_gerais", "pontuacao", "eficiencia", "recordes", "ranking"].includes(
-      pdf.tipo,
-    ),
+  // Obter anos únicos dos eventos
+  const anos = useMemo(() => {
+    const list = Array.from(
+      new Set(todosEventos.map((e) => e.ano).filter((a): a is number => a !== null)),
+    ).sort((a, b) => b - a);
+    const currentYear = new Date().getFullYear();
+    if (!list.includes(currentYear)) {
+      list.unshift(currentYear);
+    }
+    return list;
+  }, [todosEventos]);
+
+  const [anoFilter, setAnoFilter] = useState<number>(() => {
+    const currentYear = new Date().getFullYear();
+    return currentYear;
+  });
+
+  const eventos = useMemo(
+    () => todosEventos.filter((evento) => evento.ano === anoFilter),
+    [todosEventos, anoFilter],
   );
 
-  // Get unique years from events
-  const anos = Array.from(
-    new Set(todosEventos.map((e) => e.ano).filter((a): a is number => a !== null)),
-  ).sort((a, b) => b - a);
+  const hoje = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
-  // Atualizar temporada automaticamente na virada do ano
-  useEffect(() => {
-    const currentSeason = getCurrentSeason();
-    if (anoFilter !== currentSeason) {
-      setAnoFilter(currentSeason);
-    }
-  }, [anoFilter]);
+  const proximosEventos = useMemo(
+    () =>
+      eventos
+        .filter((evento) => evento.data_inicio && new Date(evento.data_inicio) >= hoje)
+        .slice(0, 3),
+    [eventos, hoje],
+  );
+
+  const resultados = useMemo(
+    () =>
+      pdfs.filter((pdf) =>
+        [
+          "resultados",
+          "resultados_gerais",
+          "pontuacao",
+          "eficiencia",
+          "recordes",
+          "ranking",
+        ].includes(pdf.tipo),
+      ),
+    [pdfs],
+  );
 
   // Group PDFs by evento_id
-  const pdfsByEvento = pdfs.reduce(
-    (acc, pdf) => {
-      if (!acc[pdf.evento_id]) acc[pdf.evento_id] = [];
-      acc[pdf.evento_id].push(pdf);
-      return acc;
-    },
-    {} as Record<string, EventoPdf[]>,
+  const pdfsByEvento = useMemo(
+    () =>
+      pdfs.reduce(
+        (acc, pdf) => {
+          if (!acc[pdf.evento_id]) acc[pdf.evento_id] = [];
+          acc[pdf.evento_id].push(pdf);
+          return acc;
+        },
+        {} as Record<string, EventoPdf[]>,
+      ),
+    [pdfs],
   );
 
   return (

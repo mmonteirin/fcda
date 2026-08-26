@@ -1,13 +1,13 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { bannerQuery } from "@/lib/site-queries";
 import { X } from "lucide-react";
 import { useState } from "react";
 
 export function Banner() {
-  const banner = useSuspenseQuery(bannerQuery).data;
+  const { data: banner } = useQuery(bannerQuery);
   const [dismissed, setDismissed] = useState(false);
 
-  if (!banner.ativo || !banner.texto || dismissed) return null;
+  if (!banner || !banner.ativo || !banner.texto || dismissed) return null;
 
   return (
     <div className="bg-primary text-primary-foreground px-4 py-3">

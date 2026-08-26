@@ -25,13 +25,13 @@ Esta chave possui permissões elevadas (bypass RLS) e **NUNCA** deve ser commita
 
 ```bash
 # .dev.vars
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjZXNpcHhlbWhydWdtcXd4dGVpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDM2MDA5MCwiZXhwIjoyMDk1OTM2MDkwfQ.wPvjH7dRC9mLJjPkjWQgVJcuel3KMEJ6Lg2lu2d4tAQ
+SUPABASE_SERVICE_ROLE_KEY=cole-sua-chave-secreta-aqui
 ```
 
 **Como criar o arquivo manualmente:**
 ```bash
 # Na raiz do projeto, execute:
-echo 'SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjZXNpcHhlbWhydWdtcXd4dGVpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDM2MDA5MCwiZXhwIjoyMDk1OTM2MDkwfQ.wPvjH7dRC9mLJjPkjWQgVJcuel3KMEJ6Lg2lu2d4tAQ' > .dev.vars
+echo 'SUPABASE_SERVICE_ROLE_KEY=cole-sua-chave-secreta-aqui' > .dev.vars
 ```
 
 O arquivo `.dev.vars` já está no `.gitignore`, então não será commitado.
@@ -44,7 +44,7 @@ O arquivo `.dev.vars` já está no `.gitignore`, então não será commitado.
 2. Vá para: Workers & Pages → Seu projeto → Settings → Environment Variables
 3. Adicione a variável:
    - Nome: `SUPABASE_SERVICE_ROLE_KEY`
-   - Valor: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjZXNpcHhlbWhydWdtcXd4dGVpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDM2MDA5MCwiZXhwIjoyMDk1OTM2MDkwfQ.wPvjH7dRC9mLJjPkjWQgVJcuel3KMEJ6Lg2lu2d4tAQ`
+   - Valor: configure uma nova chave secreta diretamente no Cloudflare
    - Marque como "Encrypted" (secreta)
 
 ## Segurança
@@ -80,7 +80,7 @@ cat wrangler.toml
 ```
 
 ## Deploy
-
+SUPABASE_SERVICE_ROLE_KEY=cole-sua-chave-secreta-aqui
 Para fazer deploy no Cloudflare:
 
 ```bash
@@ -89,7 +89,7 @@ npm run deploy
 
 O comando `deploy` usará automaticamente:
 - Variáveis públicas do `wrangler.toml`
-- Variáveis secretas configuradas no Cloudflare Dashboard
+   - Valor: configure uma nova chave secreta diretamente no Cloudflare
 
 ## Troubleshooting
 

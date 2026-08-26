@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { transparenciaQuery, type TransparenciaDocumento } from "@/lib/site-queries";
 import { getTipoLabel, TIPOS } from "@/lib/transparencia-utils";
-import { FileText, Calendar, Download, Filter, Landmark } from "lucide-react";
+import { FileText, Calendar, Download, Filter, Landmark, Users, ArrowRight } from "lucide-react";
 import { useState, useMemo } from "react";
 
 export const Route = createFileRoute("/transparencia")({
@@ -68,7 +68,31 @@ function Transparencia() {
         </div>
       </section>
 
-      <section className="py-24">
+      <section className="py-12 bg-background border-b border-border/60">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-gold/10 border border-primary/20 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+            <div className="flex items-center gap-4">
+              <div className="h-14 w-14 rounded-2xl bg-primary/10 grid place-items-center text-primary shrink-0">
+                <Users className="h-7 w-7" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-deep">Relação Oficial de Atletas</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Consulte os atletas ativos, clubes, classes e tipos de vínculo confederados e vinculados.
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/transparencia/atletas"
+              className="inline-flex items-center gap-2 rounded-xl bg-deep px-6 py-3 text-sm font-bold text-deep-foreground hover:bg-primary transition-colors shrink-0"
+            >
+              Ver Relação de Atletas <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16">
         <div className="mx-auto max-w-7xl px-6">
           <div className="mb-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {TIPOS.map((tipo) => (

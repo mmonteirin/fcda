@@ -5,13 +5,16 @@ import { useAuth } from "@/lib/use-auth";
 import logoFCDA from "@/assets/logoFCDA.png";
 import { DesktopNav } from "./DesktopNav";
 import { TopBar } from "./TopBar";
+import { GlobalSearchModal } from "@/components/search/GlobalSearchModal";
 
 const nav = [
   { to: "/", label: "Início" },
   { to: "/sobre", label: "A FCDA" },
   { to: "/modalidades", label: "Modalidades" },
   { to: "/eventos", label: "Competições" },
+  { to: "/clubes", label: "Clubes Filiados" },
   { to: "/noticias", label: "Notícias" },
+  { to: "/cursos", label: "Cursos" },
   { to: "/transparencia", label: "Transparência" },
   { to: "/contato", label: "Contato" },
 ] as const;
@@ -31,7 +34,7 @@ const competicoes = [
   { label: "Ranking Temporada 2026", to: "/ranking-temporada-2026" },
   { label: "Rankings Anteriores", to: "/rankings" },
   { label: "Recordes", to: "/recordes" },
-  { label: "Fotos", to: "/eventos" },
+  { label: "Inscrições", to: "/inscricoes" },
 ] as const;
 
 function MobileMenuItem({
@@ -183,20 +186,22 @@ export function Header() {
           </div>
         </Link>
 
-        <div className="hidden xl:flex items-center gap-1">
+        <div className="hidden xl:flex items-center gap-2">
           <DesktopNav />
+
+          <GlobalSearchModal />
 
           {isEditor ? (
             <Link
               to="/admin"
-              className="ml-2 inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-deep hover:bg-gold/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              className="ml-1 inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-xs font-bold uppercase tracking-wider text-deep hover:bg-gold/20 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               <Shield className="h-3.5 w-3.5" aria-hidden="true" /> Painel
             </Link>
           ) : !user ? (
             <Link
               to="/login"
-              className="ml-2 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider text-deep/70 hover:text-deep transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              className="ml-1 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider text-deep/70 hover:text-deep transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               title="Acesso administrativo"
             >
               <LogIn className="h-3.5 w-3.5" aria-hidden="true" /> Admin
@@ -204,7 +209,7 @@ export function Header() {
           ) : (
             <Link
               to="/perfil"
-              className="ml-2 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider text-deep/70 hover:text-deep transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              className="ml-1 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-bold uppercase tracking-wider text-deep/70 hover:text-deep transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               title="Meu perfil"
             >
               <User className="h-3.5 w-3.5" aria-hidden="true" /> Perfil
@@ -213,20 +218,23 @@ export function Header() {
 
           <Link
             to="/filie-se"
-            className="ml-3 inline-flex items-center rounded-full bg-deep px-5 py-2.5 text-sm font-bold text-deep-foreground hover:bg-primary transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="ml-2 inline-flex items-center rounded-full bg-deep px-5 py-2.5 text-sm font-bold text-deep-foreground hover:bg-primary transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             Filie-se
           </Link>
         </div>
 
-        <button
-          onClick={() => setOpen(!open)}
-          className="xl:hidden p-2 text-deep rounded-lg hover:bg-secondary/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          aria-label={open ? "Fechar menu" : "Abrir menu"}
-          aria-expanded={open}
-        >
-          {open ? <X /> : <Menu />}
-        </button>
+        <div className="xl:hidden flex items-center gap-2">
+          <GlobalSearchModal />
+          <button
+            onClick={() => setOpen(!open)}
+            className="p-2 text-deep rounded-lg hover:bg-secondary/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            aria-label={open ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={open}
+          >
+            {open ? <X /> : <Menu />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}

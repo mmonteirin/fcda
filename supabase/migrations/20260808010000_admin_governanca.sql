@@ -86,7 +86,11 @@ declare
   record_id text;
   audit_action text;
 begin
-  audit_action := lower(tg_op);
+  audit_action := case tg_op
+    when 'INSERT' then 'create'
+    when 'UPDATE' then 'update'
+    when 'DELETE' then 'delete'
+  end;
   record_id := coalesce(new.id::text, old.id::text);
 
   insert into public.admin_audit_logs (actor_id, entity_type, entity_id, action, before_data, after_data)
@@ -101,7 +105,7 @@ begin
 
   insert into public.admin_notificacoes (titulo, descricao, link, tipo)
   values (
-    initcap(tg_table_name) || ' ' || case audit_action when 'insert' then 'cadastrado' when 'update' then 'atualizado' else 'excluído' end,
+    initcap(tg_table_name) || ' ' || case audit_action when 'create' then 'cadastrado' when 'update' then 'atualizado' else 'excluído' end,
     'Uma alteração foi registrada no painel administrativo.',
     '/admin/historico',
     case when audit_action = 'delete' then 'atencao' else 'informacao' end

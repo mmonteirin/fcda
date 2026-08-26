@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/filie-se")({
   head: () => ({
     meta: [
-      { title: "Filia-se — FCDA" },
+      { title: "Filie-se — FCDA" },
       {
         name: "description",
         content: "Processo de filiação e vinculação à Federação Cearense de Desportos Aquáticos.",
@@ -193,7 +193,7 @@ function FilieSe() {
       <section className="py-24 bg-hero text-primary-foreground">
         <div className="mx-auto max-w-5xl px-6">
           <div className="text-xs uppercase tracking-[0.25em] text-gold font-bold">FCDA</div>
-          <h1 className="mt-4 text-4xl md:text-5xl font-bold">Filia-se</h1>
+          <h1 className="mt-4 text-4xl md:text-5xl font-bold">Filie-se</h1>
           <p className="mt-4 text-lg text-primary-foreground/80">
             Processo de ingresso na Federação Cearense de Desportos Aquáticos
           </p>

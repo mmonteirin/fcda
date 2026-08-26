@@ -8,6 +8,7 @@ import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components
 import { inputClass, useInvalidate } from "@/components/admin/utils";
 import { ErrorMessage, getFriendlyErrorMessage } from "@/components/admin/error-message";
 import { Upload, X, Newspaper } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/noticias")({
   loader: ({ context }) => context.queryClient.ensureQueryData(noticiasQuery(false)),
@@ -110,12 +111,14 @@ function AdminNoticias() {
       });
       invalidate();
       setEditing(null);
+      toast.success("Notícia publicada com sucesso.");
     } catch (e: unknown) {
       if (e instanceof Error) {
         setErr(getFriendlyErrorMessage(e));
       } else {
         setErr("Ocorreu um erro inesperado. Tente novamente.");
       }
+      toast.error("Não foi possível publicar a notícia.");
     } finally {
       setBusy(false);
     }

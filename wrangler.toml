@@ -1,6 +1,6 @@
 name = "fcda"
 compatibility_date = "2024-01-01"
-
+main = "src/server.ts"
 [vars]
 SUPABASE_URL = "https://ucesipxemhrugmqwxtei.supabase.co"
 SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Sf19DBS7HhDQRi4h1pxXWQ_pd-rjTSr"

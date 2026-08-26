@@ -2,7 +2,18 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { noticiaByIdentifierQuery, noticiasQuery } from "@/lib/site-queries";
-import { Calendar, ArrowLeft, Tag, ArrowRight, Facebook, Linkedin, Share2 } from "lucide-react";
+import {
+  Calendar,
+  ArrowLeft,
+  Tag,
+  ArrowRight,
+  Facebook,
+  Linkedin,
+  Share2,
+  MessageCircle,
+  Copy,
+} from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/noticias/$id")({
   loader: ({ context, params }) =>
@@ -209,11 +220,22 @@ function NoticiaDetalhes() {
             <div className="flex items-center gap-2">
               <span className="mr-1 text-sm font-semibold text-muted-foreground">Compartilhar</span>
               <a
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${noticia.titulo} - FCDA: ${url}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-border p-2 text-emerald-600 hover:bg-emerald-50 transition-colors"
+                aria-label="Compartilhar no WhatsApp"
+                title="Compartilhar no WhatsApp"
+              >
+                <MessageCircle className="h-4 w-4" />
+              </a>
+              <a
                 href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-border p-2 text-primary hover:bg-secondary"
+                className="rounded-full border border-border p-2 text-blue-600 hover:bg-blue-50 transition-colors"
                 aria-label="Compartilhar no Facebook"
+                title="Compartilhar no Facebook"
               >
                 <Facebook className="h-4 w-4" />
               </a>
@@ -221,17 +243,27 @@ function NoticiaDetalhes() {
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-border p-2 text-primary hover:bg-secondary"
+                className="rounded-full border border-border p-2 text-blue-700 hover:bg-blue-50 transition-colors"
                 aria-label="Compartilhar no LinkedIn"
+                title="Compartilhar no LinkedIn"
               >
                 <Linkedin className="h-4 w-4" />
               </a>
               <button
-                onClick={() => navigator.share?.({ title: noticia.titulo, url })}
-                className="rounded-full border border-border p-2 text-primary hover:bg-secondary"
-                aria-label="Compartilhar"
+                type="button"
+                onClick={() => {
+                  if (navigator.clipboard) {
+                    navigator.clipboard.writeText(url);
+                    toast.success("Link copiado para a área de transferência!");
+                  } else if (navigator.share) {
+                    navigator.share({ title: noticia.titulo, url });
+                  }
+                }}
+                className="rounded-full border border-border p-2 text-foreground/70 hover:bg-secondary transition-colors"
+                aria-label="Copiar link"
+                title="Copiar link"
               >
-                <Share2 className="h-4 w-4" />
+                <Copy className="h-4 w-4" />
               </button>
             </div>
             <Link

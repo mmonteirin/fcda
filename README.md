@@ -1,152 +1,176 @@
-# FCDA — Federação Cearense de Desportos Aquáticos
+# FCDA
 
-Site institucional oficial da FCDA, com painel administrativo completo para gestão de conteúdo, eventos e documentos.
+Site oficial da Federação Cearense de Desportos Aquáticos, com conteúdo público, transparência, calendário esportivo e painel administrativo.
 
-🌐 **[fcda.org.br](https://www.fcda.org.br)**
+Produção: [fcda.org.br](https://fcda.org.br)
 
----
+## Visão geral
+
+O projeto reúne:
+
+- Notícias, eventos, modalidades, clubes e cursos.
+- Rankings e recordes cearenses.
+- Portal da Transparência com documentos e relação oficial de atletas.
+- Formulários de contato, filiação e newsletter.
+- Painel administrativo protegido por Supabase Auth e roles.
+- Busca global com `Cmd+K` ou `Ctrl+K`.
+- Exportação de dados em CSV e Excel (`.xlsx`).
+- Sitemap, `robots.txt`, Schema.org e metadados sociais.
+- PWA instalável com manifest, service worker e prompt de instalação.
 
 ## Stack
 
-| Camada        | Tecnologias                        |
-| ------------- | ---------------------------------- |
-| Frontend      | React 19, TypeScript               |
-| Framework     | TanStack Start (SSR)               |
-| Routing       | TanStack Router                    |
-| Data fetching | TanStack Query                     |
-| UI            | Radix UI, shadcn/ui, TailwindCSS 4 |
-| Backend       | Supabase (Database, Auth, Storage) |
-| Validação     | Zod                                |
-| Deploy        | Cloudflare Workers                 |
+- React 19 e TypeScript
+- TanStack Start, Router e Query
+- Vite com SSR
+- Tailwind CSS 4, Radix UI, shadcn/ui e Lucide
+- Supabase: Database, Auth, Storage e Row Level Security
+- Cloudflare Workers
+- XLSX para exportação de planilhas
 
----
+## Requisitos
 
-## Por que essas escolhas
+- Node.js 18 ou superior, ou Bun
+- Conta e projeto no Supabase
+- Docker, caso queira usar o banco local do Supabase
+- Wrangler autenticado para deploy
 
-**TanStack Start sobre Next.js:** O TanStack Start oferece SSR com controle mais granular sobre o data fetching por rota, sem a camada de abstração do App Router. Como o site tem páginas públicas com SSR pesado (notícias, eventos) e um painel admin puramente client-side, essa separação ficou mais limpa.
+## Configuração local
 
-**Cloudflare Workers:** Deploy na edge garante latência baixa para usuários em todo o Brasil, sem custo de servidor fixo. O bundle do TanStack Start compila bem para o runtime do Workers.
-
-**Supabase:** RLS nativo eliminou a necessidade de uma API intermediária para as operações do painel admin. As políticas de acesso por role (admin/editor) ficam declaradas no banco, não espalhadas no código.
-
----
-
-## Funcionalidades
-
-### Site público
-
-- Home com banner configurável via painel
-- Notícias e comunicados
-- Calendário de eventos e competições
-- Modalidades aquáticas (Natação, Águas Abertas, Paranatação, Polo Aquático, Saltos Ornamentais, Nado Artístico)
-- Página de diretoria
-- Formulário de contato
-
-### Painel administrativo
-
-- Autenticação com controle de acesso por roles (admin, editor)
-- CRUD completo de notícias, eventos, modalidades, categorias e diretoria
-- Upload de PDFs por evento (23 tipos: resultados, balizamentos, regulamentos, rankings, etc.)
-- Gestão de usuários e permissões
-- Configuração de banner da home
-- Caixa de mensagens do formulário de contato
-
----
-
-## Banco de dados
-
-```
-profiles            → dados dos usuários
-user_roles          → papéis de acesso (admin, editor)
-modalidades         → modalidades aquáticas
-categorias_modalidades
-noticias            → notícias e comunicados
-eventos             → competições e eventos
-eventos_pdfs        → documentos vinculados a eventos
-diretores           → membros da diretoria
-mensagens           → contatos recebidos pelo formulário
-banner_config       → configuração do banner da home
-```
-
-**Segurança:** Row Level Security (RLS) habilitado em todas as tabelas. Políticas baseadas em roles via Supabase Auth.
-
----
-
-## Como rodar localmente
-
-### Pré-requisitos
-
-- Node.js 18+ ou Bun
-- Conta no Supabase
-
-### Setup
+Instale as dependências:
 
 ```bash
-git clone https://github.com/mmonteirin/fcda
-cd fcda
+npm install
+# ou
 bun install
 ```
 
-Crie `.env` na raiz:
+Crie um arquivo `.env.local` com as variáveis públicas do projeto:
 
 ```env
-SUPABASE_URL="https://seu-projeto.supabase.co"
-SUPABASE_PUBLISHABLE_KEY="sua-chave-publica"
-SUPABASE_SERVICE_ROLE_KEY="sua-chave-service-role"
-VITE_SUPABASE_PROJECT_ID="seu-project-id"
-VITE_SUPABASE_PUBLISHABLE_KEY="sua-chave-publica"
-VITE_SUPABASE_URL="https://seu-projeto.supabase.co"
+VITE_SUPABASE_URL=https://seu-projeto.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sua-chave-publica
+VITE_SUPABASE_PROJECT_ID=seu-project-id
 ```
 
-Configure o `wrangler.jsonc` para deploy:
+Para operações administrativas no servidor, configure `SUPABASE_SERVICE_ROLE_KEY` em `.dev.vars` localmente ou como secret no Cloudflare. Nunca coloque essa chave no Git, no frontend ou no README.
+
+## Comandos
 
 ```bash
-cp wrangler.jsonc.example wrangler.jsonc
-# Edite wrangler.jsonc com suas credenciais do Supabase
+npm run dev              # servidor Vite
+npm run dev:proxy       # proxy local do ranking/transparência
+npm run dev:all         # Vite + proxy
+npm run typecheck       # verificação TypeScript
+npm run lint            # ESLint
+npm run format:check    # validação Prettier
+npm run check           # format, lint, tipos e build
+npm run build           # gera sitemap e build de produção
+npm run preview         # preview do build
+npm run deploy          # build e deploy no Cloudflare
 ```
 
-Execute as migrações no dashboard do Supabase (pasta `supabase/migrations/`, em ordem cronológica).
+O comando `build` executa `generate:sitemap` antes da compilação. O sitemap usa `SITE_URL` quando definida e consulta notícias e eventos publicados usando as variáveis públicas do Supabase.
+
+## Banco de dados
+
+As migrations ficam em [`supabase/migrations`](supabase/migrations) e devem ser aplicadas em ordem cronológica.
+
+Para aplicar no projeto remoto:
 
 ```bash
-bun run dev      # desenvolvimento
-bun run build    # build de produção
-bun run preview  # preview do build
+npx supabase login
+npx supabase link --project-ref seu-project-id
+npx supabase db push
 ```
 
----
+Para usar o banco local, inicie o Supabase antes do lint:
 
-## Estrutura do projeto
-
+```bash
+npx supabase start
+npx supabase db reset
+npx supabase db lint --local
 ```
+
+O schema cobre autenticação e perfis, modalidades, categorias, notícias, eventos, PDFs, transparência, rankings, recordes, cursos, parceiros, clubes, filiação, newsletter, auditoria administrativa e preferências de tema.
+
+### Segurança
+
+- RLS está habilitado nas tabelas públicas e administrativas.
+- Visitantes podem consultar apenas conteúdo publicado/ativo.
+- Admins e editores gerenciam o conteúdo autorizado.
+- A service role key deve existir somente no servidor ou nos secrets do ambiente de deploy.
+- O bucket `site-images` é usado para imagens e documentos públicos do site.
+
+## Estrutura
+
+```text
 src/
-├── components/
-│   ├── admin/     # Componentes do painel administrativo
-│   ├── site/      # Componentes do site público
-│   └── ui/        # Componentes reutilizáveis (shadcn/ui)
-├── hooks/         # Hooks customizados
-├── integrations/
-│   └── supabase/  # Client, types e queries
-├── lib/           # Funções utilitárias
-├── routes/
-│   ├── _authenticated/
-│   │   └── admin/ # Rotas protegidas do painel
-│   └── ...        # Rotas públicas
-├── router.tsx
-├── server.ts
-└── start.ts
-supabase/
-├── migrations/
-└── config.toml
+├── components/       # Layout, site, painel admin e UI reutilizável
+├── integrations/     # Cliente e integração Supabase
+├── lib/              # Queries, autenticação, exportação e utilitários
+├── routes/           # Rotas públicas e rotas autenticadas do admin
+├── router.tsx        # Configuração do roteador
+├── server.ts         # Wrapper SSR e tratamento de erros
+└── start.ts          # Inicialização TanStack Start
+public/
+├── manifest.json     # Metadados da PWA
+├── sw.js             # Service worker
+├── sitemap.xml       # Fallback gerado no build
+└── robots.txt        # Diretivas para buscadores
+supabase/migrations/  # Evolução do schema e políticas RLS
+scripts/              # Importações e geração do sitemap
 ```
 
----
+## Deploy
 
-## Contato
+Configure no Cloudflare Workers:
 
-**Federação Cearense de Desportos Aquáticos**  
-Av. da Abolição, 2727 – Meireles, Fortaleza – CE  
-secretaria@fcda.org.br · [fcda.org.br](https://www.fcda.org.br)
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_SUPABASE_PROJECT_ID`
+- `SUPABASE_SERVICE_ROLE_KEY` como secret, quando necessário
 
----
+Depois execute:
 
-_Desenvolvido por [Marcos Monteiro](https://github.com/mmonteirin)_
+```bash
+npm run deploy
+```
+
+O arquivo `wrangler.jsonc` define a configuração do Worker. Consulte [`DEPLOYMENT.md`](DEPLOYMENT.md) para detalhes específicos do ambiente.
+
+O plano de migração tecnológica prevista para 2027 está em [`docs/MIGRACAO_NEXTJS_2027.md`](docs/MIGRACAO_NEXTJS_2027.md). A migração não está em execução; o documento serve como referência para inventário, spike e decisão técnica.
+
+## Scripts de dados
+
+```bash
+npm run generate:sitemap
+npm run import:clubes
+npm run import:atletas
+```
+
+Os scripts de importação podem exigir `SUPABASE_SERVICE_ROLE_KEY` e arquivos de entrada locais. Verifique os caminhos e permissões antes de executar.
+
+## Troubleshooting
+
+### A aplicação não carrega dados
+
+Confirme `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY`, além das policies RLS aplicadas no Supabase.
+
+### O painel retorna acesso negado
+
+Confirme se o usuário possui uma entrada em `user_roles` com `admin` ou `editor` e se o trigger de criação de usuário está ativo.
+
+### O proxy não responde
+
+Execute `npm run dev:proxy` em um terminal separado ou use `npm run dev:all`. O proxy local usa a porta `3001`.
+
+### O lint do banco não conecta
+
+`npx supabase db lint --local` exige que o Supabase local esteja iniciado com `npx supabase start`. Para validar o projeto remoto, use o dashboard ou o fluxo de migrations do ambiente de CI/deploy.
+
+## Licença e contato
+
+Projeto institucional da Federação Cearense de Desportos Aquáticos.
+
+Contato: [secretaria@fcda.org.br](mailto:secretaria@fcda.org.br)
