@@ -184,6 +184,14 @@ export function DesktopNav() {
               Cursos
               <span className="mt-1 block text-xs font-normal text-muted-foreground">Capacitação esportiva</span>
             </Link>
+            <Link to="/clubes" className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary" role="menuitem" tabIndex={-1}>
+              Clubes filiados
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">Rede esportiva</span>
+            </Link>
+            <Link to="/contato" className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary" role="menuitem" tabIndex={-1}>
+              Contato
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">Fale com a FCDA</span>
+            </Link>
           </div>
           <div className="grid grid-cols-2 gap-1" role="none">
             {modalidades.map((modalidade) => (
@@ -259,13 +267,6 @@ export function DesktopNav() {
       </div>
 
       <Link
-        to="/clubes"
-        className="whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        activeProps={{ className: "text-deep" }}
-      >
-        Clubes
-      </Link>
-      <Link
         to="/noticias"
         className="whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         activeProps={{ className: "text-deep" }}
@@ -278,13 +279,6 @@ export function DesktopNav() {
         activeProps={{ className: "text-deep" }}
       >
         Transparência
-      </Link>
-      <Link
-        to="/contato"
-        className="whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-semibold text-foreground/70 transition-colors hover:text-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        activeProps={{ className: "text-deep" }}
-      >
-        Contato
       </Link>
     </nav>
   );
