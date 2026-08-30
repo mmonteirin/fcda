@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import {
@@ -150,7 +151,11 @@ function EventoDetalhes() {
   }
 
   const statusInfo = getStatusLabel(evento.status || null);
-  const url = typeof window === "undefined" ? "" : window.location.href;
+  const [url, setUrl] = useState("");
+
+  useEffect(() => {
+    setUrl(window.location.href);
+  }, []);
 
   return (
     <SiteLayout>
