@@ -496,5 +496,5 @@ function ParceiroCard({ parceiro }: { parceiro: any }) {
 
 function formatData(dateStr: string): string {
   const date = new Date(dateStr);
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric", timeZone: "UTC" });
 }

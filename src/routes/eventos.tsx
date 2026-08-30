@@ -67,6 +67,7 @@ function formatData(d: string) {
       day: "2-digit",
       month: "short",
       year: "numeric",
+      timeZone: "UTC",
     });
   } catch {
     return d;

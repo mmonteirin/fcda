@@ -6,8 +6,10 @@ type InstallEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{
 export function InstallPrompt() {
   const [installEvent, setInstallEvent] = useState<InstallEvent | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     setDismissed(localStorage.getItem("fcda-pwa-dismissed") === "1");
   }, []);
 
@@ -20,7 +22,7 @@ export function InstallPrompt() {
     return () => window.removeEventListener("beforeinstallprompt", handleInstall);
   }, []);
 
-  if (!installEvent || dismissed) return null;
+  if (!mounted || !installEvent || dismissed) return null;
 
   const install = async () => {
     await installEvent.prompt();
