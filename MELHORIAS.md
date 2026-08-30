@@ -55,11 +55,11 @@ Este documento detalha as melhorias implementadas e planejadas para o site da Fe
 
 #### 1.1 Integração de Componentes Visuais
 
-- [ ] Substituir cards existentes por novos componentes visuais
-- [ ] Implementar gradientes em hero sections
-- [ ] Adicionar animações de entrada em páginas principais
-- [ ] Aplicar sombras elegantes em cards e containers
-- [ ] Implementar botões shimmer em CTAs principais
+- [x] Substituir cards existentes por novos componentes visuais
+- [x] Implementar gradientes em hero sections
+- [x] Adicionar animações de entrada em páginas principais
+- [x] Aplicar sombras elegantes em cards e containers
+- [x] Implementar botões shimmer em CTAs principais
 
 #### 1.2 Sistema de Cores
 
@@ -71,11 +71,11 @@ Este documento detalha as melhorias implementadas e planejadas para o site da Fe
 
 #### 1.3 Tipografia
 
-- [ ] Integrar fonte Sansation em toda a aplicação
-- [ ] Implementar escala de tamanhos consistente
-- [ ] Adicionar pesos de fonte variados
-- [ ] Otimizar legibilidade em diferentes dispositivos
-- [ ] Implementar hierarquia visual clara
+- [x] Integrar fonte Sansation em toda a aplicação
+- [x] Implementar escala de tamanhos consistente
+- [x] Adicionar pesos de fonte variados
+- [x] Otimizar legibilidade em diferentes dispositivos
+- [x] Implementar hierarquia visual clara
 
 ### Fase 2: Animações e Transições (Médio Prazo)
 
