@@ -4,6 +4,22 @@ Site oficial da Federação Cearense de Desportos Aquáticos, com conteúdo púb
 
 Produção: [fcda.org.br](https://fcda.org.br)
 
+## 🎨 Melhorias Recentes (Agosto 2026)
+
+### Correções Críticas
+- **Fix React Error #418:** Eliminação completa de erros de hidratação SSR
+- **Componentes Visuais:** Novos componentes modernos (FeatureCard, SectionHeader, ShimmerButton, StatsCard)
+- **Sistema de Tema:** Migration avançada com cores OKLCH, gradientes e animações
+- **Performance:** Otimização de renderização e consistência server/client
+
+### Novos Recursos
+- Sistema de configuração de tema/aparência no banco de dados
+- Componentes visuais reutilizáveis com variantes de cores
+- Suporte a modo reduzido de movimento para acessibilidade
+- Paleta de cores moderna com OKLCH (Esmeralda, Dourado, Azul, Roxo, Rosa, Teal)
+
+📋 **Plano Completo de Melhorias:** Veja [`MELHORIAS.md`](MELHORIAS.md) para detalhes das implementações e roadmap futuro.
+
 ## Visão geral
 
 O projeto reúne:
