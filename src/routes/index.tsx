@@ -4,6 +4,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { HeroBanner } from "@/components/hero-banner";
 import { SkeletonGrid, SkeletonHero } from "@/components/skeleton";
+import { FeatureCard } from "@/components/ui/feature-card";
+import { ShimmerButton } from "@/components/ui/shimmer-button";
 import {
   modalidadesQuery,
   noticiasQuery,
@@ -136,37 +138,37 @@ function Home() {
             <h2 className="mt-3 text-4xl md:text-5xl font-bold text-deep">O que você procura?</h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Link
-              to="/clubes"
-              className="group rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-8 hover:shadow-elegant transition-all duration-300 hover:-translate-y-1"
-            >
-              <Users className="h-10 w-10 text-primary mb-4 transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="text-xl font-bold text-deep mb-2">Conheça os Clubes</h3>
-              <p className="text-sm text-muted-foreground">Encontre clubes de natação no Ceará</p>
+            <Link to="/clubes">
+              <FeatureCard
+                icon={Users}
+                title="Conheça os Clubes"
+                description="Encontre clubes de natação no Ceará"
+                variant="emerald"
+              />
             </Link>
-            <Link
-              to="/cursos"
-              className="group rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-8 hover:shadow-elegant transition-all duration-300 hover:-translate-y-1"
-            >
-              <GraduationCap className="h-10 w-10 text-primary mb-4 transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="text-xl font-bold text-deep mb-2">Cursos e Capacitações</h3>
-              <p className="text-sm text-muted-foreground">Formação em desportos aquáticos</p>
+            <Link to="/cursos">
+              <FeatureCard
+                icon={GraduationCap}
+                title="Cursos e Capacitações"
+                description="Formação em desportos aquáticos"
+                variant="blue"
+              />
             </Link>
-            <Link
-              to="/filie-se"
-              className="group rounded-2xl bg-gradient-to-br from-gold/20 to-gold/10 border border-gold/30 p-8 hover:shadow-elegant transition-all duration-300 hover:-translate-y-1"
-            >
-              <Award className="h-10 w-10 text-gold mb-4 transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="text-xl font-bold text-deep mb-2">Filiação</h3>
-              <p className="text-sm text-muted-foreground">Filie-se seu clube à FCDA</p>
+            <Link to="/filie-se">
+              <FeatureCard
+                icon={Award}
+                title="Filiação"
+                description="Filie-se seu clube à FCDA"
+                variant="gold"
+              />
             </Link>
-            <Link
-              to="/transparencia"
-              className="group rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-8 hover:shadow-elegant transition-all duration-300 hover:-translate-y-1"
-            >
-              <FileText className="h-10 w-10 text-primary mb-4 transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="text-xl font-bold text-deep mb-2">Portal da Transparência</h3>
-              <p className="text-sm text-muted-foreground">Acesse documentos e informações</p>
+            <Link to="/transparencia">
+              <FeatureCard
+                icon={FileText}
+                title="Portal da Transparência"
+                description="Acesse documentos e informações"
+                variant="purple"
+              />
             </Link>
           </div>
         </div>
@@ -272,11 +274,10 @@ function Home() {
                 <p className="mt-6 text-primary-foreground/70 leading-relaxed">
                   Acompanhe as datas das principais competições oficiais organizadas pela FCDA.
                 </p>
-                <Link
-                  to="/eventos"
-                  className="mt-8 inline-flex items-center gap-2 rounded-full bg-gold-gradient px-6 py-3 text-sm font-bold text-deep hover:opacity-90 transition"
-                >
-                  Ver calendário completo <ArrowRight className="h-4 w-4" />
+                <Link to="/eventos">
+                  <ShimmerButton shimmerColor="rgba(201, 168, 76, 0.4)" className="mt-8 rounded-full">
+                    Ver calendário completo <ArrowRight className="h-4 w-4 ml-2" />
+                  </ShimmerButton>
                 </Link>
               </div>
               <div className="lg:col-span-2 divide-y divide-primary-foreground/10">
@@ -341,39 +342,45 @@ function Home() {
             <h2 className="mt-3 text-4xl md:text-5xl font-bold text-deep">Links Úteis</h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Link
-              to="/transparencia"
-              className="group rounded-2xl bg-card border border-border/60 p-6 hover:shadow-elegant transition-all hover:-translate-y-1"
-            >
-              <Shield className="h-8 w-8 text-primary mb-4" />
-              <h3 className="text-lg font-bold text-deep mb-2">Código de Conduta</h3>
-              <p className="text-sm text-muted-foreground">Políticas de combate ao assédio</p>
+            <Link to="/transparencia">
+              <FeatureCard
+                icon={Shield}
+                title="Código de Conduta"
+                description="Políticas de combate ao assédio"
+                variant="emerald"
+                size="sm"
+              />
             </Link>
             <a
               href="https://www.cbda.org.br/"
               target="_blank"
               rel="noopener noreferrer"
-              className="group rounded-2xl bg-card border border-border/60 p-6 hover:shadow-elegant transition-all hover:-translate-y-1"
             >
-              <Trophy className="h-8 w-8 text-primary mb-4" />
-              <h3 className="text-lg font-bold text-deep mb-2">CBDA</h3>
-              <p className="text-sm text-muted-foreground">Confederação Brasileira</p>
+              <FeatureCard
+                icon={Trophy}
+                title="CBDA"
+                description="Confederação Brasileira"
+                variant="gold"
+                size="sm"
+              />
             </a>
-            <Link
-              to="/contato"
-              className="group rounded-2xl bg-card border border-border/60 p-6 hover:shadow-elegant transition-all hover:-translate-y-1"
-            >
-              <MapPin className="h-8 w-8 text-primary mb-4" />
-              <h3 className="text-lg font-bold text-deep mb-2">Onde Treinar</h3>
-              <p className="text-sm text-muted-foreground">Encontre piscinas no Ceará</p>
+            <Link to="/contato">
+              <FeatureCard
+                icon={MapPin}
+                title="Onde Treinar"
+                description="Encontre piscinas no Ceará"
+                variant="blue"
+                size="sm"
+              />
             </Link>
-            <Link
-              to="/cursos"
-              className="group rounded-2xl bg-card border border-border/60 p-6 hover:shadow-elegant transition-all hover:-translate-y-1"
-            >
-              <GraduationCap className="h-8 w-8 text-primary mb-4" />
-              <h3 className="text-lg font-bold text-deep mb-2">Formação</h3>
-              <p className="text-sm text-muted-foreground">Cursos e capacitações</p>
+            <Link to="/cursos">
+              <FeatureCard
+                icon={GraduationCap}
+                title="Formação"
+                description="Cursos e capacitações"
+                variant="purple"
+                size="sm"
+              />
             </Link>
           </div>
         </div>

@@ -31,7 +31,7 @@ export function HeroBanner({ slides, eventos }: HeroBannerProps) {
   const featuredSlides = slides.slice(0, 3);
 
   return (
-    <section className="bg-secondary/45 py-7 md:py-9">
+    <section className="bg-gradient-to-br from-secondary/30 to-secondary/50 py-7 md:py-9 animate-fade-in-up">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="mb-5 flex items-end justify-between gap-4">
           <div>
@@ -55,7 +55,7 @@ export function HeroBanner({ slides, eventos }: HeroBannerProps) {
                 alt=""
                 className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-700 group-hover:scale-105"
               />
-              <div className="absolute inset-0 -z-10 bg-gradient-to-t from-deep via-deep/35 to-transparent" />
+              <div className="absolute inset-0 -z-10 bg-gradient-hero" />
               <div className="absolute inset-x-0 bottom-0 p-5 md:p-7">
                 <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-gold">
                   {index === 0 ? "Destaque" : "Em evidência"}
