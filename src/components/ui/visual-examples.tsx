@@ -85,7 +85,7 @@ export function FeatureSectionExample() {
         <FeatureCard
           icon={Shield}
           title="Segurança Total"
-          description "Equipe de salvamento especializada e protocolos rigorosos de segurança em todas as atividades."
+          description="Equipe de salvamento especializada e protocolos rigorosos de segurança em todas as atividades."
           variant="gold"
         />
         
@@ -113,7 +113,7 @@ export function FeatureSectionExample() {
         <FeatureCard
           icon={Trophy}
           title="Resultados Comprovados"
-          description "Histórico de conquistas em competições estaduais, nacionais e internacionais."
+          description="Histórico de conquistas em competições estaduais, nacionais e internacionais."
           variant="gold"
         />
       </div>
