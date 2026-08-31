@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Menu, X, LogIn, Shield, ChevronDown, ChevronRight, User, GraduationCap } from "lucide-react";
 import { useAuth } from "@/lib/use-auth";
+import { cn } from "@/lib/utils";
 import logoFCDA from "@/assets/logoFCDA.png";
 import { DesktopNav } from "./DesktopNav";
 import { TopBar } from "./TopBar";
@@ -42,18 +43,26 @@ function MobileMenuItem({
   label,
   onClick,
   children,
+  className,
+  style,
 }: {
   to?: string;
   label: string;
   onClick: () => void;
   children?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
 }) {
   if (to) {
     return (
       <Link
         to={to}
         onClick={onClick}
-        className="flex items-center justify-between px-4 py-3 text-base font-semibold text-foreground/80 hover:text-deep hover:bg-secondary/50 transition-colors"
+        className={cn(
+          "flex items-center justify-between px-4 py-3 text-base font-semibold text-foreground/80 hover:text-deep hover:bg-secondary/50 transition-colors",
+          className
+        )}
+        style={style}
       >
         {label}
       </Link>
@@ -62,7 +71,11 @@ function MobileMenuItem({
   return (
     <button
       onClick={onClick}
-      className="flex items-center justify-between w-full px-4 py-3 text-base font-semibold text-foreground/80 hover:text-deep hover:bg-secondary/50 transition-colors text-left rounded-lg"
+      className={cn(
+        "flex items-center justify-between w-full px-4 py-3 text-base font-semibold text-foreground/80 hover:text-deep hover:bg-secondary/50 transition-colors text-left rounded-lg",
+        className
+      )}
+      style={style}
     >
       {label}
       {children}
@@ -130,17 +143,28 @@ export function Header() {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && open) {
-        setOpen(false);
-        setModalidadesOpen(false);
-        setCompeticoesOpen(false);
+        closeMenu();
       }
     };
-
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
   }, [open]);
 
-  // Close menu on resize to desktop
+  // Trap focus in mobile menu when open
+  useEffect(() => {
+    if (!open) return;
+    
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key === "Tab") {
+        e.preventDefault();
+        closeMenu();
+      }
+    };
+    
+    document.addEventListener("keydown", handleTab);
+    return () => document.removeEventListener("keydown", handleTab);
+  }, [open]);
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1280 && open) {
@@ -171,7 +195,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/60 bg-background/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-border/60 bg-gradient-header backdrop-blur-xl shadow-header">
       <TopBar />
       <div className="mx-auto flex h-[4.75rem] max-w-7xl items-center justify-between gap-6 px-4 sm:px-6">
         <Link to="/" className="flex w-14 shrink-0 items-center group" onClick={closeMenu}>
@@ -231,16 +255,23 @@ export function Header() {
 
       {/* Mobile Menu */}
       <div
-        className={`xl:hidden border-t border-border bg-background transition-all duration-300 ease-in-out ${
-          open ? "max-h-screen opacity-100" : "max-h-0 opacity-0 pointer-events-none"
+        className={`xl:hidden border-t border-border bg-gradient-header transition-all duration-300 ease-in-out ${
+          open ? "max-h-screen opacity-100 animate-slide-in" : "max-h-0 opacity-0 pointer-events-none"
         }`}
         role="dialog"
         aria-modal="true"
         aria-label="Menu de navegação"
       >
         <div className="px-4 py-6 flex flex-col gap-2 max-h-[70vh] overflow-y-auto">
-          {nav.map((item) => (
-            <MobileMenuItem key={item.to} to={item.to} label={item.label} onClick={closeMenu} />
+          {nav.map((item, index) => (
+            <MobileMenuItem 
+              key={item.to} 
+              to={item.to} 
+              label={item.label} 
+              onClick={closeMenu}
+              className="animate-fade-in-up"
+              style={{ animationDelay: `${index * 50}ms` }}
+            />
           ))}
 
           {/* Mobile Submenu - Modalidades */}

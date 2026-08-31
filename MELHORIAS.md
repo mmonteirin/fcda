@@ -133,11 +133,11 @@ Este documento detalha as melhorias implementadas e planejadas para o site da Fe
 
 #### 4.1 Header e Navegação
 
-- [ ] Redesign do header com gradientes
-- [ ] Implementar menu mobile animado
-- [ ] Adicionar breadcrumbs visuais
-- [ ] Implementar search bar melhorada
-- [ ] Otimizar navegação por teclado
+- [x] Redesign do header com gradientes
+- [x] Implementar menu mobile animado
+- [x] Adicionar breadcrumbs visuais
+- [x] Implementar search bar melhorada
+- [x] Otimizar navegação por teclado
 
 #### 4.2 Cards e Containers
 

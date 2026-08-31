@@ -1208,4 +1208,13 @@
     padding-top: var(--spacing-4xl);
     padding-bottom: var(--spacing-4xl);
   }
+  
+  /* Header gradient - Phase 4.1 */
+  .bg-gradient-header {
+    background: linear-gradient(135deg, oklch(0.98 0.01 90 / 0.95) 0%, oklch(0.95 0.02 90 / 0.92) 50%, oklch(0.52 0.12 165 / 0.05) 100%);
+  }
+  
+  .shadow-header {
+    box-shadow: 0 4px 20px -2px oklch(0.25 0.08 165 / 0.15);
+  }
 }
