@@ -39,6 +39,8 @@ const PaginationLink = ({ className, isActive, size = "icon", ...props }: Pagina
         variant: isActive ? "outline" : "ghost",
         size,
       }),
+      "transition-all duration-300 hover:scale-110 active:scale-95",
+      isActive && "bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow animate-bounce-in",
       className,
     )}
     {...props}
@@ -53,11 +55,11 @@ const PaginationPrevious = ({
   <PaginationLink
     aria-label="Go to previous page"
     size="default"
-    className={cn("gap-1 pl-2.5", className)}
+    className={cn("gap-1 pl-2.5 hover:bg-secondary/50 transition-colors", className)}
     {...props}
   >
-    <ChevronLeft className="h-4 w-4" />
-    <span>Previous</span>
+    <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+    <span>Anterior</span>
   </PaginationLink>
 );
 PaginationPrevious.displayName = "PaginationPrevious";
@@ -66,11 +68,11 @@ const PaginationNext = ({ className, ...props }: React.ComponentProps<typeof Pag
   <PaginationLink
     aria-label="Go to next page"
     size="default"
-    className={cn("gap-1 pr-2.5", className)}
+    className={cn("gap-1 pr-2.5 hover:bg-secondary/50 transition-colors", className)}
     {...props}
   >
-    <span>Next</span>
-    <ChevronRight className="h-4 w-4" />
+    <span>Próxima</span>
+    <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
   </PaginationLink>
 );
 PaginationNext.displayName = "PaginationNext";
@@ -78,11 +80,11 @@ PaginationNext.displayName = "PaginationNext";
 const PaginationEllipsis = ({ className, ...props }: React.ComponentProps<"span">) => (
   <span
     aria-hidden
-    className={cn("flex h-9 w-9 items-center justify-center", className)}
+    className={cn("flex h-9 w-9 items-center justify-center text-muted-foreground animate-pulse", className)}
     {...props}
   >
     <MoreHorizontal className="h-4 w-4" />
-    <span className="sr-only">More pages</span>
+    <span className="sr-only">Mais páginas</span>
   </span>
 );
 PaginationEllipsis.displayName = "PaginationEllipsis";

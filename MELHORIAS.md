@@ -157,11 +157,11 @@ Este documento detalha as melhorias implementadas e planejadas para o site da Fe
 
 #### 4.4 Tabelas e Listas
 
-- [ ] Implementar tabelas com sorting animado
-- [ ] Adicionar hover effects em rows
-- [ ] Implementar sticky headers
-- [ ] Otimizar responsividade
-- [ ] Adicionar pagination visual
+- [x] Implementar tabelas com sorting animado
+- [x] Adicionar hover effects em rows
+- [x] Implementar sticky headers
+- [x] Otimizar responsividade
+- [x] Adicionar pagination visual
 
 ### Fase 5: Performance e Otimização (Contínuo)
 
