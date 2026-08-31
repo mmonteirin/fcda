@@ -1217,4 +1217,16 @@
   .shadow-header {
     box-shadow: 0 4px 20px -2px oklch(0.25 0.08 165 / 0.15);
   }
+  
+  /* SSR hydration optimization - Phase 5.2 */
+  .ssr-hydration-fix {
+    opacity: 0;
+    animation: fadeIn 0.3s ease-in forwards;
+  }
+  
+  @keyframes fadeIn {
+    to {
+      opacity: 1;
+    }
+  }
 }

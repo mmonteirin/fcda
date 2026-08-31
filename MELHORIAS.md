@@ -175,11 +175,11 @@ Este documento detalha as melhorias implementadas e planejadas para o site da Fe
 
 #### 5.2 Renderização
 
-- [ ] Implementar virtual scrolling para listas longas
-- [ ] Otimizar re-renders com memo
-- [ ] Implementar suspense boundaries
-- [ ] Adicionar loading states
-- [ ] Otimizar SSR hydration
+- [x] Implementar virtual scrolling para listas longas
+- [x] Otimizar re-renders com memo
+- [x] Implementar suspense boundaries
+- [x] Adicionar loading states
+- [x] Otimizar SSR hydration
 
 #### 5.3 Imagens e Mídia
 
