@@ -234,11 +234,16 @@
   a {
     color: var(--color-primary);
     text-decoration: none;
-    transition: color 0.2s ease;
+    transition: color 0.2s ease, transform 0.2s ease;
   }
   
   a:hover {
     color: var(--color-primary-foreground);
+    transform: translateY(-1px);
+  }
+  
+  a:active {
+    transform: translateY(0);
   }
   
   /* Focus visible melhorado */

@@ -13,7 +13,7 @@ const ShimmerButton = React.forwardRef<HTMLButtonElement, ShimmerButtonProps>(
       <button
         ref={ref}
         className={cn(
-          "relative overflow-hidden rounded-lg bg-primary px-6 py-3 text-primary-foreground font-semibold transition-all hover:bg-primary/90 hover:shadow-glow active:scale-95",
+          "relative overflow-hidden rounded-lg bg-primary px-6 py-3 text-primary-foreground font-semibold transition-all duration-300 ease-out hover:bg-primary/90 hover:shadow-glow hover:-translate-y-0.5 active:scale-95 active:translate-y-0",
           className
         )}
         style={{

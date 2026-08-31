@@ -81,19 +81,19 @@ Este documento detalha as melhorias implementadas e planejadas para o site da Fe
 
 #### 2.1 Animações de Entrada
 
-- [ ] Fade-in-up para hero sections
-- [ ] Scale-in para cards e modais
-- [ ] Slide-in para menus e sidebars
-- [ ] Bounce-in para elementos destacados
-- [ ] Stagger animations para listas
+- [x] Fade-in-up para hero sections
+- [x] Scale-in para cards e modais
+- [x] Slide-in para menus e sidebars
+- [x] Bounce-in para elementos destacados
+- [x] Stagger animations para listas
 
 #### 2.2 Micro-interações
 
-- [ ] Hover effects em botões e cards
-- [ ] Transições suaves em links
-- [ ] Feedback visual em ações
-- [ ] Loading states animados
-- [ ] Success/error animations
+- [x] Hover effects em botões e cards
+- [x] Transições suaves em links
+- [x] Feedback visual em ações
+- [x] Loading states animados
+- [x] Success/error animations
 
 #### 2.3 Performance de Animações
 
