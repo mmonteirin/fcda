@@ -123,11 +123,11 @@ Este documento detalha as melhorias implementadas e planejadas para o site da Fe
 
 #### 3.3 Border Radius
 
-- [ ] Aplicar border radius consistente
-- [ ] Implementar variantes (sm, md, lg, xl, 2xl, full)
-- [ ] Otimizar para diferentes elementos
-- [ ] Adicionar suporte a rounded corners customizados
-- [ ] Implementar smooth corners
+- [x] Aplicar border radius consistente
+- [x] Implementar variantes (sm, md, lg, xl, 2xl, full)
+- [x] Otimizar para diferentes elementos
+- [x] Adicionar suporte a rounded corners customizados
+- [x] Implementar smooth corners
 
 ### Fase 4: Componentes Específicos (Longo Prazo)
 
