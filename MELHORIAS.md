@@ -97,11 +97,11 @@ Este documento detalha as melhorias implementadas e planejadas para o site da Fe
 
 #### 2.3 Performance de Animações
 
-- [ ] Implementar `will-change` otimizado
-- [ ] Usar transforms em vez de propriedades de layout
-- [ ] Reduzir repaints e reflows
-- [ ] Implementar reduced motion para acessibilidade
-- [ ] Lazy loading de animações não críticas
+- [x] Implementar `will-change` otimizado
+- [x] Usar transforms em vez de propriedades de layout
+- [x] Reduzir repaints e reflows
+- [x] Implementar reduced motion para acessibilidade
+- [x] Lazy loading de animações não críticas
 
 ### Fase 3: Layout e Espaçamento (Médio Prazo)
 
