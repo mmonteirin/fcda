@@ -107,11 +107,11 @@ Este documento detalha as melhorias implementadas e planejadas para o site da Fe
 
 #### 3.1 Sistema de Grid
 
-- [ ] Implementar grid system responsivo
-- [ ] Otimizar breakpoints (sm, md, lg, xl, 2xl)
-- [ ] Criar containers com max-widths configuráveis
-- [ ] Implementar gaps consistentes
-- [ ] Adicionar suporte a auto-fit/auto-fill
+- [x] Implementar grid system responsivo
+- [x] Otimizar breakpoints (sm, md, lg, xl, 2xl)
+- [x] Criar containers com max-widths configuráveis
+- [x] Implementar gaps consistentes
+- [x] Adicionar suporte a auto-fit/auto-fill
 
 #### 3.2 Espaçamento
 
