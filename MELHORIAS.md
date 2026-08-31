@@ -115,11 +115,11 @@ Este documento detalha as melhorias implementadas e planejadas para o site da Fe
 
 #### 3.2 Espaçamento
 
-- [ ] Implementar escala de spacing consistente
-- [ ] Usar tokens de espaçamento (xs, sm, md, lg, xl, 2xl)
-- [ ] Otimizar padding e margin
-- [ ] Implementar vertical rhythm
-- [ ] Adicionar breathing room em seções
+- [x] Implementar escala de spacing consistente
+- [x] Usar tokens de espaçamento (xs, sm, md, lg, xl, 2xl)
+- [x] Otimizar padding e margin
+- [x] Implementar vertical rhythm
+- [x] Adicionar breathing room em seções
 
 #### 3.3 Border Radius
 
