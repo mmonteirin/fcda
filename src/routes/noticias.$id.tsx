@@ -10,11 +10,20 @@ import {
   ArrowRight,
   Facebook,
   Linkedin,
-  Share2,
   MessageCircle,
   Copy,
+  Check,
+  ChevronRight,
+  Share2,
 } from "lucide-react";
 import { toast } from "sonner";
+
+import imgNatacao from "@/assets/mod-natacao.jpg";
+import imgPolo from "@/assets/mod-polo.jpg";
+import imgSaltos from "@/assets/mod-saltos.jpg";
+import imgArtistico from "@/assets/mod-artistico.jpg";
+import imgAguas from "@/assets/mod-aguas.jpg";
+import heroSwimmer from "@/assets/hero-swimmer.jpg";
 
 export const Route = createFileRoute("/noticias/$id")({
   loader: ({ context, params }) =>
@@ -62,6 +71,16 @@ function formatData(d: string) {
   }
 }
 
+function getFallbackNoticiaImage(categoria?: string | null) {
+  const cat = (categoria || "").toLowerCase();
+  if (cat.includes("água") || cat.includes("aguas")) return imgAguas;
+  if (cat.includes("polo")) return imgPolo;
+  if (cat.includes("salto")) return imgSaltos;
+  if (cat.includes("artístico") || cat.includes("artistico")) return imgArtistico;
+  if (cat.includes("nata")) return imgNatacao;
+  return heroSwimmer;
+}
+
 /**
  * Renderiza conteúdo salvo como texto puro ou HTML.
  * - Se contiver tags HTML, renderiza diretamente.
@@ -78,10 +97,10 @@ function ArticleContent({ content }: { content: string }) {
           prose prose-lg max-w-none
           prose-headings:text-deep prose-headings:font-bold
           prose-p:text-foreground prose-p:leading-relaxed
-          prose-a:text-primary prose-a:underline
+          prose-a:text-primary prose-a:underline hover:prose-a:text-deep
           prose-strong:text-deep
           prose-li:text-foreground
-          prose-img:rounded-xl prose-img:shadow-card
+          prose-img:rounded-2xl prose-img:shadow-card
         "
       />
     );
@@ -110,16 +129,12 @@ function NoticiaDetalhes() {
   const noticia = useSuspenseQuery(noticiaByIdentifierQuery(id)).data;
   const todasNoticias = useSuspenseQuery(noticiasQuery(true)).data;
 
-  // Outras notícias da mesma categoria (excluindo a atual)
-  const relacionadas = todasNoticias
-    .filter((n) => n.id !== noticia?.id && n.categoria === noticia?.categoria)
-    .slice(0, 3);
+  const [url, setUrl] = useState("");
+  const [copied, setCopied] = useState(false);
 
-  // Se não tem da mesma categoria, pega as mais recentes
-  const sugeridas =
-    relacionadas.length > 0
-      ? relacionadas
-      : todasNoticias.filter((n) => n.id !== noticia?.id).slice(0, 3);
+  useEffect(() => {
+    setUrl(window.location.href);
+  }, []);
 
   if (!noticia) {
     return (
@@ -136,109 +151,117 @@ function NoticiaDetalhes() {
       </SiteLayout>
     );
   }
-  const [url, setUrl] = useState("");
 
-  useEffect(() => {
-    setUrl(window.location.href);
-  }, []);
+  // Outras notícias da mesma categoria (excluindo a atual)
+  const relacionadas = todasNoticias
+    .filter((n) => n.id !== noticia.id && n.categoria === noticia.categoria)
+    .slice(0, 3);
+
+  // Se não tem da mesma categoria, pega as mais recentes
+  const sugeridas =
+    relacionadas.length > 0
+      ? relacionadas
+      : todasNoticias.filter((n) => n.id !== noticia.id).slice(0, 3);
+
+  const heroImage = noticia.imagem_url || getFallbackNoticiaImage(noticia.categoria);
+
+  const handleCopy = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success("Link copiado para a área de transferência!");
+      setTimeout(() => setCopied(false), 2000);
+    } else if (navigator.share) {
+      navigator.share({ title: noticia.titulo, url });
+    }
+  };
 
   return (
     <SiteLayout>
-      {/* ── HERO ── */}
-      {noticia.imagem_url ? (
-        <div className="relative h-[55vh] min-h-[400px] overflow-hidden">
+      {/* ── HERO BANNER REFINADO ── */}
+      <section className="relative overflow-hidden bg-deep text-primary-foreground min-h-[440px] md:min-h-[500px] flex items-end">
+        <div className="absolute inset-0 z-0">
           <img
-            src={noticia.imagem_url}
+            src={heroImage}
             alt={noticia.titulo}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="h-full w-full object-cover object-center filter brightness-75 contrast-105"
           />
-          {/* gradiente sobre a imagem */}
-          <div className="absolute inset-0 bg-gradient-to-t from-deep via-deep/60 to-deep/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-deep via-deep/75 to-deep/35" />
+          <div className="absolute inset-0 bg-gradient-to-r from-deep/90 via-deep/50 to-transparent" />
+        </div>
 
-          <div className="absolute inset-0 flex flex-col justify-end">
-            <div className="mx-auto w-full max-w-4xl px-6 pb-12">
+        <div className="relative z-10 w-full pb-12 pt-28 md:pt-36">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6">
+            <div className="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold text-primary-foreground/75">
               <Link
                 to="/noticias"
-                className="inline-flex items-center gap-1.5 text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-6"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 backdrop-blur-md transition-colors hover:bg-white/20 hover:text-white"
               >
-                <ArrowLeft className="h-4 w-4" /> Todas as notícias
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Todas as notícias
               </Link>
-
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-gold/90 px-3 py-1 text-xs font-bold uppercase tracking-wider text-deep mb-4">
-                <Tag className="h-3 w-3" />
+              <ChevronRight className="h-3.5 w-3.5 text-primary-foreground/40" />
+              <span className="rounded-full bg-gold/90 px-3 py-1 font-bold uppercase tracking-wider text-deep">
                 {noticia.categoria}
-              </div>
+              </span>
+            </div>
 
-              <h1 className="text-3xl md:text-5xl font-bold text-primary-foreground leading-tight">
-                {noticia.titulo}
-              </h1>
+            <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl text-white leading-tight">
+              {noticia.titulo}
+            </h1>
 
-              <div className="mt-4 flex items-center gap-2 text-primary-foreground/70 text-sm">
-                <Calendar className="h-4 w-4" />
-                {formatData(noticia.data)}
-              </div>
+            <div className="mt-5 flex items-center gap-2 text-primary-foreground/80 text-sm">
+              <Calendar className="h-4 w-4 text-gold" />
+              <span>{formatData(noticia.data)}</span>
+              <span className="opacity-40">·</span>
+              <span className="text-primary-foreground/70">
+                Federação Cearense de Desportos Aquáticos
+              </span>
             </div>
           </div>
         </div>
-      ) : (
-        /* Sem imagem: hero escuro simples */
-        <section className="py-20 bg-hero text-primary-foreground">
-          <div className="mx-auto max-w-4xl px-6">
-            <Link
-              to="/noticias"
-              className="inline-flex items-center gap-1.5 text-sm text-primary-foreground/70 hover:text-primary-foreground transition-colors mb-6"
-            >
-              <ArrowLeft className="h-4 w-4" /> Todas as notícias
-            </Link>
+      </section>
 
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-gold/20 border border-gold/40 px-3 py-1 text-xs font-bold uppercase tracking-wider text-gold mb-4">
-              <Tag className="h-3 w-3" />
-              {noticia.categoria}
-            </div>
-
-            <h1 className="text-3xl md:text-5xl font-bold leading-tight">{noticia.titulo}</h1>
-
-            <div className="mt-4 flex items-center gap-2 text-primary-foreground/70 text-sm">
-              <Calendar className="h-4 w-4" />
-              {formatData(noticia.data)}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ── CONTEÚDO ── */}
-      <article className="py-16">
-        <div className="mx-auto max-w-4xl px-6">
+      {/* ── CONTEÚDO PRINCIPAL ── */}
+      <article className="py-14 sm:py-16 bg-background">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
           {/* Resumo (lead) */}
           {noticia.resumo && (
-            <p className="text-xl text-muted-foreground font-medium leading-relaxed mb-10 pb-10 border-b border-border">
-              {noticia.resumo}
-            </p>
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 sm:p-8 mb-10">
+              <p className="text-lg sm:text-xl text-deep font-semibold leading-relaxed">
+                {noticia.resumo}
+              </p>
+            </div>
           )}
 
-          {/* Corpo */}
+          {/* Corpo da Matéria */}
           {noticia.conteudo ? (
-            <ArticleContent content={noticia.conteudo} />
+            <div className="prose-content">
+              <ArticleContent content={noticia.conteudo} />
+            </div>
           ) : (
-            <p className="text-muted-foreground italic">Conteúdo não disponível.</p>
+            <p className="text-muted-foreground italic">Conteúdo em atualização.</p>
           )}
 
-          {/* Rodapé do artigo */}
-          <div className="mt-12 pt-8 border-t border-border flex flex-wrap items-center justify-between gap-4">
+          {/* Rodapé e Compartilhamento */}
+          <div className="mt-14 pt-8 border-t border-border flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Tag className="h-4 w-4" />
+              <Tag className="h-4 w-4 text-primary" />
               <span className="font-semibold text-deep">{noticia.categoria}</span>
               <span>·</span>
               <Calendar className="h-4 w-4" />
               {formatData(noticia.data)}
             </div>
+
             <div className="flex items-center gap-2">
-              <span className="mr-1 text-sm font-semibold text-muted-foreground">Compartilhar</span>
+              <span className="mr-1 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Compartilhar
+              </span>
               <a
                 href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${noticia.titulo} - FCDA: ${url}`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-border p-2 text-emerald-600 hover:bg-emerald-50 transition-colors"
+                className="rounded-full border border-border p-2.5 text-emerald-600 hover:bg-emerald-50 transition-colors"
                 aria-label="Compartilhar no WhatsApp"
                 title="Compartilhar no WhatsApp"
               >
@@ -248,7 +271,7 @@ function NoticiaDetalhes() {
                 href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-border p-2 text-blue-600 hover:bg-blue-50 transition-colors"
+                className="rounded-full border border-border p-2.5 text-blue-600 hover:bg-blue-50 transition-colors"
                 aria-label="Compartilhar no Facebook"
                 title="Compartilhar no Facebook"
               >
@@ -258,7 +281,7 @@ function NoticiaDetalhes() {
                 href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-full border border-border p-2 text-blue-700 hover:bg-blue-50 transition-colors"
+                className="rounded-full border border-border p-2.5 text-blue-700 hover:bg-blue-50 transition-colors"
                 aria-label="Compartilhar no LinkedIn"
                 title="Compartilhar no LinkedIn"
               >
@@ -266,78 +289,82 @@ function NoticiaDetalhes() {
               </a>
               <button
                 type="button"
-                onClick={() => {
-                  if (navigator.clipboard) {
-                    navigator.clipboard.writeText(url);
-                    toast.success("Link copiado para a área de transferência!");
-                  } else if (navigator.share) {
-                    navigator.share({ title: noticia.titulo, url });
-                  }
-                }}
-                className="rounded-full border border-border p-2 text-foreground/70 hover:bg-secondary transition-colors"
+                onClick={handleCopy}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-2 text-xs font-bold text-foreground/80 hover:bg-secondary transition-colors"
                 aria-label="Copiar link"
                 title="Copiar link"
               >
-                <Copy className="h-4 w-4" />
+                {copied ? (
+                  <Check className="h-4 w-4 text-emerald-600" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+                <span>{copied ? "Copiado!" : "Copiar Link"}</span>
               </button>
             </div>
-            <Link
-              to="/noticias"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-            >
-              <ArrowLeft className="h-4 w-4" /> Voltar para notícias
-            </Link>
           </div>
         </div>
       </article>
 
-      {/* ── MAIS NOTÍCIAS ── */}
+      {/* ── MAIS NOTÍCIAS RELACIONADAS ── */}
       {sugeridas.length > 0 && (
-        <section className="py-16 bg-secondary/40">
-          <div className="mx-auto max-w-6xl px-6">
-            <h2 className="text-2xl font-bold text-deep mb-8">
-              {relacionadas.length > 0 ? "Mais sobre " + noticia.categoria : "Outras notícias"}
-            </h2>
+        <section className="py-16 bg-secondary/40 border-t border-border/60">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold text-deep">
+                {relacionadas.length > 0 ? `Mais em ${noticia.categoria}` : "Outras Notícias"}
+              </h2>
+              <Link
+                to="/noticias"
+                className="text-sm font-bold text-primary hover:text-deep hover:underline"
+              >
+                Ver todas →
+              </Link>
+            </div>
+
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sugeridas.map((n) => (
-                <Link
-                  key={n.id}
-                  to="/noticias/$id"
-                  params={{ id: n.slug }}
-                  className="group flex flex-col rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card hover:shadow-elegant transition-all hover:-translate-y-1"
-                >
-                  {n.imagem_url ? (
-                    <div className="aspect-[16/9] overflow-hidden">
+              {sugeridas.map((n) => {
+                const itemImg = n.imagem_url || getFallbackNoticiaImage(n.categoria);
+                return (
+                  <Link
+                    key={n.id}
+                    to="/noticias/$id"
+                    params={{ id: n.slug }}
+                    className="group flex flex-col rounded-3xl bg-card border border-border/80 overflow-hidden shadow-card hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 hover:border-primary/50"
+                  >
+                    <div className="relative aspect-[16/9] overflow-hidden bg-secondary">
                       <img
-                        src={n.imagem_url}
+                        src={itemImg}
                         alt={n.titulo}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
+                      <div className="absolute top-3 left-3">
+                        <span className="rounded-full bg-gold/95 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-deep shadow-xs">
+                          {n.categoria}
+                        </span>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="aspect-[16/9] bg-emerald-gradient flex items-center justify-center">
-                      <Tag className="h-8 w-8 text-primary-foreground/40" />
+                    <div className="flex flex-col flex-1 p-5">
+                      <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>{formatData(n.data)}</span>
+                      </div>
+                      <h3 className="font-bold text-deep text-base leading-snug group-hover:text-primary transition-colors line-clamp-2 flex-1">
+                        {n.titulo}
+                      </h3>
+                      {n.resumo && (
+                        <p className="mt-2 text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                          {n.resumo}
+                        </p>
+                      )}
+                      <div className="mt-4 pt-3 border-t border-border/50 inline-flex items-center gap-1 text-xs font-bold text-primary">
+                        Ler notícia completa <ArrowRight className="h-3 w-3" />
+                      </div>
                     </div>
-                  )}
-                  <div className="flex flex-col flex-1 p-5">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xs font-bold uppercase tracking-wider text-primary">
-                        {n.categoria}
-                      </span>
-                      <span className="text-xs text-muted-foreground">·</span>
-                      <span className="text-xs text-muted-foreground">{formatData(n.data)}</span>
-                    </div>
-                    <h3 className="font-bold text-deep leading-snug group-hover:text-primary transition-colors line-clamp-2 flex-1">
-                      {n.titulo}
-                    </h3>
-                    <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{n.resumo}</p>
-                    <div className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                      Ler notícia <ArrowRight className="h-3 w-3" />
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>
