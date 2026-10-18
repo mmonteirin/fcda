@@ -1,5 +1,16 @@
-import { ArrowUpRight, Calendar, MapPin } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Calendar,
+  MapPin,
+  Sparkles,
+  Trophy,
+  Users,
+  Waves,
+  ChevronRight,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import heroImg from "@/assets/hero-swimmer.jpg";
 
 interface BannerSlide {
   id: string;
@@ -15,6 +26,8 @@ interface Evento {
   nome: string;
   data_texto: string;
   local: string;
+  modalidade?: string;
+  status?: string | null;
   link?: string;
 }
 
@@ -28,69 +41,218 @@ interface HeroBannerProps {
 export function HeroBanner({ slides, eventos }: HeroBannerProps) {
   if (slides.length === 0) return null;
 
-  const featuredSlides = slides.slice(0, 3);
+  const mainSlide = slides[0];
+  const secondarySlide = slides[1] || slides[0];
+  const proximoEvento = eventos.length > 0 ? eventos[0] : null;
 
   return (
-    <section className="bg-gradient-to-br from-secondary/30 to-secondary/50 py-7 md:py-9 animate-fade-in-up">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-primary">FCDA em foco</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-deep md:text-4xl">Notícias e movimento</h1>
-          </div>
-          <Link to="/noticias" className="hidden items-center gap-1 text-sm font-bold text-primary hover:text-deep sm:inline-flex">
-            Todas as notícias <ArrowUpRight className="h-4 w-4" />
-          </Link>
-        </div>
+    <section className="relative overflow-hidden bg-hero text-primary-foreground pt-8 pb-12 lg:pt-12 lg:pb-16 animate-fade-in">
+      {/* Luzes de fundo e textura sutil */}
+      <div className="absolute inset-0 pointer-events-none opacity-20 bg-[radial-gradient(#d4af37_1px,transparent_1px)] [background-size:28px_28px]" />
+      <div className="absolute top-0 right-1/4 -mt-20 h-96 w-96 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-10 -mb-20 h-80 w-80 rounded-full bg-gold/15 blur-3xl pointer-events-none" />
 
-        <div className="grid gap-2 md:min-h-[500px] md:grid-cols-2 md:grid-rows-2">
-          {featuredSlides.map((slide, index) => (
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* CABEÇALHO HERO COM IDENTIDADE OFICIAL */}
+        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-primary-foreground/15 pb-8">
+          <div className="space-y-3 max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full bg-gold/15 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.2em] text-gold border border-gold/30 backdrop-blur-md">
+              <Sparkles className="h-3.5 w-3.5 text-gold" />
+              Desde 1958 • Filiada à CBDA
+            </div>
+
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+              O Esporte Aquático no Ceará em Movimento
+            </h1>
+
+            <p className="text-base sm:text-lg text-primary-foreground/80 leading-relaxed max-w-2xl">
+              Acompanhe o calendário oficial de competições, rankings estaduais, recordes e as
+              últimas notícias da natação e águas abertas cearenses.
+            </p>
+          </div>
+
+          {/* Botões de Ação Rápida no Topo */}
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             <Link
-              key={slide.id}
-              to={slide.link || "/noticias"}
-              className={`group relative isolate min-h-[260px] overflow-hidden bg-deep ${index === 0 ? "md:row-span-2 md:min-h-0" : "md:min-h-0"}`}
+              to="/eventos"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-gold via-amber-400 to-gold px-5 py-3 text-sm font-bold text-deep shadow-[0_4px_20px_rgba(212,175,55,0.35)] transition-all hover:scale-105 hover:shadow-[0_6px_25px_rgba(212,175,55,0.45)] active:scale-95"
             >
-              <img
-                src={slide.image}
-                alt=""
-                className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 -z-10 bg-gradient-hero" />
-              <div className="absolute inset-x-0 bottom-0 p-5 md:p-7">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-gold">
-                  {index === 0 ? "Destaque" : "Em evidência"}
-                </p>
-                <h2 className={`max-w-2xl font-bold leading-tight text-primary-foreground ${index === 0 ? "text-2xl md:text-4xl" : "text-xl md:text-2xl"}`}>
-                  {slide.title}
-                </h2>
-                {index === 0 && (
-                  <p className="mt-3 line-clamp-2 max-w-xl text-sm text-primary-foreground/80">
-                    {slide.description}
-                  </p>
-                )}
-              </div>
+              <Calendar className="h-4 w-4 text-deep" />
+              Calendário 2026
             </Link>
-          ))}
+
+            <Link
+              to="/ranking-temporada-2026"
+              className="inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-3 text-sm font-bold text-white backdrop-blur-md transition-all active:scale-95"
+            >
+              <Trophy className="h-4 w-4 text-gold" />
+              Rankings
+            </Link>
+          </div>
         </div>
 
-        <div className="mt-2 flex flex-col gap-3 border-t border-border/70 bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between md:px-5">
-          <div className="flex items-center gap-2 text-sm font-bold text-deep">
-            <Calendar className="h-4 w-4 text-primary" />
-            Próximas competições
-          </div>
-          {eventos.length > 0 ? (
-            <Link to="/eventos" className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground hover:text-primary">
-              <span className="truncate">{eventos[0].nome}</span>
-              <span className="hidden shrink-0 text-xs sm:inline">{eventos[0].data_texto}</span>
-              <MapPin className="hidden h-3.5 w-3.5 shrink-0 sm:block" />
-              <ArrowUpRight className="h-4 w-4 shrink-0 text-primary" />
-            </Link>
-          ) : (
-            <span className="text-sm text-muted-foreground">Nenhum evento agendado</span>
-          )}
-          <Link to="/eventos" className="text-sm font-bold text-primary sm:hidden">
-            Ver calendário
+        {/* BENTO GRID DE DESTAQUES VISUAIS */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 min-h-[460px]">
+          {/* Card 1: Destaque Principal (7 Colunas) */}
+          <Link
+            to={mainSlide.link || "/noticias"}
+            className="group relative lg:col-span-7 flex flex-col justify-end overflow-hidden rounded-3xl border border-white/15 bg-deep min-h-[340px] sm:min-h-[420px] shadow-elegant transition-all duration-500 hover:border-gold/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+          >
+            <img
+              src={mainSlide.image || heroImg}
+              alt={mainSlide.title}
+              className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-85"
+            />
+            {/* Gradiente escuro para legibilidade perfeita */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 to-black/10" />
+
+            <div className="relative z-10 p-6 sm:p-8">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-gold px-3 py-1 text-xs font-bold uppercase tracking-wider text-deep shadow-xs">
+                Destaque Principal
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight group-hover:text-gold transition-colors duration-300">
+                {mainSlide.title}
+              </h2>
+
+              {mainSlide.description && (
+                <p className="mt-2.5 line-clamp-2 text-sm sm:text-base text-white/85 max-w-xl">
+                  {mainSlide.description}
+                </p>
+              )}
+
+              <div className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-gold group-hover:translate-x-1 transition-transform">
+                <span>{mainSlide.linkText || "Acessar conteúdo"}</span>
+                <ArrowRight className="h-4 w-4" />
+              </div>
+            </div>
           </Link>
+
+          {/* Coluna da Direita (5 Colunas: 2 Cards Empilhados) */}
+          <div className="lg:col-span-5 flex flex-col gap-5">
+            {/* Card 2: Próxima Competição em Destaque */}
+            {proximoEvento ? (
+              <Link
+                to="/eventos"
+                className="group relative flex-1 flex flex-col justify-between overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-emerald-950/80 via-deep/90 to-[#021712]/95 p-6 backdrop-blur-md shadow-card transition-all duration-300 hover:border-emerald-400/50 hover:shadow-elegant"
+              >
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 border border-emerald-400/30 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-300">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    Próxima Competição
+                  </div>
+                  <span className="text-xs font-semibold text-primary-foreground/60 border border-white/15 rounded-full px-2.5 py-0.5">
+                    {proximoEvento.modalidade || "Natação"}
+                  </span>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2 text-gold font-bold text-sm mb-1.5">
+                    <Calendar className="h-4 w-4" />
+                    <span>{proximoEvento.data_texto}</span>
+                  </div>
+
+                  <h3 className="text-xl font-bold text-white group-hover:text-gold transition-colors leading-snug line-clamp-2">
+                    {proximoEvento.nome}
+                  </h3>
+
+                  {proximoEvento.local && (
+                    <div className="mt-2 flex items-center gap-1.5 text-xs text-primary-foreground/75 truncate">
+                      <MapPin className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                      <span className="truncate">{proximoEvento.local}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-bold text-gold">
+                  <span>Ver calendário e inscrições</span>
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            ) : null}
+
+            {/* Card 3: Notícia Secundária ou Destaque Esportivo */}
+            {secondarySlide && secondarySlide.id !== mainSlide.id ? (
+              <Link
+                to={secondarySlide.link || "/noticias"}
+                className="group relative flex-1 flex flex-col justify-end overflow-hidden rounded-3xl border border-white/15 bg-deep min-h-[190px] shadow-card transition-all duration-500 hover:border-gold/50"
+              >
+                <img
+                  src={secondarySlide.image || heroImg}
+                  alt={secondarySlide.title}
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-80"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+
+                <div className="relative z-10 p-5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gold mb-1 inline-block">
+                    Em Evidência
+                  </span>
+                  <h3 className="text-lg font-bold text-white group-hover:text-gold transition-colors leading-snug line-clamp-2">
+                    {secondarySlide.title}
+                  </h3>
+                  <div className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-white/80">
+                    Ler mais <ChevronRight className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+              </Link>
+            ) : (
+              <Link
+                to="/ranking-temporada-2026"
+                className="group relative flex-1 flex flex-col justify-between overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-gold/20 via-deep/90 to-deep p-6 backdrop-blur-md shadow-card transition-all duration-300 hover:border-gold/50"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold text-deep font-bold shadow-xs">
+                    <Trophy className="h-5 w-5" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gold">
+                    Oficial FCDA
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white group-hover:text-gold transition-colors leading-snug">
+                    Ranking da Temporada 2026
+                  </h3>
+                  <p className="mt-1 text-xs text-primary-foreground/75 leading-relaxed">
+                    Confira a pontuação acumulada dos clubes e atletas nas etapas do campeonato
+                    cearense.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-bold text-gold">
+                  <span>Acessar tabela de pontuação</span>
+                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* FAIXA INFERIOR COM NÚMEROS DA FEDERAÇÃO */}
+        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 backdrop-blur-md">
+          <div className="text-center p-2">
+            <div className="text-2xl sm:text-3xl font-extrabold text-gold">67+</div>
+            <div className="text-xs text-primary-foreground/70 uppercase tracking-wider font-semibold mt-0.5">
+              Anos de História
+            </div>
+          </div>
+          <div className="text-center p-2 border-l border-white/10">
+            <div className="text-2xl sm:text-3xl font-extrabold text-gold">5</div>
+            <div className="text-xs text-primary-foreground/70 uppercase tracking-wider font-semibold mt-0.5">
+              Modalidades
+            </div>
+          </div>
+          <div className="text-center p-2 border-l border-white/10">
+            <div className="text-2xl sm:text-3xl font-extrabold text-gold">100+</div>
+            <div className="text-xs text-primary-foreground/70 uppercase tracking-wider font-semibold mt-0.5">
+              Clubes Filiados
+            </div>
+          </div>
+          <div className="text-center p-2 border-l border-white/10">
+            <div className="text-2xl sm:text-3xl font-extrabold text-gold">2026</div>
+            <div className="text-xs text-primary-foreground/70 uppercase tracking-wider font-semibold mt-0.5">
+              Circuito Ativo
+            </div>
+          </div>
         </div>
       </div>
     </section>
