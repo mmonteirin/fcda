@@ -138,6 +138,8 @@ export async function verifySwimSystemWebhook(
 
   const signature = hexToBytes(match[1]);
   if (!signature) return false;
+  const signatureBuffer = new ArrayBuffer(signature.byteLength);
+  new Uint8Array(signatureBuffer).set(signature);
 
   const key = await crypto.subtle.importKey(
     "raw",
@@ -147,5 +149,5 @@ export async function verifySwimSystemWebhook(
     ["verify"],
   );
 
-  return crypto.subtle.verify("HMAC", key, signature, rawBody);
+  return crypto.subtle.verify("HMAC", key, signatureBuffer, rawBody);
 }

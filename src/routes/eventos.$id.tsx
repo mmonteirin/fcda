@@ -129,7 +129,7 @@ function getStatusConfig(status: string | null | undefined) {
       return {
         label: "Inscrições Abertas",
         badgeClass:
-          "bg-emerald-500/20 text-emerald-300 border-emerald-400/40 shadow-[0_0_20px_rgba(16,185,129,0.25)]",
+          "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-400/40",
         dotClass: "bg-emerald-400 animate-pulse",
         bannerBg: "from-emerald-950/80 via-emerald-900/40 to-card",
         buttonText: "Inscreva-se Agora",
@@ -140,7 +140,7 @@ function getStatusConfig(status: string | null | undefined) {
       return {
         label: "Em Andamento",
         badgeClass:
-          "bg-sky-500/20 text-sky-300 border-sky-400/40 shadow-[0_0_20px_rgba(14,165,233,0.25)]",
+          "bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-400/40",
         dotClass: "bg-sky-400 animate-ping",
         bannerBg: "from-sky-950/80 via-sky-900/40 to-card",
         buttonText: "Acompanhar Provas",
@@ -150,7 +150,8 @@ function getStatusConfig(status: string | null | undefined) {
     case "inscricoes_fechadas":
       return {
         label: "Inscrições Encerradas",
-        badgeClass: "bg-amber-500/20 text-amber-300 border-amber-400/40",
+        badgeClass:
+          "bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-400/40",
         dotClass: "bg-amber-400",
         bannerBg: "from-amber-950/80 via-amber-900/40 to-card",
         buttonText: "Inscrições Finalizadas",
@@ -161,7 +162,8 @@ function getStatusConfig(status: string | null | undefined) {
     case "finalizado":
       return {
         label: "Evento Concluído",
-        badgeClass: "bg-slate-500/20 text-slate-300 border-slate-400/40",
+        badgeClass:
+          "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-500/20 dark:text-slate-300 dark:border-slate-400/40",
         dotClass: "bg-slate-400",
         bannerBg: "from-slate-900/80 via-slate-850/40 to-card",
         buttonText: "Resultados Disponíveis",
@@ -171,7 +173,8 @@ function getStatusConfig(status: string | null | undefined) {
     case "cancelado":
       return {
         label: "Cancelado",
-        badgeClass: "bg-red-500/20 text-red-300 border-red-400/40",
+        badgeClass:
+          "bg-red-100 text-red-800 border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-400/40",
         dotClass: "bg-red-400",
         bannerBg: "from-red-950/80 via-red-900/40 to-card",
         buttonText: "Evento Cancelado",
@@ -181,7 +184,8 @@ function getStatusConfig(status: string | null | undefined) {
     case "confirmado":
       return {
         label: "Data Confirmada",
-        badgeClass: "bg-teal-500/20 text-teal-300 border-teal-400/40",
+        badgeClass:
+          "bg-teal-100 text-teal-800 border-teal-300 dark:bg-teal-500/20 dark:text-teal-300 dark:border-teal-400/40",
         dotClass: "bg-teal-400",
         bannerBg: "from-teal-950/80 via-teal-900/40 to-card",
         buttonText: "Ver Detalhes",
@@ -192,7 +196,8 @@ function getStatusConfig(status: string | null | undefined) {
     default:
       return {
         label: "Calendário Oficial 2026",
-        badgeClass: "bg-emerald-950/60 text-emerald-300 border-emerald-500/40",
+        badgeClass:
+          "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-500/40",
         dotClass: "bg-emerald-400",
         bannerBg: "from-deep/90 via-deep/60 to-card",
         buttonText: "Consultar Calendário",
@@ -279,7 +284,7 @@ function EventoDetalhes() {
   return (
     <SiteLayout>
       {/* ── HERO BANNER DINÂMICO DE ALTO IMPACTO ── */}
-      <section className="relative overflow-hidden bg-deep text-primary-foreground min-h-[480px] lg:min-h-[540px] flex items-end">
+      <section className="relative flex min-h-[420px] items-end overflow-hidden bg-deep text-primary-foreground lg:min-h-[480px]">
         {/* Imagem de Fundo com Tratamento Artístico */}
         <div className="absolute inset-0 z-0">
           <img
@@ -287,7 +292,7 @@ function EventoDetalhes() {
             alt={evento.nome}
             fetchPriority="high"
             decoding="async"
-            className="h-full w-full object-cover object-center scale-105 filter brightness-75 contrast-110 motion-safe:animate-fade-in"
+            className="h-full w-full object-cover object-center brightness-75 contrast-110 motion-safe:animate-fade-in"
           />
           {/* Overlay gradiente suave com as cores institucionais da FCDA */}
           <div className="absolute inset-0 bg-gradient-to-t from-deep via-deep/80 to-deep/40" />
@@ -297,7 +302,7 @@ function EventoDetalhes() {
         </div>
 
         {/* Conteúdo do Hero */}
-        <div className="relative z-10 w-full pb-12 pt-28 md:pt-36">
+        <div className="relative z-10 w-full pb-10 pt-20 md:pb-12 md:pt-24">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {/* Navegação e Trilha (Breadcrumbs) */}
             <div className="mb-6 flex flex-wrap items-center gap-2 text-xs font-semibold text-primary-foreground/75">
@@ -397,40 +402,6 @@ function EventoDetalhes() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* COLUNA PRINCIPAL (Esquerda - 8 colunas) */}
             <div className="lg:col-span-8 space-y-8">
-              {/* Card de Destaque para Inscrições (quando ativas) */}
-              {isRegistrationOpen && (
-                <div className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-gold/10 p-6 sm:p-8 shadow-card">
-                  <div className="absolute top-0 right-0 -mr-12 -mt-12 h-44 w-44 rounded-full bg-emerald-500/10 blur-2xl pointer-events-none" />
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-                    <div className="space-y-1.5">
-                      <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
-                        <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                        Inscrições Oficiais FCDA
-                      </div>
-                      <h2 className="text-xl sm:text-2xl font-bold text-deep">
-                        Participe desta etapa oficial
-                      </h2>
-                      <p className="text-sm text-muted-foreground max-w-xl">
-                        Acesse o sistema de inscrições online para cadastrar atletas, equipes e
-                        provas nesta competição.
-                      </p>
-                    </div>
-
-                    {evento.link_inscricao && (
-                      <a
-                        href={evento.link_inscricao}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-deep px-6 py-3.5 text-sm font-bold text-deep-foreground transition-all hover:bg-primary hover:shadow-elegant active:scale-95"
-                      >
-                        Inscrever-se Agora
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )}
-
               {/* Informações Estruturadas (Grid de 4 Cards Elegantes) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* 1. Data e Período */}
@@ -934,7 +905,8 @@ function SwimSystemCompetitionPanel({
           )}
         </div>
         <p className="text-xs text-muted-foreground">
-          Atualizado em {new Date(syncedAt).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })}
+          Atualizado em{" "}
+          {new Date(syncedAt).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })}
         </p>
       </div>
 
@@ -943,7 +915,10 @@ function SwimSystemCompetitionPanel({
           <h3 className="mb-3 font-bold text-deep">Etapas e horários</h3>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {sessions.map((session, index) => (
-              <div key={displayValue(session.id) || index} className="rounded-xl bg-secondary/50 p-4">
+              <div
+                key={displayValue(session.id) || index}
+                className="rounded-xl bg-secondary/50 p-4"
+              >
                 <p className="font-semibold text-deep">
                   {displayValue(session.name) || `Etapa ${displayValue(session.number)}`}
                 </p>
@@ -992,13 +967,19 @@ function SwimSystemCompetitionPanel({
                     .join(" ");
                   return (
                     <tr key={displayValue(result.id) || index} className="border-t border-border">
-                      <td className="px-4 py-3 font-medium">{displayValue(result.eventNumber) || "—"}</td>
+                      <td className="px-4 py-3 font-medium">
+                        {displayValue(result.eventNumber) || "—"}
+                      </td>
                       <td className="px-4 py-3">{name || "Revezamento"}</td>
-                      <td className="px-4 py-3">{displayValue(club?.shortname) || displayValue(club?.name) || "—"}</td>
+                      <td className="px-4 py-3">
+                        {displayValue(club?.shortname) || displayValue(club?.name) || "—"}
+                      </td>
                       <td className="px-4 py-3">{displayValue(agegroup?.name) || "—"}</td>
                       <td className="px-4 py-3 font-mono">{formatSwimTime(result.resultTimeMs)}</td>
                       <td className="px-4 py-3">
-                        {displayValue(bestPlacement?.place) || displayValue(result.resultStatus) || "—"}
+                        {displayValue(bestPlacement?.place) ||
+                          displayValue(result.resultStatus) ||
+                          "—"}
                       </td>
                     </tr>
                   );
