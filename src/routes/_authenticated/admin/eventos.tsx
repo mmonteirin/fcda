@@ -50,6 +50,7 @@ function AdminEventos() {
         status: editing.status || null,
         link_inscricao: editing.link_inscricao?.trim() || null,
         imagem_url: editing.imagem_url || null,
+        swimsystem_meet_id: editing.swimsystem_meet_id?.trim() || null,
       });
       invalidate();
       setEditing(null);
@@ -309,6 +310,17 @@ function AdminEventos() {
               />
               <p className="mt-1 text-xs text-muted-foreground">
                 Ao preencher, o botão “Inscreva-se” será exibido na página pública do evento.
+              </p>
+            </Field>
+            <Field label="ID da competição no SwimSystem">
+              <input
+                className={inputClass}
+                value={editing.swimsystem_meet_id ?? ""}
+                onChange={(e) => setEditing({ ...editing, swimsystem_meet_id: e.target.value })}
+                placeholder="UUID da competição no SwimSystem"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Vincula os webhooks à competição e habilita a publicação de horários e resultados sincronizados.
               </p>
             </Field>
             <Field label="Capa do evento">

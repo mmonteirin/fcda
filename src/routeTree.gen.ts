@@ -36,6 +36,7 @@ import { Route as EventosIdRouteImport } from './routes/eventos.$id'
 import { Route as AuthenticatedPerfilRouteImport } from './routes/_authenticated/perfil'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as ApiWebhooksSwimsystemRouteImport } from './routes/api/webhooks/swimsystem'
 import { Route as AuthenticatedAdminUsuariosRouteImport } from './routes/_authenticated/admin/usuarios'
 import { Route as AuthenticatedAdminTransparenciaRouteImport } from './routes/_authenticated/admin/transparencia'
 import { Route as AuthenticatedAdminRecordesRouteImport } from './routes/_authenticated/admin/recordes'
@@ -190,6 +191,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const ApiWebhooksSwimsystemRoute = ApiWebhooksSwimsystemRouteImport.update({
+  id: '/api/webhooks/swimsystem',
+  path: '/api/webhooks/swimsystem',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminUsuariosRoute =
   AuthenticatedAdminUsuariosRouteImport.update({
@@ -358,6 +364,7 @@ export interface FileRoutesByFullPath {
   '/admin/recordes': typeof AuthenticatedAdminRecordesRoute
   '/admin/transparencia': typeof AuthenticatedAdminTransparenciaRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/api/webhooks/swimsystem': typeof ApiWebhooksSwimsystemRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -402,6 +409,7 @@ export interface FileRoutesByTo {
   '/admin/recordes': typeof AuthenticatedAdminRecordesRoute
   '/admin/transparencia': typeof AuthenticatedAdminTransparenciaRoute
   '/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/api/webhooks/swimsystem': typeof ApiWebhooksSwimsystemRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -452,6 +460,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/recordes': typeof AuthenticatedAdminRecordesRoute
   '/_authenticated/admin/transparencia': typeof AuthenticatedAdminTransparenciaRoute
   '/_authenticated/admin/usuarios': typeof AuthenticatedAdminUsuariosRoute
+  '/api/webhooks/swimsystem': typeof ApiWebhooksSwimsystemRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -502,6 +511,7 @@ export interface FileRouteTypes {
     | '/admin/recordes'
     | '/admin/transparencia'
     | '/admin/usuarios'
+    | '/api/webhooks/swimsystem'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -546,6 +556,7 @@ export interface FileRouteTypes {
     | '/admin/recordes'
     | '/admin/transparencia'
     | '/admin/usuarios'
+    | '/api/webhooks/swimsystem'
     | '/admin'
   id:
     | '__root__'
@@ -595,6 +606,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/recordes'
     | '/_authenticated/admin/transparencia'
     | '/_authenticated/admin/usuarios'
+    | '/api/webhooks/swimsystem'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -617,6 +629,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SobreRoute: typeof SobreRoute
   TransparenciaRoute: typeof TransparenciaRouteWithChildren
+  ApiWebhooksSwimsystemRoute: typeof ApiWebhooksSwimsystemRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -809,6 +822,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/webhooks/swimsystem': {
+      id: '/api/webhooks/swimsystem'
+      path: '/api/webhooks/swimsystem'
+      fullPath: '/api/webhooks/swimsystem'
+      preLoaderRoute: typeof ApiWebhooksSwimsystemRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/usuarios': {
       id: '/_authenticated/admin/usuarios'
@@ -1079,6 +1099,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SobreRoute: SobreRoute,
   TransparenciaRoute: TransparenciaRouteWithChildren,
+  ApiWebhooksSwimsystemRoute: ApiWebhooksSwimsystemRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

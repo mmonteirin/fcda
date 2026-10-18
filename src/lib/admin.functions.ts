@@ -103,6 +103,7 @@ const eventoSchema = z.object({
     .nullable(),
   link_inscricao: z.string().url().optional().nullable(),
   imagem_url: z.string().url().optional().nullable(),
+  swimsystem_meet_id: z.string().max(100).optional().nullable(),
 });
 
 export async function saveEvento(supabase: SupabaseClient, userId: string, data: unknown) {

@@ -43,9 +43,39 @@ export type Evento = {
   status?: string | null;
   link_inscricao?: string | null;
   imagem_url?: string | null;
+  swimsystem_meet_id?: string | null;
   created_at: string;
   updated_at: string;
 };
+
+export type SwimSystemCompetitionCache = {
+  meet_id: string;
+  snapshot: {
+    meet?: Record<string, unknown>;
+    sessions?: Record<string, unknown>[];
+    events?: Record<string, unknown>[];
+    results?: { pointsTableLabel?: string; results?: Record<string, unknown>[] };
+    scoring?: unknown;
+    medals?: unknown;
+  };
+  synced_at: string;
+};
+
+export const swimSystemCompetitionQuery = (meetId: string) =>
+  queryOptions({
+    queryKey: ["swimsystem-competition", meetId],
+    queryFn: async (): Promise<SwimSystemCompetitionCache | null> => {
+      const db = asDynamicSupabase(supabase);
+      const { data, error } = await db
+        .from("swimsystem_competition_cache")
+        .select("meet_id,snapshot,synced_at")
+        .eq("meet_id", meetId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 60_000,
+  });
 export type Diretor = {
   id: string;
   nome: string;
