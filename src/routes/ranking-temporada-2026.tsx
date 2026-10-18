@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { rankingAPI, RankingData, RankingCategoria, RankingAtleta, RankingClube } from "@/lib/ranking-api";
+import { rankingAPI, RankingData, RankingCategoria, RankingAtleta, RankingClube } from "@/lib/api/ranking";
 import { Trophy, Users, Award, TrendingUp, Medal, Filter, ChevronDown } from "lucide-react";
 
 export const Route = createFileRoute("/ranking-temporada-2026")({

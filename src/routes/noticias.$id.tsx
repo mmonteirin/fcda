@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { noticiaByIdentifierQuery, noticiasQuery } from "@/lib/site-queries";
+import { noticiaByIdentifierQuery, noticiasQuery } from "@/lib/api/site-queries";
 import {
   Calendar,
   ArrowLeft,
@@ -18,12 +18,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import imgNatacao from "@/assets/mod-natacao.jpg";
-import imgPolo from "@/assets/mod-polo.jpg";
-import imgSaltos from "@/assets/mod-saltos.jpg";
-import imgArtistico from "@/assets/mod-artistico.jpg";
-import imgAguas from "@/assets/mod-aguas.jpg";
-import heroSwimmer from "@/assets/hero-swimmer.jpg";
+import imgNatacao from "@/assets/images/mod-natacao.jpg";
+import imgPolo from "@/assets/images/mod-polo.jpg";
+import imgSaltos from "@/assets/images/mod-saltos.jpg";
+import imgArtistico from "@/assets/images/mod-artistico.jpg";
+import imgAguas from "@/assets/images/mod-aguas.jpg";
+import heroSwimmer from "@/assets/images/hero-swimmer.jpg";
 
 export const Route = createFileRoute("/noticias/$id")({
   loader: ({ context, params }) =>

@@ -10,9 +10,9 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { AuthProvider } from "@/lib/auth.tsx";
+import { AuthProvider } from "@/lib/auth/auth";
 import { Toaster } from "@/components/ui/sonner";
-import logoFCDA from "@/assets/logoFCDA.png";
+import logoFCDA from "@/assets/images/logoFCDA.png";
 import "@/lib/sentry";
 
 function NotFoundComponent() {

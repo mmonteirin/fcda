@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { cursosQuery, type Curso } from "@/lib/site-queries";
+import { cursosQuery, type Curso } from "@/lib/api/site-queries";
 import { Calendar, Clock, MapPin, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/cursos")({

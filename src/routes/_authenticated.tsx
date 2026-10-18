@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { useAuth } from "@/lib/use-auth";
+import { useAuth } from "@/lib/auth/use-auth";
 import { Waves, LogOut, ChevronDown, LayoutDashboard, UserCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({

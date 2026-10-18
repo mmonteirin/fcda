@@ -10,7 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import heroImg from "@/assets/hero-swimmer.jpg";
+import heroImg from "@/assets/images/hero-swimmer.jpg";
 
 interface BannerSlide {
   id: string;

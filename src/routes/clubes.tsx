@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { clubesQuery, type Clube } from "@/lib/site-queries";
+import { clubesQuery, type Clube } from "@/lib/api/site-queries";
 import { Building2, MapPin, Phone, Mail, Calendar, ExternalLink, Search } from "lucide-react";
 
 export const Route = createFileRoute("/clubes")({

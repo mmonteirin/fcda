@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { eventosQuery, eventosPdfsQuery, type Evento, type EventoPdf } from "@/lib/site-queries";
+import { eventosQuery, eventosPdfsQuery, type Evento, type EventoPdf } from "@/lib/api/site-queries";
 import {
   Calendar,
   MapPin,

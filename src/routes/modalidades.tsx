@@ -6,7 +6,7 @@ import {
   categoriasModalidadesQuery,
   modalidadeImg,
   type CategoriaModalidade,
-} from "@/lib/site-queries";
+} from "@/lib/api/site-queries";
 
 export const Route = createFileRoute("/modalidades")({
   head: () => ({

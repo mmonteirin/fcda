@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { transparenciaQuery, type TransparenciaDocumento } from "@/lib/site-queries";
-import { getTipoLabel, TIPOS } from "@/lib/transparencia-utils";
+import { transparenciaQuery, type TransparenciaDocumento } from "@/lib/api/site-queries";
+import { getTipoLabel, TIPOS } from "@/lib/utils/transparencia";
 import { FileText, Calendar, Download, Filter, Landmark, Users, ArrowRight } from "lucide-react";
 import { useState, useMemo } from "react";
 

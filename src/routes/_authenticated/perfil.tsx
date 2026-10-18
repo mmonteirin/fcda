@@ -12,7 +12,7 @@ import {
   type AtletaProfile,
   type TreinadorProfile,
   type GestorProfile,
-} from "@/lib/site-queries";
+} from "@/lib/api/site-queries";
 import {
   updateProfile,
   updateAtletaProfile,

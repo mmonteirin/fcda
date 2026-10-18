@@ -2,9 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { useState } from "react";
-import { bannerQuery, type BannerConfig } from "@/lib/site-queries";
+import { bannerQuery, type BannerConfig } from "@/lib/api/site-queries";
 import { saveBanner } from "@/lib/admin.functions";
-import { useAuth } from "@/lib/use-auth";
+import { useAuth } from "@/lib/auth/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, Field } from "@/components/admin/ui";
 import { useInvalidate, inputClass } from "@/components/admin/utils";

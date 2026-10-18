@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { bannerQuery } from "@/lib/site-queries";
+import { bannerQuery } from "@/lib/api/site-queries";
 import { X } from "lucide-react";
 import { useState } from "react";
 

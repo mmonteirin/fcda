@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { eventosQuery, eventosPdfsQuery, type EventoPdf } from "@/lib/site-queries";
+import { eventosQuery, eventosPdfsQuery, type EventoPdf } from "@/lib/api/site-queries";
 import { uploadPdf } from "@/lib/admin.functions";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";

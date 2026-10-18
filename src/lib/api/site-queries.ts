@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { asDynamicSupabase } from "./supabase-helpers";
+import { asDynamicSupabase } from "../supabase-helpers";
 
 export type Modalidade = {
   id: string;
@@ -609,11 +609,11 @@ export const gestorProfileQuery = (userId: string) =>
   });
 
 // Map slug de modalidade para imagem local fallback
-import imgNatacao from "@/assets/mod-natacao.jpg";
-import imgPolo from "@/assets/mod-polo.jpg";
-import imgSaltos from "@/assets/mod-saltos.jpg";
-import imgArtistico from "@/assets/mod-artistico.jpg";
-import imgAguas from "@/assets/mod-aguas.jpg";
+import imgNatacao from "@/assets/images/mod-natacao.jpg";
+import imgPolo from "@/assets/images/mod-polo.jpg";
+import imgSaltos from "@/assets/images/mod-saltos.jpg";
+import imgArtistico from "@/assets/images/mod-artistico.jpg";
+import imgAguas from "@/assets/images/mod-aguas.jpg";
 
 const localBySlug: Record<string, string> = {
   natacao: imgNatacao,

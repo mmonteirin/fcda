@@ -32,7 +32,7 @@ import {
   noticiasQuery,
   recordesBuscaQuery,
   transparenciaQuery,
-} from "@/lib/site-queries";
+} from "@/lib/api/site-queries";
 
 export function GlobalSearchModal() {
   const [open, setOpen] = useState(false);

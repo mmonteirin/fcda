@@ -1,4 +1,4 @@
-import type { TransparenciaDocumento } from "./site-queries";
+import type { TransparenciaDocumento } from "../api/site-queries";
 
 export function getTipoLabel(tipo: TransparenciaDocumento["tipo"]) {
   const labels = {

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { HeroBanner } from "@/components/hero-banner";
+import { HeroBanner } from "@/components/features/hero";
 import { SkeletonGrid, SkeletonHero } from "@/components/skeleton";
 import {
   modalidadesQuery,
@@ -10,7 +10,7 @@ import {
   eventosQuery,
   modalidadeImg,
   parceirosQuery,
-} from "@/lib/site-queries";
+} from "@/lib/api/site-queries";
 import {
   ArrowRight,
   Calendar,
@@ -31,7 +31,7 @@ import {
   Phone,
   Mail,
 } from "lucide-react";
-import hero from "@/assets/hero-swimmer.jpg";
+import hero from "@/assets/images/hero-swimmer.jpg";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) =>

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { cursosQuery, type Curso } from "@/lib/site-queries";
+import { cursosQuery, type Curso } from "@/lib/api/site-queries";
 import { saveCurso, deleteCurso, uploadImage } from "@/lib/admin.functions";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";

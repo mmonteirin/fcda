@@ -12,7 +12,7 @@ import {
   transparenciaQuery,
   parceirosQuery,
   cursosQuery,
-} from "@/lib/site-queries";
+} from "@/lib/api/site-queries";
 import {
   Newspaper,
   Calendar,
@@ -42,7 +42,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { exportCsv, printReport } from "@/lib/admin-export";
+import { exportCsv, printReport } from "@/lib/export/admin-export";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   loader: ({ context }) =>

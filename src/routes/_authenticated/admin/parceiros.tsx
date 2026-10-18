@@ -1,13 +1,13 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { parceirosQuery, type Parceiro } from "@/lib/site-queries";
+import { parceirosQuery, type Parceiro } from "@/lib/api/site-queries";
 import {
   saveParceiro,
   deleteParceiro,
   assertEditor,
   uploadParceiroLogo,
 } from "@/lib/admin.functions";
-import { useAuth } from "@/lib/use-auth";
+import { useAuth } from "@/lib/auth/use-auth";
 import { Building2, Handshake, Medal, Plus, ExternalLink, X, Upload } from "lucide-react";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { createFileRoute } from "@tanstack/react-router";

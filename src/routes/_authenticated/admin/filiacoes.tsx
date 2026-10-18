@@ -5,9 +5,9 @@ import { useState } from "react";
 import { AdminToolbar } from "@/components/admin/ui";
 import { useInvalidate } from "@/components/admin/utils";
 import { FileText, Check, X, Clock, Building2, Calendar, MapPin, Phone } from "lucide-react";
-import { filiacaoQuery, type SolicitacaoFiliacao } from "@/lib/site-queries";
+import { filiacaoQuery, type SolicitacaoFiliacao } from "@/lib/api/site-queries";
 import { aprovarFiliacao, rejeitarFiliacao } from "@/lib/admin.functions";
-import { useAuth } from "@/lib/use-auth";
+import { useAuth } from "@/lib/auth/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin/filiacoes")({

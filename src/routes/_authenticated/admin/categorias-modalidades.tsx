@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { categoriasModalidadesQuery, type CategoriaModalidade } from "@/lib/site-queries";
+import { categoriasModalidadesQuery, type CategoriaModalidade } from "@/lib/api/site-queries";
 import { saveCategoriaModalidade, deleteCategoriaModalidade } from "@/lib/admin.functions";
-import { useAuth } from "@/lib/use-auth";
+import { useAuth } from "@/lib/auth/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";

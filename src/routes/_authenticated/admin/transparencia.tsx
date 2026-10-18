@@ -2,14 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { transparenciaQuery, type TransparenciaDocumento } from "@/lib/site-queries";
+import { transparenciaQuery, type TransparenciaDocumento } from "@/lib/api/site-queries";
 import {
   saveTransparencia,
   deleteTransparencia,
   uploadTransparenciaPdf,
 } from "@/lib/admin.functions";
-import { getTipoLabel } from "@/lib/transparencia-utils";
-import { useAuth } from "@/lib/use-auth";
+import { getTipoLabel } from "@/lib/utils/transparencia";
+import { useAuth } from "@/lib/auth/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";

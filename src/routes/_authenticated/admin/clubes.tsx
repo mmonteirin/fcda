@@ -1,8 +1,8 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { clubesQuery, type Clube } from "@/lib/site-queries";
+import { clubesQuery, type Clube } from "@/lib/api/site-queries";
 import { saveClube, deleteClube, assertEditor, uploadClubeLogo } from "@/lib/admin.functions";
-import { useAuth } from "@/lib/use-auth";
+import { useAuth } from "@/lib/auth/use-auth";
 import {
   Plus,
   ExternalLink,

@@ -1,7 +1,7 @@
 import { Header } from "./Header/Header";
 import { Footer } from "./Footer/Footer";
 import { Banner } from "./Banner";
-import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { InstallPrompt } from "@/components/features/pwa/InstallPrompt";
 
 export function SiteLayout({ children }: { children: React.ReactNode }) {
   return (

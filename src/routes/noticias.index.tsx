@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { noticiasQuery, eventosQuery } from "@/lib/site-queries";
+import { noticiasQuery, eventosQuery } from "@/lib/api/site-queries";
 import { Calendar, MapPin } from "lucide-react";
 
 export const Route = createFileRoute("/noticias/")({

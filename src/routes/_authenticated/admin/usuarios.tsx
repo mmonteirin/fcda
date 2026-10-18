@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { usersQuery, type UserWithRoles } from "@/lib/site-queries";
+import { usersQuery, type UserWithRoles } from "@/lib/api/site-queries";
 import { addUserRole, removeUserRole, createUser } from "@/lib/admin.functions";
 import { AdminToolbar, AdminTable, Modal, Field } from "@/components/admin/ui";
 import { Shield, ShieldCheck, X, User, Dumbbell, Building2, UserCog } from "lucide-react";

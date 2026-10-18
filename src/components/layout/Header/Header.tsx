@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Menu, X, LogIn, Shield, ChevronDown, ChevronRight, User, GraduationCap } from "lucide-react";
-import { useAuth } from "@/lib/use-auth";
-import logoFCDA from "@/assets/logoFCDA.png";
+import { useAuth } from "@/lib/auth/use-auth";
+import logoFCDA from "@/assets/images/logoFCDA.png";
 import { DesktopNav } from "./DesktopNav";
 import { TopBar } from "./TopBar";
-import { GlobalSearchModal } from "@/components/search/GlobalSearchModal";
+import { GlobalSearchModal } from "@/components/features/search/GlobalSearchModal";
 
 const nav = [
   { to: "/", label: "Início" },

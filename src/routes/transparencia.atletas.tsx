@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { SiteLayout } from "@/components/layout/SiteLayout";
-import { transparenciaAPI, type AtletaTransparencia } from "@/lib/transparencia-api";
-import { clubesQuery, type Clube } from "@/lib/site-queries";
+import { transparenciaAPI, type AtletaTransparencia } from "@/lib/api/transparencia";
+import { clubesQuery, type Clube } from "@/lib/api/site-queries";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { asDynamicSupabase } from "@/lib/supabase-helpers";
 import { Users, Building2, Search, Filter, AlertCircle, Download } from "lucide-react";
-import { exportToCSV } from "@/lib/export-csv";
-import { exportToXLSX } from "@/lib/export-xlsx";
+import { exportToCSV } from "@/lib/export/csv";
+import { exportToXLSX } from "@/lib/export/xlsx";
 
 type Atleta = AtletaTransparencia & {
   vinculoCalculado: "confederado" | "vinculado";

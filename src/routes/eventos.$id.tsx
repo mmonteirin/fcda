@@ -7,7 +7,7 @@ import {
   eventosQuery,
   eventosPdfsQuery,
   type EventoPdf,
-} from "@/lib/site-queries";
+} from "@/lib/api/site-queries";
 import {
   Calendar,
   MapPin,
@@ -33,12 +33,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import imgNatacao from "@/assets/mod-natacao.jpg";
-import imgPolo from "@/assets/mod-polo.jpg";
-import imgSaltos from "@/assets/mod-saltos.jpg";
-import imgArtistico from "@/assets/mod-artistico.jpg";
-import imgAguas from "@/assets/mod-aguas.jpg";
-import heroSwimmer from "@/assets/hero-swimmer.jpg";
+import imgNatacao from "@/assets/images/mod-natacao.jpg";
+import imgPolo from "@/assets/images/mod-polo.jpg";
+import imgSaltos from "@/assets/images/mod-saltos.jpg";
+import imgArtistico from "@/assets/images/mod-artistico.jpg";
+import imgAguas from "@/assets/images/mod-aguas.jpg";
+import heroSwimmer from "@/assets/images/hero-swimmer.jpg";
 
 const PDF_TIPOS = [
   { value: "resultados", label: "Resultados Oficiais" },

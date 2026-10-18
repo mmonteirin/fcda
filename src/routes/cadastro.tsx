@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { User, Dumbbell, Building2, ArrowRight, Check, X } from "lucide-react";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { publicRegister } from "@/lib/admin.functions";
-import { clubesQuery } from "@/lib/site-queries";
+import { clubesQuery } from "@/lib/api/site-queries";
 
 export const Route = createFileRoute("/cadastro")({
   head: () => ({
