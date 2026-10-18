@@ -10,7 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import heroImg from "@/assets/images/hero-swimmer.jpg";
+import heroImg from "@/assets/images/hero-swimmer.webp";
 
 interface BannerSlide {
   id: string;
@@ -101,6 +101,8 @@ export function HeroBanner({ slides, eventos }: HeroBannerProps) {
             <img
               src={mainSlide.image || heroImg}
               alt={mainSlide.title}
+              fetchPriority="high"
+              decoding="async"
               className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-85"
             />
             {/* Gradiente escuro para legibilidade perfeita */}
@@ -180,6 +182,8 @@ export function HeroBanner({ slides, eventos }: HeroBannerProps) {
                 <img
                   src={secondarySlide.image || heroImg}
                   alt={secondarySlide.title}
+                  loading="lazy"
+                  decoding="async"
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105 filter brightness-80"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />

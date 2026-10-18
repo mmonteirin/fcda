@@ -33,12 +33,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import imgNatacao from "@/assets/images/mod-natacao.jpg";
-import imgPolo from "@/assets/images/mod-polo.jpg";
-import imgSaltos from "@/assets/images/mod-saltos.jpg";
-import imgArtistico from "@/assets/images/mod-artistico.jpg";
-import imgAguas from "@/assets/images/mod-aguas.jpg";
-import heroSwimmer from "@/assets/images/hero-swimmer.jpg";
+import imgNatacao from "@/assets/images/mod-natacao.webp";
+import imgPolo from "@/assets/images/mod-polo.webp";
+import imgSaltos from "@/assets/images/mod-saltos.webp";
+import imgArtistico from "@/assets/images/mod-artistico.webp";
+import imgAguas from "@/assets/images/mod-aguas.webp";
+import heroSwimmer from "@/assets/images/hero-swimmer.webp";
 
 const PDF_TIPOS = [
   { value: "resultados", label: "Resultados Oficiais" },
@@ -279,6 +279,8 @@ function EventoDetalhes() {
           <img
             src={heroImage}
             alt={evento.nome}
+            fetchPriority="high"
+            decoding="async"
             className="h-full w-full object-cover object-center scale-105 filter brightness-75 contrast-110 motion-safe:animate-fade-in"
           />
           {/* Overlay gradiente suave com as cores institucionais da FCDA */}
@@ -831,6 +833,7 @@ function EventoDetalhes() {
                         src={eventImg}
                         alt={e.nome}
                         loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />

@@ -100,6 +100,7 @@ function Noticias() {
                         alt={n.titulo}
                         className="absolute inset-0 h-full w-full object-cover"
                         loading="lazy"
+                        decoding="async"
                       />
                     )}
                     <div className="absolute top-4 left-4 inline-flex items-center rounded-full bg-gold px-3 py-1 text-xs font-bold text-deep uppercase tracking-wider">

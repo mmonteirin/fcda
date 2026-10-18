@@ -31,7 +31,7 @@ import {
   Phone,
   Mail,
 } from "lucide-react";
-import hero from "@/assets/images/hero-swimmer.jpg";
+import hero from "@/assets/images/hero-swimmer.webp";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) =>
@@ -324,6 +324,8 @@ function Home() {
                   <img
                     src={modalidadeImg(mod)}
                     alt={mod.nome}
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-108"
                   />
                   {/* Gradiente escuro para legibilidade */}
@@ -390,6 +392,7 @@ function Home() {
                         src={n.imagem_url || hero}
                         alt={n.titulo}
                         loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       <div className="absolute top-3 left-3">
@@ -639,6 +642,8 @@ function ParceiroCard({ parceiro }: { parceiro: any }) {
           <img
             src={parceiro.logo_url}
             alt={parceiro.nome}
+            loading="lazy"
+            decoding="async"
             className="max-h-12 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
@@ -656,6 +661,8 @@ function ParceiroCard({ parceiro }: { parceiro: any }) {
         <img
           src={parceiro.logo_url}
           alt={parceiro.nome}
+          loading="lazy"
+          decoding="async"
           className="max-h-12 w-auto object-contain"
         />
       ) : (

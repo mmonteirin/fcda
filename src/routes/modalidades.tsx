@@ -83,6 +83,7 @@ function Modalidades() {
                           src={modalidadeImg(m)}
                           alt={m.nome}
                           loading="lazy"
+                          decoding="async"
                           className="w-full aspect-[4/3] object-cover"
                         />
                       </div>
@@ -120,6 +121,7 @@ function Modalidades() {
                         src={modalidadeImg(m)}
                         alt={m.nome}
                         loading="lazy"
+                        decoding="async"
                         className="w-full aspect-[4/3] object-cover"
                       />
                     </div>

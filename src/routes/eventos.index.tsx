@@ -231,6 +231,8 @@ function Eventos() {
                         <img
                           src={evento.imagem_url}
                           alt={evento.nome}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -336,6 +338,8 @@ function Eventos() {
                         <img
                           src={evento.imagem_url}
                           alt={evento.nome}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover"
                         />
                       </div>

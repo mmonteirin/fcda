@@ -144,6 +144,8 @@ function Recordes() {
                       <img
                         src={r.foto_url}
                         alt={r.atleta_nome}
+                        loading="lazy"
+                        decoding="async"
                         className="h-full w-full object-cover"
                       />
                     ) : (

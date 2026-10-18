@@ -12,7 +12,8 @@ import {
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth/auth";
 import { Toaster } from "@/components/ui/sonner";
-import logoFCDA from "@/assets/images/logoFCDA.png";
+import logoFCDA from "@/assets/images/logoFCDA.webp";
+import sansationRegular from "@/assets/fonts/Sansation_Regular.woff2?url";
 import "@/lib/sentry";
 
 function NotFoundComponent() {
@@ -107,8 +108,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "manifest", href: "/manifest.json" },
       {
+        rel: "preload",
+        href: sansationRegular,
+        as: "font",
+        type: "font/woff2",
+        crossOrigin: "anonymous",
+      },
+      {
         rel: "icon",
-        type: "image/png",
+        type: "image/webp",
         href: logoFCDA,
       },
       {

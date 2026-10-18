@@ -146,7 +146,13 @@ function AdminEventos() {
                 <div className="font-semibold text-deep dark:text-white">{e.nome}</div>
                 {e.imagem_url && (
                   <div className="mt-2">
-                    <img src={e.imagem_url} alt="" className="h-12 w-20 object-cover rounded-lg" />
+                    <img
+                      src={e.imagem_url}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="h-12 w-20 object-cover rounded-lg"
+                    />
                   </div>
                 )}
               </td>
@@ -312,6 +318,8 @@ function AdminEventos() {
                     <img
                       src={editing.imagem_url}
                       alt="Prévia da capa do evento"
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover"
                     />
                     <button

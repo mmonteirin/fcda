@@ -137,6 +137,8 @@ function AdminModalidades() {
                     <img
                       src={m.img_url}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="h-12 w-12 object-cover rounded-lg"
                     />
                   )}
@@ -254,6 +256,8 @@ function AdminModalidades() {
                     <img
                       src={editing.img_url}
                       alt="Preview"
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-40 object-cover rounded-lg"
                     />
                     <button

@@ -185,6 +185,8 @@ function ClubesAdmin() {
                       <img
                         src={clube.logo_url}
                         alt={clube.nome}
+                        loading="lazy"
+                        decoding="async"
                         className="h-8 w-8 object-contain rounded"
                       />
                     )}
@@ -292,6 +294,8 @@ function ClubesAdmin() {
                     <img
                       src={formData.logo_url}
                       alt="Logo do clube"
+                      loading="lazy"
+                      decoding="async"
                       className="h-16 w-auto object-contain rounded border"
                     />
                   </div>

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { Target, Eye, Heart, Award } from "lucide-react";
-import hero from "@/assets/images/mod-natacao.jpg";
+import hero from "@/assets/images/mod-natacao.webp";
 import { diretoresQuery } from "@/lib/api/site-queries";
 
 export const Route = createFileRoute("/sobre")({

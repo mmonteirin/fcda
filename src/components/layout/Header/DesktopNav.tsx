@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import pictogramas from "@/assets/images/pictogramas/modalidades.png";
-import masters from "@/assets/images/pictogramas/masters.png";
+import pictogramas from "@/assets/images/pictogramas/modalidades.webp";
+import masters from "@/assets/images/pictogramas/masters.webp";
 
 type ModalidadeMenu = { label: string; position: string; source?: string };
 

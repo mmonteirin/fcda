@@ -147,6 +147,8 @@ function ParceirosAdmin() {
                     <img
                       src={parceiro.logo_url}
                       alt={parceiro.nome}
+                      loading="lazy"
+                      decoding="async"
                       className="h-10 w-10 object-contain rounded-lg bg-white dark:bg-slate-800 p-1"
                     />
                   )}
@@ -244,6 +246,8 @@ function ParceirosAdmin() {
                 <img
                   src={formData.logo_url}
                   alt="Logo do parceiro"
+                  loading="lazy"
+                  decoding="async"
                   className="h-16 w-auto object-contain rounded-lg border border-border"
                 />
               </div>

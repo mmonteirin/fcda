@@ -127,6 +127,8 @@ function AdminCursos() {
                     <img
                       src={c.imagem_url}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="h-12 w-20 object-cover rounded-lg"
                     />
                   </div>
@@ -252,6 +254,8 @@ function AdminCursos() {
                     <img
                       src={editing.imagem_url}
                       alt="Preview"
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-40 object-cover rounded-lg"
                     />
                     <button

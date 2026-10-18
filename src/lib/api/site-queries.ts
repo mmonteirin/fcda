@@ -609,11 +609,11 @@ export const gestorProfileQuery = (userId: string) =>
   });
 
 // Map slug de modalidade para imagem local fallback
-import imgNatacao from "@/assets/images/mod-natacao.jpg";
-import imgPolo from "@/assets/images/mod-polo.jpg";
-import imgSaltos from "@/assets/images/mod-saltos.jpg";
-import imgArtistico from "@/assets/images/mod-artistico.jpg";
-import imgAguas from "@/assets/images/mod-aguas.jpg";
+import imgNatacao from "@/assets/images/mod-natacao.webp";
+import imgPolo from "@/assets/images/mod-polo.webp";
+import imgSaltos from "@/assets/images/mod-saltos.webp";
+import imgArtistico from "@/assets/images/mod-artistico.webp";
+import imgAguas from "@/assets/images/mod-aguas.webp";
 
 const localBySlug: Record<string, string> = {
   natacao: imgNatacao,

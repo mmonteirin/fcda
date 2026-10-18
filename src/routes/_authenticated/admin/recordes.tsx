@@ -183,6 +183,8 @@ function AdminRecordes() {
                 <img
                   src={form.foto_url}
                   alt="Prévia"
+                  loading="lazy"
+                  decoding="async"
                   className="mt-3 h-32 w-24 rounded-lg object-cover"
                 />
               )}

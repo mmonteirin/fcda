@@ -221,6 +221,8 @@ function AtletasTransparencia() {
                         <img
                           src={logoUrl}
                           alt={clube}
+                          loading="lazy"
+                          decoding="async"
                           className="h-10 w-10 rounded-full object-cover"
                         />
                       ) : (
@@ -336,6 +338,8 @@ function AtletasTransparencia() {
                                 <img
                                   src={logoUrl}
                                   alt={x.clube}
+                                  loading="lazy"
+                                  decoding="async"
                                   className="h-6 w-6 rounded-full object-cover"
                                 />
                               ) : null}

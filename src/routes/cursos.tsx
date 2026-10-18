@@ -83,6 +83,8 @@ function CursoCard({ curso }: { curso: Curso }) {
           <img
             src={curso.imagem_url}
             alt={curso.titulo}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300"
           />
         </div>

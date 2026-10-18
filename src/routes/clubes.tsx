@@ -108,6 +108,8 @@ function ClubeCard({ clube }: { clube: Clube }) {
           <img
             src={clube.logo_url}
             alt={clube.nome}
+            loading="lazy"
+            decoding="async"
             className="h-16 w-16 object-contain rounded-lg"
           />
         ) : (
