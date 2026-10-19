@@ -26,8 +26,8 @@ jobs:
 
       - name: Validate Supabase frontend configuration
         env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://ucesipxemhrugmqwxtei.supabase.co' }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_Sf19DBS7HhDQRi4h1pxXWQ_pd-rjTSr' }}
         run: |
           test -n "$VITE_SUPABASE_URL" || { echo "::error::Configure the VITE_SUPABASE_URL Actions variable."; exit 1; }
           test -n "$VITE_SUPABASE_PUBLISHABLE_KEY" || { echo "::error::Configure the VITE_SUPABASE_PUBLISHABLE_KEY Actions variable."; exit 1; }
@@ -35,8 +35,8 @@ jobs:
       - name: Build project
         run: bun run build
         env:
-          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://ucesipxemhrugmqwxtei.supabase.co' }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_Sf19DBS7HhDQRi4h1pxXWQ_pd-rjTSr' }}
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
