@@ -2,11 +2,13 @@ import {
   ArrowRight,
   ArrowUpRight,
   Calendar,
+  CalendarDays,
+  Building2,
   MapPin,
   Sparkles,
+  ShieldCheck,
   Trophy,
   Users,
-  Waves,
   ChevronRight,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -38,12 +40,28 @@ interface HeroBannerProps {
   interval?: number;
 }
 
+function getFcdaAnniversary() {
+  const today = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Fortaleza",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(new Date());
+  const parts = Object.fromEntries(today.map(({ type, value }) => [type, Number(value)]));
+  const alreadyCelebrated = parts.month > 6 || (parts.month === 6 && parts.day >= 6);
+  return {
+    age: parts.year - 1958 - (alreadyCelebrated ? 0 : 1),
+    year: parts.year,
+  };
+}
+
 export function HeroBanner({ slides, eventos }: HeroBannerProps) {
   if (slides.length === 0) return null;
 
   const mainSlide = slides[0];
   const secondarySlide = slides[1] || slides[0];
   const proximoEvento = eventos.length > 0 ? eventos[0] : null;
+  const aniversario = getFcdaAnniversary();
 
   return (
     <section className="relative overflow-hidden bg-hero text-primary-foreground pt-8 pb-12 lg:pt-12 lg:pb-16 animate-fade-in">
@@ -58,7 +76,7 @@ export function HeroBanner({ slides, eventos }: HeroBannerProps) {
           <div className="space-y-3 max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-gold/15 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.2em] text-gold border border-gold/30 backdrop-blur-md">
               <Sparkles className="h-3.5 w-3.5 text-gold" />
-              Desde 1958 • Filiada à CBDA
+              Desde 1958 • {aniversario.age} anos de história
             </div>
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
@@ -232,32 +250,23 @@ export function HeroBanner({ slides, eventos }: HeroBannerProps) {
         </div>
 
         {/* FAIXA INFERIOR COM NÚMEROS DA FEDERAÇÃO */}
-        <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 rounded-3xl border border-white/10 bg-white/5 p-4 sm:p-6 backdrop-blur-md">
-          <div className="text-center p-2">
-            <div className="text-2xl sm:text-3xl font-extrabold text-gold">67+</div>
-            <div className="text-xs text-primary-foreground/70 uppercase tracking-wider font-semibold mt-0.5">
-              Anos de História
-            </div>
+        <section aria-label="Números da FCDA" className="mt-8 overflow-hidden rounded-3xl border border-white/15 bg-[#041c18]/70 shadow-[0_18px_50px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+          <div className="grid grid-cols-2 divide-x divide-y divide-white/10 sm:grid-cols-4 sm:divide-y-0">
+            {[
+              { value: aniversario.age, label: "Anos de história", context: "Desde 6 de junho de 1958", icon: CalendarDays },
+              { value: "2.062", label: "Atletas ativos", context: "Na entidade", icon: Users },
+              { value: "107", label: "Clubes ativos", context: "Na entidade", icon: Building2 },
+              { value: "84", label: "Árbitros ativos", context: "Na entidade", icon: ShieldCheck },
+            ].map(({ value, label, context, icon: Icon }) => (
+              <div key={label} className="group flex min-h-32 flex-col items-center justify-center px-3 py-5 text-center transition-colors hover:bg-white/5 motion-reduce:transition-none sm:min-h-36 sm:px-5">
+                <Icon aria-hidden="true" className="mb-2 h-4 w-4 text-gold/90 transition-transform group-hover:-translate-y-0.5 motion-reduce:transition-none" />
+                <p className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">{value}</p>
+                <p className="mt-1 text-xs font-bold uppercase tracking-[0.12em] text-primary-foreground/90 sm:text-sm">{label}</p>
+                <p className="mt-1 text-[11px] text-primary-foreground/60">{context}</p>
+              </div>
+            ))}
           </div>
-          <div className="text-center p-2 border-l border-white/10">
-            <div className="text-2xl sm:text-3xl font-extrabold text-gold">5</div>
-            <div className="text-xs text-primary-foreground/70 uppercase tracking-wider font-semibold mt-0.5">
-              Modalidades
-            </div>
-          </div>
-          <div className="text-center p-2 border-l border-white/10">
-            <div className="text-2xl sm:text-3xl font-extrabold text-gold">100+</div>
-            <div className="text-xs text-primary-foreground/70 uppercase tracking-wider font-semibold mt-0.5">
-              Clubes Filiados
-            </div>
-          </div>
-          <div className="text-center p-2 border-l border-white/10">
-            <div className="text-2xl sm:text-3xl font-extrabold text-gold">2026</div>
-            <div className="text-xs text-primary-foreground/70 uppercase tracking-wider font-semibold mt-0.5">
-              Circuito Ativo
-            </div>
-          </div>
-        </div>
+        </section>
       </div>
     </section>
   );
