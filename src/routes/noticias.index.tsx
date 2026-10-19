@@ -83,7 +83,7 @@ function Noticias() {
           <h2 className="mt-3 text-4xl font-bold text-deep mb-12">Em destaque</h2>
 
           {noticias.length === 0 ? (
-            <p className="text-muted-foreground">Nenhuma notícia publicada ainda.</p>
+            <div className="rounded-2xl border border-border bg-card px-6 py-12 text-center shadow-sm"><p className="text-xl font-bold text-deep">Novidades em breve</p><p className="mt-2 text-muted-foreground">Ainda não há notícias publicadas.</p><Link to="/eventos" className="mt-5 inline-flex items-center rounded-full bg-deep px-5 py-2.5 text-sm font-bold text-deep-foreground hover:bg-primary">Ver calendário de eventos</Link></div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {noticias.map((n) => (
@@ -91,7 +91,8 @@ function Noticias() {
                   key={n.id}
                   to="/noticias/$id"
                   params={{ id: n.slug }}
-                  className="group rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card hover:shadow-elegant transition-all hover:-translate-y-1"
+                  className="group motion-safe:animate-fade-in-up rounded-2xl bg-card border border-border/60 overflow-hidden shadow-card hover:shadow-elegant transition-all hover:-translate-y-1 motion-reduce:transition-none"
+                  aria-label={`Ler notícia: ${n.titulo}`}
                 >
                   <div className="aspect-[4/3] bg-emerald-gradient relative overflow-hidden">
                     {n.imagem_url && (
@@ -129,7 +130,7 @@ function Noticias() {
           <h2 className="mt-3 text-4xl font-bold text-deep mb-12">Próximos eventos</h2>
 
           {eventosFuturos.length === 0 ? (
-            <p className="text-muted-foreground">Nenhum evento futuro cadastrado.</p>
+            <div className="rounded-2xl border border-border bg-card px-6 py-10 text-center"><p className="font-semibold text-deep">Nenhum evento futuro cadastrado.</p><Link to="/eventos" className="mt-4 inline-flex items-center rounded-full border border-border px-5 py-2.5 text-sm font-bold text-deep hover:bg-secondary">Consultar calendário completo</Link></div>
           ) : (
             <div className="rounded-2xl bg-card border border-border overflow-hidden shadow-card">
               {eventosFuturos.map((e) => (

@@ -17,6 +17,7 @@ import {
   Share2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ReadingProgress } from "@/components/ui/reading-progress";
 
 import imgNatacao from "@/assets/images/mod-natacao.webp";
 import imgPolo from "@/assets/images/mod-polo.webp";
@@ -43,6 +44,9 @@ export const Route = createFileRoute("/noticias/$id")({
         { property: "og:title", content: noticia?.titulo ?? "FCDA" },
         { property: "og:description", content: noticia?.resumo ?? "" },
         ...(noticia?.imagem_url ? [{ property: "og:image", content: noticia.imagem_url }] : []),
+        { property: "og:type", content: "article" },
+        { name: "twitter:card", content: "summary_large_image" },
+        ...(noticia?.imagem_url ? [{ name: "twitter:image", content: noticia.imagem_url }] : []),
       ],
     };
   },
@@ -178,6 +182,7 @@ function NoticiaDetalhes() {
 
   return (
     <SiteLayout>
+      <ReadingProgress />
       {/* ── HERO BANNER REFINADO ── */}
       <section className="relative overflow-hidden bg-deep text-primary-foreground min-h-[440px] md:min-h-[500px] flex items-end">
         <div className="absolute inset-0 z-0">

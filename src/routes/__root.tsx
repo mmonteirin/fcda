@@ -80,7 +80,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  head: ({ match }) => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
@@ -98,14 +98,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "Site oficial da Federação Cearense de Desportos Aquáticos. Calendário, notícias e resultados.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { property: "og:image", content: "https://fcda.org.br/og-fcda.webp" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@FCDA" },
+      { name: "twitter:image", content: "https://fcda.org.br/og-fcda.webp" },
       {
         name: "theme-color",
         content: "#073c2f",
       },
     ],
     links: [
+      { rel: "canonical", href: `https://fcda.org.br${match.pathname}` },
       { rel: "manifest", href: "/manifest.json" },
       {
         rel: "preload",

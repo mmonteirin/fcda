@@ -34,6 +34,7 @@ import {
   Compass,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ReadingProgress } from "@/components/ui/reading-progress";
 
 import imgNatacao from "@/assets/images/mod-natacao.webp";
 import imgPolo from "@/assets/images/mod-polo.webp";
@@ -94,6 +95,9 @@ export const Route = createFileRoute("/eventos/$id")({
             `Confira informações, local, balizamentos e resultados do ${evento?.nome || "evento"}.`,
         },
         ...(evento?.imagem_url ? [{ property: "og:image", content: evento.imagem_url }] : []),
+        { property: "og:type", content: "article" },
+        { name: "twitter:card", content: "summary_large_image" },
+        ...(evento?.imagem_url ? [{ name: "twitter:image", content: evento.imagem_url }] : []),
       ],
     };
   },
@@ -283,6 +287,7 @@ function EventoDetalhes() {
 
   return (
     <SiteLayout>
+      <ReadingProgress />
       {/* ── HERO BANNER DINÂMICO DE ALTO IMPACTO ── */}
       <section className="relative flex min-h-[420px] items-end overflow-hidden bg-deep text-primary-foreground lg:min-h-[480px]">
         {/* Imagem de Fundo com Tratamento Artístico */}

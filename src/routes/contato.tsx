@@ -119,7 +119,7 @@ function Contato() {
 
           <div className="rounded-2xl bg-card border border-border p-8 shadow-elegant">
             {status === "sent" ? (
-              <div className="text-center py-12">
+              <div className="text-center py-12" role="status" aria-live="polite">
                 <div className="h-16 w-16 rounded-full bg-emerald-500/10 grid place-items-center text-emerald-600 mx-auto mb-6">
                   <CheckCircle className="h-8 w-8" />
                 </div>
@@ -140,6 +140,7 @@ function Contato() {
                 ref={formRef}
                 onSubmit={handleSubmit}
               >
+                <p className="sr-only" role="status" aria-live="polite">{status === "sending" ? "Enviando mensagem." : status === "error" ? "Erro ao enviar. Tente novamente." : ""}</p>
                 <h2 className="text-2xl font-bold text-deep">Envie uma mensagem</h2>
                 <p className="text-sm text-muted-foreground mt-1">Retornamos em até 2 dias úteis.</p>
 
@@ -163,7 +164,7 @@ function Contato() {
                 </div>
 
                 {status === "error" && (
-                  <p className="mt-4 text-sm text-destructive">Erro ao enviar. Tente novamente.</p>
+                  <p className="mt-4 text-sm text-destructive" role="alert">Erro ao enviar. Tente novamente.</p>
                 )}
 
                 <button

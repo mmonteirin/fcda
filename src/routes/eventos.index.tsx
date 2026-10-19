@@ -280,8 +280,10 @@ function Eventos() {
             </a>
           </div>
           {proximosEventos.length === 0 ? (
-            <div className="mt-8 rounded-2xl border border-dashed border-border bg-card/70 p-8 text-center text-muted-foreground">
-              Nenhum evento futuro cadastrado para esta temporada.
+            <div className="mt-8 rounded-2xl border border-dashed border-border bg-card/70 p-8 text-center">
+              <p className="font-semibold text-deep">Nenhum evento futuro cadastrado para esta temporada.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Enquanto isso, consulte as competições e resultados já publicados.</p>
+              <a href="#calendario" className="mt-5 inline-flex items-center gap-2 rounded-full bg-deep px-5 py-2.5 text-sm font-bold text-deep-foreground transition hover:bg-primary">Abrir calendário completo <ArrowRight aria-hidden="true" className="h-4 w-4"/></a>
             </div>
           ) : (
             <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -290,7 +292,7 @@ function Eventos() {
                 return (
                   <article
                     key={evento.id}
-                    className="group overflow-hidden rounded-2xl border border-border bg-card shadow-card transition duration-300 hover:-translate-y-1 hover:shadow-elegant"
+                    className="group motion-safe:animate-fade-in-up overflow-hidden rounded-2xl border border-border bg-card shadow-card transition duration-300 hover:-translate-y-1 hover:shadow-elegant motion-reduce:transition-none"
                   >
                     {evento.imagem_url ? (
                       <div className="aspect-[16/9] overflow-hidden bg-secondary">

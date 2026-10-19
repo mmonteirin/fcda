@@ -1,8 +1,22 @@
 import { mkdir, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 
 const siteUrl = (process.env.SITE_URL || "https://fcda.org.br").replace(/\/$/, "");
-const supabaseUrl = process.env.VITE_SUPABASE_URL || "https://ucesipxemhrugmqwxtei.supabase.co";
-const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const [dotenvConfig, cloudflareVars] = await Promise.all([
+  readFile(".env", "utf8").catch(() => ""),
+  readFile(".dev.vars", "utf8").catch(() => ""),
+]);
+const readConfigValue = (...names: string[]) => {
+  for (const name of names) {
+    const value = [process.env[name], ...[dotenvConfig, cloudflareVars].map((file) =>
+      file.split(/\r?\n/).find((line) => line.startsWith(`${name}=`))?.slice(name.length + 1),
+    )].find(Boolean);
+    if (value) return value.trim().replace(/^['"]|['"]$/g, "");
+  }
+  return undefined;
+};
+const supabaseUrl = readConfigValue("VITE_SUPABASE_URL", "SUPABASE_URL") || "https://ucesipxemhrugmqwxtei.supabase.co";
+const supabaseKey = readConfigValue("VITE_SUPABASE_PUBLISHABLE_KEY", "SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY");
 const staticPaths = [
   "/",
   "/sobre",
@@ -21,25 +35,34 @@ const staticPaths = [
   "/contato",
 ];
 
-async function fetchSlugs(table: string, column: string) {
+async function fetchValues(table: string, column: string, publishedOnly = true) {
   if (!supabaseKey) return [] as string[];
-  const response = await fetch(
-    `${supabaseUrl}/rest/v1/${table}?select=${column}&publicado=eq.true`,
-    { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } },
-  );
-  if (!response.ok) return [] as string[];
-  const rows = (await response.json()) as Array<Record<string, string | null>>;
-  return rows.map((row) => row[column]).filter((value): value is string => Boolean(value));
+  const publishedFilter = publishedOnly ? "&publicado=eq.true" : "";
+  try {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/${table}?select=${column}${publishedFilter}`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } },
+    );
+    if (!response.ok) return [] as string[];
+    const rows = (await response.json()) as Array<Record<string, string | null>>;
+    return rows.map((row) => row[column]).filter((value): value is string => Boolean(value));
+  } catch {
+    return [] as string[];
+  }
 }
 
-const [noticiaSlugs, eventoIds] = await Promise.all([
-  fetchSlugs("noticias", "slug"),
-  fetchSlugs("eventos", "id"),
+const [noticiaSlugs, eventoIds, rankingIds, cursoIds] = await Promise.all([
+  fetchValues("noticias", "slug"),
+  fetchValues("eventos", "id", false),
+  fetchValues("rankings", "id"),
+  fetchValues("cursos", "id"),
 ]);
 const paths = [
   ...staticPaths,
   ...noticiaSlugs.map((slug) => `/noticias/${encodeURIComponent(slug)}`),
   ...eventoIds.map((id) => `/eventos/${encodeURIComponent(id)}`),
+  ...rankingIds.map((id) => `/rankings/${encodeURIComponent(id)}`),
+  ...cursoIds.map((id) => `/cursos/${encodeURIComponent(id)}`),
 ];
 const urls = paths
   .map((path) => `  <url><loc>${siteUrl}${path}</loc></url>`)

@@ -8,6 +8,8 @@ import {
   type CategoriaModalidade,
 } from "@/lib/api/site-queries";
 
+const slugify = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
 export const Route = createFileRoute("/modalidades")({
   head: () => ({
     meta: [
@@ -41,6 +43,7 @@ function Modalidades() {
     {} as Record<string, typeof modalidades>,
   );
   const modalidadesSemCategoria = modalidades.filter((m) => !m.categoria_id);
+  const categoriasVisiveis = categorias.filter((cat) => (modalidadesByCategoria[cat.id] || []).length > 0);
 
   return (
     <SiteLayout>
@@ -61,13 +64,15 @@ function Modalidades() {
         </div>
       </section>
 
+      {categoriasVisiveis.length > 1 && <nav aria-label="Navegar pelas modalidades" className="sticky top-0 z-30 border-b border-border bg-background/95 py-3 shadow-sm backdrop-blur"><div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-6">{categoriasVisiveis.map((cat) => <a key={cat.id} href={`#modalidade-${slugify(cat.slug || cat.nome)}`} className="shrink-0 rounded-full border border-border px-4 py-2 text-sm font-semibold text-deep transition hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">{cat.nome}</a>)}</div></nav>}
+
       <section className="py-24">
         <div className="mx-auto max-w-7xl px-6">
           {categorias.map((cat) => {
             const catModalidades = modalidadesByCategoria[cat.id] || [];
             if (catModalidades.length === 0) return null;
             return (
-              <div key={cat.id} className="mb-24">
+              <div key={cat.id} id={`modalidade-${slugify(cat.slug || cat.nome)}`} className="mb-24 scroll-mt-28">
                 <div className="mb-8">
                   <h2 className="text-3xl font-bold text-deep">{cat.nome}</h2>
                   {cat.descricao && <p className="mt-2 text-muted-foreground">{cat.descricao}</p>}

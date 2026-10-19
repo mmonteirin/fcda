@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/layout/SiteLayout";
 import { cursosQuery, type Curso } from "@/lib/api/site-queries";
-import { Calendar, Clock, MapPin, ExternalLink } from "lucide-react";
+import { Calendar, Clock, MapPin, ExternalLink, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/cursos")({
   head: () => ({
@@ -75,6 +75,9 @@ function CursoCard({ curso }: { curso: Curso }) {
 
   const dataInicio = formatDate(curso.data_inicio);
   const dataFim = formatDate(curso.data_fim);
+  const hoje = new Date().toISOString().slice(0, 10);
+  const encerrado = Boolean(curso.data_fim && curso.data_fim < hoje);
+  const status = encerrado ? "Encerrado" : curso.link_inscricao ? "Inscrições abertas" : "Em breve";
 
   return (
     <article className="group rounded-2xl bg-card border border-border/60 shadow-card hover:shadow-elegant transition-all hover:-translate-y-1 overflow-hidden">
@@ -90,6 +93,7 @@ function CursoCard({ curso }: { curso: Curso }) {
         </div>
       )}
       <div className="p-6">
+        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${encerrado ? "bg-secondary text-muted-foreground" : curso.link_inscricao ? "bg-emerald-100 text-emerald-800" : "bg-gold/20 text-deep"}`}>{status}</span>
         <h2 className="text-xl font-bold text-deep group-hover:text-primary transition-colors">
           {curso.titulo}
         </h2>
@@ -121,7 +125,10 @@ function CursoCard({ curso }: { curso: Curso }) {
           )}
         </div>
 
-        {curso.link_inscricao && (
+        <Link to="/cursos/$id" params={{ id: curso.id }} className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full border border-border px-6 py-3 text-sm font-bold text-deep transition hover:bg-secondary">
+          Detalhes do curso <ArrowRight className="h-4 w-4" />
+        </Link>
+        {curso.link_inscricao && !encerrado && (
           <a
             href={curso.link_inscricao}
             target="_blank"

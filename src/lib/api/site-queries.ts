@@ -265,6 +265,69 @@ export const recordesBuscaQuery = queryOptions({
   },
 });
 
+export type Recorde = {
+  id: string;
+  piscina: string;
+  sexo: string;
+  prova: string;
+  atleta_nome: string;
+  foto_url: string | null;
+  marca: string;
+  ano_estabelecimento: number;
+};
+
+export const recordesQuery = queryOptions({
+  queryKey: ["recordes"],
+  queryFn: async (): Promise<Recorde[]> => {
+    const sb = asDynamicSupabase(supabase);
+    const { data, error } = await sb.from("recordes").select("*").eq("publicado", true).order("prova");
+    if (error) throw error;
+    return data ?? [];
+  },
+  staleTime: 5 * 60_000,
+});
+
+export type ClassificacaoRanking = {
+  id: string;
+  atleta_nome: string;
+  ano_nascimento: number;
+  categoria: string;
+  clube: string;
+  pontuacoes: Record<string, unknown>;
+  pontuacao_final: number;
+};
+
+export type Ranking = {
+  id: string;
+  nome: string;
+  ano: number;
+  descricao: string | null;
+  ranking_classificacoes: ClassificacaoRanking[];
+};
+
+export const rankingsQuery = queryOptions({
+  queryKey: ["rankings"],
+  queryFn: async (): Promise<Ranking[]> => {
+    const sb = asDynamicSupabase(supabase);
+    const { data, error } = await sb.from("rankings").select("*,ranking_classificacoes(*)").eq("publicado", true).order("ano", { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+  staleTime: 5 * 60_000,
+});
+
+export const rankingByIdQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["ranking", id],
+    queryFn: async (): Promise<Ranking | null> => {
+      const sb = asDynamicSupabase(supabase);
+      const { data, error } = await sb.from("rankings").select("*,ranking_classificacoes(*)").eq("id", id).eq("publicado", true).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60_000,
+  });
+
 export const usersQuery = queryOptions({
   queryKey: ["users"],
   queryFn: async (): Promise<UserWithRoles[]> => {
@@ -506,6 +569,18 @@ export const cursosQuery = (onlyPublished = true) =>
       if (error) throw error;
       return data ?? [];
     },
+  });
+
+export const cursoByIdQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["curso", id],
+    queryFn: async (): Promise<Curso | null> => {
+      const sb = asDynamicSupabase(supabase);
+      const { data, error } = await sb.from("cursos").select("*").eq("id", id).eq("publicado", true).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60_000,
   });
 
 // ============ PERFIS DE USUÁRIO ============
