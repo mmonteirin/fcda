@@ -8,8 +8,9 @@ import { cloudflare } from "@cloudflare/vite-plugin";
 import type { Plugin } from "vite";
 
 // ── Env vars ────────────────────────────────────────────────────────────────
-// TanStack Start uses Rolldown for the client environment build.
-// Rolldown does NOT pick up Vite's top-level `define` substitutions, so we inject VITE_* vars explicitly via rolldownOptions.define.
+// TanStack Start uses Vite's client environment build.
+// Define the public Supabase values on that environment so the browser bundle
+// receives them at build time without exposing any server-only secrets.
 //
 // loadEnv reads .env / .env.local / .env.production from the project root.
 // We use "" as prefix to capture every variable, then filter to VITE_* below.
@@ -43,11 +44,7 @@ export default defineConfig({
   ],
   environments: {
     client: {
-      build: {
-        rolldownOptions: {
-          define: clientRolldownDefine,
-        },
-      },
+      define: clientRolldownDefine,
     },
   },
 });

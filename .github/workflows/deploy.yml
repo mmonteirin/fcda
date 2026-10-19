@@ -38,6 +38,14 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://ucesipxemhrugmqwxtei.supabase.co' }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_Sf19DBS7HhDQRi4h1pxXWQ_pd-rjTSr' }}
 
+      - name: Verify Supabase config in client bundle
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL || 'https://ucesipxemhrugmqwxtei.supabase.co' }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_Sf19DBS7HhDQRi4h1pxXWQ_pd-rjTSr' }}
+        run: |
+          grep -R -F -q "$VITE_SUPABASE_URL" dist/client/assets || { echo "::error::Supabase URL was not embedded in the client bundle."; exit 1; }
+          grep -R -F -q "$VITE_SUPABASE_PUBLISHABLE_KEY" dist/client/assets || { echo "::error::Supabase publishable key was not embedded in the client bundle."; exit 1; }
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
