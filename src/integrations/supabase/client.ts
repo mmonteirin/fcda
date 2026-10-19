@@ -3,17 +3,21 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
 function createSupabaseClient() {
+  // These are public Supabase project values. Keep them as a client fallback
+  // so deployments built outside the GitHub Actions workflow still work.
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
   // Also accept VITE_* prefixed vars from process.env for flexibility
   const SUPABASE_URL =
     import.meta.env.VITE_SUPABASE_URL ||
     process.env.VITE_SUPABASE_URL ||
-    process.env.SUPABASE_URL;
+    process.env.SUPABASE_URL ||
+    "https://ucesipxemhrugmqwxtei.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY =
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.SUPABASE_PUBLISHABLE_KEY;
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    "sb_publishable_Sf19DBS7HhDQRi4h1pxXWQ_pd-rjTSr";
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
