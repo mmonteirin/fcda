@@ -1,11 +1,21 @@
 import { Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Menu, X, LogIn, Shield, ChevronDown, ChevronRight, User, GraduationCap } from "lucide-react";
+import {
+  Menu,
+  X,
+  LogIn,
+  Shield,
+  ChevronDown,
+  ChevronRight,
+  User,
+  GraduationCap,
+} from "lucide-react";
 import { useAuth } from "@/lib/auth/use-auth";
 import logoFCDA from "@/assets/images/logoFCDA.webp";
 import { DesktopNav } from "./DesktopNav";
 import { TopBar } from "./TopBar";
 import { GlobalSearchModal } from "@/components/features/search/GlobalSearchModal";
+import { modalidadePictograms } from "@/lib/data/modalidade-pictograms";
 
 const nav = [
   { to: "/", label: "Início" },
@@ -20,13 +30,13 @@ const nav = [
 ] as const;
 
 const modalidades = [
-  { label: "Natação", icon: "🏊" },
-  { label: "Polo Aquático", icon: "🤽" },
-  { label: "Águas Abertas", icon: "🌊" },
-  { label: "Nado Artístico", icon: "🎨" },
-  { label: "Saltos Ornamentais", icon: "🏊" },
-  { label: "Masters", icon: "🏅" },
-  { label: "Paralímpico", icon: "♿" },
+  { label: "Natação", icon: modalidadePictograms["Natação"] },
+  { label: "Polo Aquático", icon: modalidadePictograms["Polo Aquático"] },
+  { label: "Águas Abertas", icon: modalidadePictograms["Águas Abertas"] },
+  { label: "Nado Artístico", icon: modalidadePictograms["Nado Artístico"] },
+  { label: "Saltos Ornamentais", icon: modalidadePictograms["Saltos Ornamentais"] },
+  { label: "Masters", icon: modalidadePictograms.Masters },
+  { label: "Paranatação", icon: modalidadePictograms.Paranatação },
 ] as const;
 
 const competicoes = [
@@ -96,9 +106,12 @@ function MobileSubMenu({
             className="flex items-center gap-3 px-4 py-3 text-base font-semibold text-deep hover:bg-secondary/50 transition-colors rounded-lg"
           >
             {item.icon && (
-              <span className="text-xl" aria-hidden="true">
-                {item.icon}
-              </span>
+              <img
+                src={item.icon}
+                alt=""
+                className="h-9 w-9 rounded-lg border border-border/60 bg-white object-cover p-0.5"
+                aria-hidden="true"
+              />
             )}
             {item.label}
           </Link>

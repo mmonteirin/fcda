@@ -1,19 +1,18 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronDown } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import pictogramas from "@/assets/images/pictogramas/modalidades.webp";
-import masters from "@/assets/images/pictogramas/masters.webp";
+import { modalidadePictograms } from "@/lib/data/modalidade-pictograms";
 
-type ModalidadeMenu = { label: string; position: string; source?: string };
+type ModalidadeMenu = { label: string; source: string };
 
 const modalidades: readonly ModalidadeMenu[] = [
-  { label: "Natação", position: "0% 0%" },
-  { label: "Polo Aquático", position: "50% 0%" },
-  { label: "Águas Abertas", position: "50% 100%" },
-  { label: "Nado Artístico", position: "0% 100%" },
-  { label: "Saltos Ornamentais", position: "100% 0%" },
-  { label: "Masters", position: "center", source: masters },
-  { label: "Paralímpico", position: "100% 100%" },
+  { label: "Natação", source: modalidadePictograms["Natação"] },
+  { label: "Polo Aquático", source: modalidadePictograms["Polo Aquático"] },
+  { label: "Águas Abertas", source: modalidadePictograms["Águas Abertas"] },
+  { label: "Nado Artístico", source: modalidadePictograms["Nado Artístico"] },
+  { label: "Saltos Ornamentais", source: modalidadePictograms["Saltos Ornamentais"] },
+  { label: "Masters", source: modalidadePictograms.Masters },
+  { label: "Paranatação", source: modalidadePictograms.Paranatação },
 ];
 
 const competicoes = [
@@ -176,21 +175,49 @@ export function DesktopNav() {
         />
         <MegaMenuContent isOpen={openMenu === "federacao"} className="w-[34rem]">
           <div className="mb-3 grid grid-cols-2 gap-2 border-b border-border pb-3" role="none">
-            <Link to="/sobre" className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary" role="menuitem" tabIndex={-1}>
+            <Link
+              to="/sobre"
+              className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary"
+              role="menuitem"
+              tabIndex={-1}
+            >
               A FCDA
-              <span className="mt-1 block text-xs font-normal text-muted-foreground">Conheça a federação</span>
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                Conheça a federação
+              </span>
             </Link>
-            <Link to="/cursos" className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary" role="menuitem" tabIndex={-1}>
+            <Link
+              to="/cursos"
+              className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary"
+              role="menuitem"
+              tabIndex={-1}
+            >
               Cursos
-              <span className="mt-1 block text-xs font-normal text-muted-foreground">Capacitação esportiva</span>
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                Capacitação esportiva
+              </span>
             </Link>
-            <Link to="/clubes" className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary" role="menuitem" tabIndex={-1}>
+            <Link
+              to="/clubes"
+              className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary"
+              role="menuitem"
+              tabIndex={-1}
+            >
               Clubes filiados
-              <span className="mt-1 block text-xs font-normal text-muted-foreground">Rede esportiva</span>
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                Rede esportiva
+              </span>
             </Link>
-            <Link to="/contato" className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary" role="menuitem" tabIndex={-1}>
+            <Link
+              to="/contato"
+              className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary"
+              role="menuitem"
+              tabIndex={-1}
+            >
               Contato
-              <span className="mt-1 block text-xs font-normal text-muted-foreground">Fale com a FCDA</span>
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                Fale com a FCDA
+              </span>
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-1" role="none">
@@ -202,13 +229,12 @@ export function DesktopNav() {
                 role="menuitem"
                 tabIndex={-1}
               >
-                <span
-                  className="h-8 w-8 shrink-0 rounded-lg bg-white bg-no-repeat"
-                  style={{
-                    backgroundImage: `url(${modalidade.source ?? pictogramas})`,
-                    backgroundPosition: modalidade.position,
-                    backgroundSize: modalidade.source ? "cover" : "300% 200%",
-                  }}
+                <img
+                  src={modalidade.source}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-10 w-10 shrink-0 rounded-xl border border-border/60 bg-white object-cover p-0.5"
                   aria-hidden="true"
                 />
                 {modalidade.label}
