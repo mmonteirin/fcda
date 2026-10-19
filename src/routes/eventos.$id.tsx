@@ -32,6 +32,9 @@ import {
   Waves,
   ShieldCheck,
   Compass,
+  Search,
+  ListChecks,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ReadingProgress } from "@/components/ui/reading-progress";
@@ -955,205 +958,269 @@ function SwimSystemCompetitionPanel({
   syncedAt: string;
   meetId: string;
 }) {
+  const [activeView, setActiveView] = useState<"overview" | "program" | "results">("overview");
+  const [eventSearch, setEventSearch] = useState("");
+  const [resultSearch, setResultSearch] = useState("");
   const data = snapshot;
   const sessions = data.sessions ?? [];
   const events = data.events ?? [];
   const results = data.results?.results ?? [];
   const swimSystemUrl = `https://www.swimsystem.app/meets/sw/${encodeURIComponent(meetId)}`;
+  const filteredEvents = events.filter((event, index) => {
+    const haystack = [
+      displaySwimField(event.name),
+      displaySwimField(event.eventName),
+      displaySwimField(event.title),
+      displaySwimField(event.gender),
+      displaySwimField(event.agegroup),
+      displaySwimField(event.category),
+      displaySwimField(event.round),
+      displayValue(event.eventNumber) || String(index + 1),
+    ]
+      .join(" ")
+      .toLocaleLowerCase("pt-BR");
+    return haystack.includes(eventSearch.trim().toLocaleLowerCase("pt-BR"));
+  });
+  const filteredResults = results.filter((result) => {
+    const athlete = result.athlete as Record<string, unknown> | undefined;
+    const club = result.club as Record<string, unknown> | undefined;
+    const agegroup = result.agegroup as Record<string, unknown> | undefined;
+    const haystack = [
+      [athlete?.firstName, athlete?.lastName].map(displayValue).filter(Boolean).join(" "),
+      displayValue(club?.shortname),
+      displayValue(club?.name),
+      displayValue(agegroup?.name),
+      displayValue(result.eventNumber),
+      displaySwimField(result.event),
+      displaySwimField(result.eventName),
+    ]
+      .join(" ")
+      .toLocaleLowerCase("pt-BR");
+    return haystack.includes(resultSearch.trim().toLocaleLowerCase("pt-BR"));
+  });
+  const meetName = displaySwimField(data.meet?.name);
+  const lastSync = new Date(syncedAt);
+  const syncLabel = Number.isNaN(lastSync.getTime())
+    ? ""
+    : lastSync.toLocaleString("pt-BR", {
+        timeZone: "America/Fortaleza",
+        dateStyle: "short",
+        timeStyle: "short",
+      });
 
   return (
-    <section className="mb-8 rounded-3xl border border-sky-500/20 bg-card p-6 shadow-sm sm:p-8">
-      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <div className="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">
-            Integração oficial SwimSystem
-          </div>
-          <h2 className="mt-1 text-2xl font-bold text-deep">Horários e resultados</h2>
-          {displayValue(data.meet?.name) && (
-            <p className="mt-1 text-sm text-muted-foreground">{displayValue(data.meet?.name)}</p>
-          )}
-        </div>
-        <div className="flex flex-col items-start gap-2 sm:items-end">
-          <p className="text-xs text-muted-foreground">
-            Sincronizado em{" "}
-            {new Date(syncedAt).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })}
-          </p>
-          <a
-            href={swimSystemUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-sm font-bold text-sky-700 hover:text-sky-900 dark:text-sky-300 dark:hover:text-sky-100"
-          >
-            Abrir competição no SwimSystem <ExternalLink className="h-4 w-4" />
-          </a>
-        </div>
-      </div>
-
-      <div className="mb-8 grid gap-3 sm:grid-cols-3">
-        {[
-          { label: "Etapas", count: sessions.length, icon: Calendar },
-          { label: "Provas", count: events.length, icon: Waves },
-          { label: "Inscrições e resultados", count: results.length, icon: Trophy },
-        ].map(({ label, count, icon: Icon }) => (
-          <div
-            key={label}
-            className="flex items-center gap-3 rounded-2xl border border-border/70 bg-secondary/35 p-4"
-          >
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-card text-sky-700 shadow-sm dark:text-sky-300">
-              <Icon className="h-5 w-5" aria-hidden="true" />
-            </span>
-            <span>
-              <span className="block text-xl font-bold leading-none text-deep">{count}</span>
-              <span className="mt-1 block text-xs text-muted-foreground">{label}</span>
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {sessions.length > 0 && (
-        <div className="mb-8">
-          <h3 className="mb-3 font-bold text-deep">Etapas e horários</h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {sessions.map((session, index) => (
-              <div
-                key={displayValue(session.id) || index}
-                className="rounded-xl bg-secondary/50 p-4"
-              >
-                <p className="font-semibold text-deep">
-                  {displayValue(session.name) || `Etapa ${displayValue(session.number)}`}
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {[session.date, session.daytime].map(displayValue).filter(Boolean).join(" · ")}
-                </p>
-                {displayValue(session.warmupFrom) && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Aquecimento: {displayValue(session.warmupFrom)}
-                    {displayValue(session.warmupUntil) && `–${displayValue(session.warmupUntil)}`}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {events.length > 0 && (
-        <div className="mb-8">
-          <div className="mb-3 flex items-end justify-between gap-3">
-            <div>
-              <h3 className="font-bold text-deep">Programa de provas</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Provas e categorias sincronizadas do SwimSystem.
-              </p>
-            </div>
-            {events.length > 8 && (
-              <span className="text-xs text-muted-foreground">Exibindo 8 de {events.length}</span>
-            )}
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {events.slice(0, 8).map((event, index) => {
-              const eventName =
-                displaySwimField(event.name) ||
-                displaySwimField(event.eventName) ||
-                displaySwimField(event.title) ||
-                [displayValue(event.distance), displaySwimField(event.stroke)]
-                  .filter(Boolean)
-                  .join("m ") ||
-                `Prova ${displayValue(event.eventNumber) || index + 1}`;
-              const details = [
-                displaySwimField(event.gender),
-                displaySwimField(event.agegroup),
-                displaySwimField(event.category),
-                displaySwimField(event.round),
-              ].filter(Boolean);
-              return (
-                <div
-                  key={displayValue(event.id) || index}
-                  className="flex items-start gap-3 rounded-xl border border-border/70 bg-card p-4"
-                >
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-sky-500/10 text-sm font-bold text-sky-800 dark:text-sky-200">
-                    {displayValue(event.eventNumber) || index + 1}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block font-semibold text-deep">{eventName}</span>
-                    {details.length > 0 && (
-                      <span className="mt-1 block text-xs text-muted-foreground">
-                        {details.join(" · ")}
-                      </span>
-                    )}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div>
-        <div className="mb-3 flex items-end justify-between gap-3">
+    <section className="mb-8 overflow-hidden rounded-3xl border border-sky-500/20 bg-card shadow-sm">
+      <header className="relative overflow-hidden bg-gradient-to-br from-sky-950 via-sky-900 to-teal-800 px-6 py-7 text-white sm:px-8">
+        <div className="absolute -right-16 -top-24 h-64 w-64 rounded-full border-[32px] border-white/5" aria-hidden="true" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h3 className="font-bold text-deep">Inscrições e resultados oficiais</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Dados publicados pela organização da competição.
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-sky-100">
+              <Waves className="h-3.5 w-3.5" aria-hidden="true" /> Dados oficiais SwimSystem
+            </p>
+            <h2 className="mt-3 text-2xl font-bold sm:text-3xl">
+              {meetName || "Competição"}
+            </h2>
+            <p className="mt-1 text-sm text-sky-100/85">
+              Programação e resultados sincronizados da competição.
             </p>
           </div>
-          {results.length > 100 && (
-            <span className="text-xs text-muted-foreground">Exibindo 100 de {results.length}</span>
-          )}
-        </div>
-        {results.length > 0 ? (
-          <div className="overflow-x-auto rounded-xl border border-border">
-            <table className="w-full min-w-[680px] text-left text-sm">
-              <thead className="bg-secondary/70 text-xs uppercase text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3">Prova</th>
-                  <th className="px-4 py-3">Atleta</th>
-                  <th className="px-4 py-3">Clube</th>
-                  <th className="px-4 py-3">Categoria</th>
-                  <th className="px-4 py-3">Tempo</th>
-                  <th className="px-4 py-3">Colocação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {results.slice(0, 100).map((result, index) => {
-                  const athlete = result.athlete as Record<string, unknown> | undefined;
-                  const club = result.club as Record<string, unknown> | undefined;
-                  const agegroup = result.agegroup as Record<string, unknown> | undefined;
-                  const placements = Array.isArray(result.placements)
-                    ? (result.placements as Record<string, unknown>[])
-                    : [];
-                  const bestPlacement = placements[0];
-                  const name = [athlete?.firstName, athlete?.lastName]
-                    .map(displayValue)
-                    .filter(Boolean)
-                    .join(" ");
-                  return (
-                    <tr key={displayValue(result.id) || index} className="border-t border-border">
-                      <td className="px-4 py-3 font-medium">
-                        {displayValue(result.eventNumber) || "—"}
-                      </td>
-                      <td className="px-4 py-3">{name || "Revezamento"}</td>
-                      <td className="px-4 py-3">
-                        {displayValue(club?.shortname) || displayValue(club?.name) || "—"}
-                      </td>
-                      <td className="px-4 py-3">{displayValue(agegroup?.name) || "—"}</td>
-                      <td className="px-4 py-3 font-mono">{formatSwimTime(result.resultTimeMs)}</td>
-                      <td className="px-4 py-3">
-                        {displayValue(bestPlacement?.place) ||
-                          displayValue(result.resultStatus) ||
-                          "—"}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            {syncLabel && <p className="text-xs text-sky-100/75">Atualizado em {syncLabel}</p>}
+            <a
+              href={swimSystemUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-sky-950 transition hover:bg-sky-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-sky-900"
+            >
+              Ver página oficial <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            </a>
           </div>
-        ) : (
-          <p className="rounded-xl bg-secondary/50 p-4 text-sm text-muted-foreground">
-            Ainda não há resultados publicados para esta competição.
-          </p>
+        </div>
+      </header>
+
+      <div className="p-5 sm:p-8">
+        <div className="mb-6 grid gap-3 sm:grid-cols-3">
+          {[
+            { label: "Etapas", count: sessions.length, icon: Calendar },
+            { label: "Provas", count: events.length, icon: ListChecks },
+            { label: "Resultados", count: results.length, icon: Trophy },
+          ].map(({ label, count, icon: Icon }) => (
+            <div key={label} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-4">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-sky-600 text-white shadow-sm">
+                <Icon className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span>
+                <span className="block text-2xl font-bold leading-none text-deep">{count}</span>
+                <span className="mt-1 block text-sm text-muted-foreground">{label} publicados</span>
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mb-6 flex gap-2 overflow-x-auto border-b border-border pb-2" role="group" aria-label="Dados da competição">
+          {([
+            ["overview", "Visão geral", Calendar],
+            ["program", `Programa (${events.length})`, ListChecks],
+            ["results", `Resultados (${results.length})`, Trophy],
+          ] as const).map(([view, label, Icon]) => (
+            <button
+              key={view}
+              type="button"
+              aria-pressed={activeView === view}
+              onClick={() => setActiveView(view)}
+              className={`inline-flex shrink-0 items-center gap-2 rounded-t-xl px-4 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 ${activeView === view ? "border-b-2 border-sky-700 bg-sky-50 text-sky-900 dark:bg-sky-950/40 dark:text-sky-100" : "text-muted-foreground hover:bg-secondary/60 hover:text-deep"}`}
+            >
+              <Icon className="h-4 w-4" aria-hidden="true" /> {label}
+            </button>
+          ))}
+        </div>
+
+        {(activeView === "overview" || activeView === "program") && (
+          <div aria-label="Programação da competição" className="space-y-7">
+            {sessions.length > 0 && (
+              <section>
+                <div className="mb-3 flex items-end justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-deep">Etapas e horários</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">Confira os períodos de cada sessão.</p>
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {sessions.map((session, index) => (
+                    <article key={displayValue(session.id) || index} className="rounded-2xl border border-border/70 bg-secondary/25 p-4">
+                      <p className="font-semibold text-deep">{displayValue(session.name) || `Etapa ${displayValue(session.number) || index + 1}`}</p>
+                      <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        {[session.date, session.daytime].map(displayValue).filter(Boolean).join(" · ") || "Horário não informado"}
+                      </p>
+                      {(displayValue(session.warmupFrom) || displayValue(session.warmupUntil)) && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Aquecimento: {displayValue(session.warmupFrom) || "—"}{displayValue(session.warmupUntil) && `–${displayValue(session.warmupUntil)}`}
+                        </p>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section>
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h3 className="font-bold text-deep">Programa de provas</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{events.length} provas sincronizadas do SwimSystem.</p>
+                </div>
+                {events.length > 0 && (
+                  <label className="relative block sm:w-80">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                    <input
+                      type="search"
+                      value={eventSearch}
+                      onChange={(event) => setEventSearch(event.target.value)}
+                      placeholder="Buscar prova, categoria ou sexo"
+                      aria-label="Buscar no programa de provas"
+                      className="w-full rounded-xl border border-border bg-background py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                    />
+                  </label>
+                )}
+              </div>
+              {filteredEvents.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {filteredEvents.map((event, index) => {
+                    const eventPosition = events.indexOf(event) + 1;
+                    const eventName = displaySwimField(event.name) || displaySwimField(event.eventName) || displaySwimField(event.title) || [displayValue(event.distance), displaySwimField(event.stroke)].filter(Boolean).join("m ") || `Prova ${displayValue(event.eventNumber) || eventPosition}`;
+                    const details = [displaySwimField(event.gender), displaySwimField(event.agegroup), displaySwimField(event.category), displaySwimField(event.round)].filter(Boolean);
+                    return (
+                      <article key={displayValue(event.id) || index} className="flex items-start gap-3 rounded-2xl border border-border/70 bg-card p-4 transition hover:border-sky-500/40 hover:bg-sky-50/40 dark:hover:bg-sky-950/15">
+                        <span className="grid h-10 min-w-10 place-items-center rounded-xl bg-sky-600/10 px-2 text-sm font-bold text-sky-800 dark:text-sky-200">{displayValue(event.eventNumber) || eventPosition}</span>
+                        <span className="min-w-0">
+                          <span className="block font-semibold text-deep">{eventName}</span>
+                          {details.length > 0 && <span className="mt-1 block text-sm text-muted-foreground">{details.join(" · ")}</span>}
+                          {displayValue(event.startTime) && <span className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-sky-800 dark:text-sky-200"><Calendar className="h-3.5 w-3.5" aria-hidden="true" />{displayValue(event.startTime)}</span>}
+                        </span>
+                      </article>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="rounded-xl bg-secondary/40 p-5 text-sm text-muted-foreground">{events.length ? "Nenhuma prova corresponde à busca." : "O programa de provas ainda não foi publicado."}</p>
+              )}
+            </section>
+          </div>
         )}
+
+        {(activeView === "overview" || activeView === "results") && (
+          <section aria-label="Resultados da competição" className={activeView === "overview" ? "mt-8 border-t border-border pt-7" : ""}>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h3 className="font-bold text-deep">Resultados oficiais</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {data.results?.pointsTableLabel ? `Tabela: ${data.results.pointsTableLabel} · ` : ""}{results.length} resultados publicados.
+                </p>
+              </div>
+              {results.length > 0 && (
+                <label className="relative block sm:w-80">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                  <input
+                    type="search"
+                    value={resultSearch}
+                    onChange={(event) => setResultSearch(event.target.value)}
+                    placeholder="Buscar atleta, clube ou prova"
+                    aria-label="Buscar nos resultados"
+                    className="w-full rounded-xl border border-border bg-background py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
+                  />
+                </label>
+              )}
+            </div>
+            {filteredResults.length > 0 ? (
+              <>
+                <p className="mb-2 text-xs text-muted-foreground">Exibindo {filteredResults.length} de {results.length}</p>
+                <div className="overflow-hidden rounded-2xl border border-border">
+                  <div className="max-h-[34rem] overflow-auto">
+                    <table className="w-full min-w-[680px] text-left text-sm">
+                      <thead className="sticky top-0 z-10 bg-secondary text-xs uppercase tracking-wide text-muted-foreground shadow-sm">
+                        <tr>
+                          <th scope="col" className="px-4 py-3">Prova</th>
+                          <th scope="col" className="px-4 py-3">Atleta</th>
+                          <th scope="col" className="px-4 py-3">Clube</th>
+                          <th scope="col" className="px-4 py-3">Categoria</th>
+                          <th scope="col" className="px-4 py-3">Tempo</th>
+                          <th scope="col" className="px-4 py-3">Colocação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredResults.map((result, index) => {
+                          const athlete = result.athlete as Record<string, unknown> | undefined;
+                          const club = result.club as Record<string, unknown> | undefined;
+                          const agegroup = result.agegroup as Record<string, unknown> | undefined;
+                          const placements = Array.isArray(result.placements) ? result.placements as Record<string, unknown>[] : [];
+                          const bestPlacement = placements[0];
+                          const athleteName = [athlete?.firstName, athlete?.lastName].map(displayValue).filter(Boolean).join(" ");
+                          const place = displayValue(bestPlacement?.place);
+                          return (
+                            <tr key={displayValue(result.id) || index} className="border-t border-border odd:bg-background even:bg-secondary/20">
+                              <td className="px-4 py-3 font-medium text-deep">{displayValue(result.eventNumber) || "—"}</td>
+                              <td className="px-4 py-3">{athleteName || "Revezamento"}</td>
+                              <td className="px-4 py-3">{displayValue(club?.shortname) || displayValue(club?.name) || "—"}</td>
+                              <td className="px-4 py-3">{displayValue(agegroup?.name) || "—"}</td>
+                              <td className="px-4 py-3 font-mono tabular-nums">{formatSwimTime(result.resultTimeMs)}</td>
+                              <td className="px-4 py-3">{place ? <span className="inline-flex items-center gap-1.5 font-semibold text-deep">{place === "1" && <Award className="h-4 w-4 text-amber-500" aria-label="1º lugar" />}{place}º</span> : displayValue(result.resultStatus) || "—"}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="rounded-xl bg-secondary/40 p-5 text-sm text-muted-foreground">{results.length ? "Nenhum resultado corresponde à busca." : "Os resultados oficiais ainda não foram publicados. Consulte a página oficial para ver atualizações."}</p>
+            )}
+          </section>
+        )}
+        <p className="mt-6 flex items-center gap-2 border-t border-border pt-4 text-xs text-muted-foreground">
+          <Info className="h-4 w-4 shrink-0" aria-hidden="true" /> Os dados são fornecidos pelo SwimSystem. A página oficial pode ter informações mais recentes.
+        </p>
       </div>
     </section>
   );
