@@ -11,7 +11,6 @@ const modalidades: readonly ModalidadeMenu[] = [
   { label: "Águas Abertas", source: modalidadePictograms["Águas Abertas"] },
   { label: "Nado Artístico", source: modalidadePictograms["Nado Artístico"] },
   { label: "Saltos Ornamentais", source: modalidadePictograms["Saltos Ornamentais"] },
-  { label: "Masters", source: modalidadePictograms.Masters },
   { label: "Paranatação", source: modalidadePictograms.Paranatação },
 ];
 

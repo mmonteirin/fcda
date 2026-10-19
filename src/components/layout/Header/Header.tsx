@@ -35,7 +35,6 @@ const modalidades = [
   { label: "Águas Abertas", icon: modalidadePictograms["Águas Abertas"] },
   { label: "Nado Artístico", icon: modalidadePictograms["Nado Artístico"] },
   { label: "Saltos Ornamentais", icon: modalidadePictograms["Saltos Ornamentais"] },
-  { label: "Masters", icon: modalidadePictograms.Masters },
   { label: "Paranatação", icon: modalidadePictograms.Paranatação },
 ] as const;
 

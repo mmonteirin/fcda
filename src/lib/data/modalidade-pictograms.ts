@@ -4,7 +4,6 @@ import aguasAbertas from "@/assets/images/pictogramas/aguas-abertas.webp";
 import nadoArtistico from "@/assets/images/pictogramas/nado-artistico.webp";
 import saltosOrnamentais from "@/assets/images/pictogramas/saltos-ornamentais.webp";
 import paranatacao from "@/assets/images/pictogramas/paranatacao.webp";
-import masters from "@/assets/images/pictogramas/masters.webp";
 
 export const modalidadePictograms: Record<string, string> = {
   Natação: natacao,
@@ -12,6 +11,5 @@ export const modalidadePictograms: Record<string, string> = {
   "Águas Abertas": aguasAbertas,
   "Nado Artístico": nadoArtistico,
   "Saltos Ornamentais": saltosOrnamentais,
-  Masters: masters,
   Paranatação: paranatacao,
 };
