@@ -131,7 +131,7 @@ function AdminFiliacoes() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
                       <Building2 className="h-5 w-5 text-muted-foreground" />
-                      <h3 className="font-bold text-deep dark:text-white truncate">{soli.razao_social}</h3>
+                      <h3 className="truncate text-base font-bold text-deep dark:text-white">{soli.razao_social}</h3>
                     </div>
                     <p className="text-sm text-muted-foreground">{soli.cnpj}</p>
                     <div className="flex items-center gap-2 mt-3">
@@ -184,14 +184,14 @@ function AdminFiliacoes() {
 
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-semibold text-deep dark:text-white mb-2">Tipo de Processo</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-deep dark:text-white">Tipo de Processo</h3>
                   <p className="text-sm text-muted-foreground">
                     {selectedFiliacao.tipo === "filiacao" ? "Filiação" : "Vinculação"}
                   </p>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-deep dark:text-white mb-2">Dados da Entidade</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-deep dark:text-white">Dados da Entidade</h3>
                   <div className="space-y-2 text-sm">
                     <div>
                       <span className="text-muted-foreground">Razão Social:</span>{" "}
@@ -211,7 +211,7 @@ function AdminFiliacoes() {
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-deep dark:text-white mb-2">Endereço</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-deep dark:text-white">Endereço</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-start gap-2">
                       <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
@@ -240,7 +240,7 @@ function AdminFiliacoes() {
 
                 {selectedFiliacao.fone && (
                   <div>
-                    <h3 className="font-semibold text-deep dark:text-white mb-2">Contato</h3>
+                    <h3 className="mb-2 text-sm font-semibold text-deep dark:text-white">Contato</h3>
                     <div className="flex items-center gap-2 text-sm">
                       <Phone className="h-4 w-4 text-muted-foreground" />
                       <span className="text-deep dark:text-white">{selectedFiliacao.fone}</span>
@@ -250,7 +250,7 @@ function AdminFiliacoes() {
 
                 {selectedFiliacao.data_fundacao && (
                   <div>
-                    <h3 className="font-semibold text-deep dark:text-white mb-2">Data da Fundação</h3>
+                    <h3 className="mb-2 text-sm font-semibold text-deep dark:text-white">Data da Fundação</h3>
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-deep dark:text-white">
@@ -261,7 +261,7 @@ function AdminFiliacoes() {
                 )}
 
                 <div>
-                  <h3 className="font-semibold text-deep dark:text-white mb-2">Data da Solicitação</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-deep dark:text-white">Data da Solicitação</h3>
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-deep dark:text-white">
@@ -274,7 +274,7 @@ function AdminFiliacoes() {
               {/* Documentos enviados */}
               {(selectedFiliacao.doc_cnpj_url || selectedFiliacao.doc_requerimento_url) && (
                 <div>
-                  <h3 className="font-semibold text-deep mb-2">Documentos Enviados</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-deep">Documentos Enviados</h3>
                   <div className="space-y-2">
                     {selectedFiliacao.doc_cnpj_url && (
                       <a
@@ -304,7 +304,7 @@ function AdminFiliacoes() {
 
               {/* Termo de aceite */}
               <div>
-                <h3 className="font-semibold text-deep mb-2">Termo de Aceite</h3>
+                <h3 className="mb-2 text-sm font-semibold text-deep">Termo de Aceite</h3>
                 {selectedFiliacao.aceite_termo ? (
                   <div className="flex items-center gap-2 text-sm">
                     <Check className="h-4 w-4 text-emerald-600" />

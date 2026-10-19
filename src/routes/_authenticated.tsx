@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, Link, useNavigate, useRouterState } from "@tan
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/use-auth";
 import { Waves, LogOut, ChevronDown, LayoutDashboard, UserCircle } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -18,6 +19,12 @@ function AuthenticatedLayout() {
     user?.email?.split("@")[0] ??
     "Usuário";
   const roleLabel = isAdmin ? "Administrador" : "Editor";
+  const avatarUrl = [
+    user?.user_metadata?.avatar_url,
+    user?.user_metadata?.picture,
+    user?.user_metadata?.photo_url,
+    user?.user_metadata?.avatar,
+  ].find((value): value is string => typeof value === "string" && value.length > 0);
   const initials = displayName
     .split(" ")
     .map((part: string) => part[0])
@@ -89,9 +96,10 @@ function AuthenticatedLayout() {
                 aria-haspopup="menu"
                 aria-label={`Menu do usuário ${displayName}`}
               >
-                <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-sm">
-                  {initials}
-                </span>
+                <Avatar className="h-10 w-10 rounded-xl border border-primary/15 shadow-sm">
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt={`Foto de ${displayName}`} className="object-cover" />}
+                  <AvatarFallback className="rounded-xl bg-primary text-xs font-bold text-primary-foreground">{initials}</AvatarFallback>
+                </Avatar>
                 <span className="hidden sm:block">
                   <span className="block text-sm font-bold text-deep">{displayName}</span>
                   <span className="block text-xs text-muted-foreground">{roleLabel}</span>

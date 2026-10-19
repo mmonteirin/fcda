@@ -83,7 +83,7 @@ function AdminNotifications() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="font-semibold text-deep dark:text-white">{item.titulo}</h2>
+              <h2 className="text-base font-semibold leading-snug text-deep dark:text-white">{item.titulo}</h2>
               <p className="mt-1 text-sm text-muted-foreground">{item.descricao}</p>
               <time className="mt-2 block text-xs text-muted-foreground">
                 {new Date(item.created_at).toLocaleString("pt-BR")}

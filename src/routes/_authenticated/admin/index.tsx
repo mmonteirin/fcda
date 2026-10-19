@@ -229,7 +229,7 @@ function AdminIndex() {
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-border bg-white p-6 shadow-sm dark:bg-slate-900">
           <div className="mb-5">
-            <h2 className="font-bold text-deep dark:text-white">Competições por modalidade</h2>
+            <h2 className="text-lg font-bold text-deep dark:text-white">Competições por modalidade</h2>
             <p className="text-sm text-muted-foreground">Distribuição dos eventos cadastrados.</p>
           </div>
           <div className="h-64">
@@ -251,7 +251,7 @@ function AdminIndex() {
         </div>
         <div className="rounded-2xl border border-border bg-white p-6 shadow-sm dark:bg-slate-900">
           <div className="mb-5">
-            <h2 className="font-bold text-deep dark:text-white">Conteúdo publicado</h2>
+            <h2 className="text-lg font-bold text-deep dark:text-white">Conteúdo publicado</h2>
             <p className="text-sm text-muted-foreground">Publicações visíveis no portal.</p>
           </div>
           <div className="flex h-64 items-center">
