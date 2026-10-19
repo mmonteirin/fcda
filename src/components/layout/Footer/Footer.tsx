@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Waves, Instagram, Facebook, Youtube, Mail, MapPin, Phone, Clock, FileText, Trophy, Users, Building2 } from "lucide-react";
+import { Waves, Instagram, Facebook, Youtube, Mail, MapPin, Phone, Clock, FileText, Trophy, Users, Building2, ShieldCheck } from "lucide-react";
 
 export function Footer() {
   const [email, setEmail] = useState("");
@@ -112,6 +112,11 @@ export function Footer() {
             <li>
               <Link to="/transparencia" className="hover:text-gold transition-colors flex items-center gap-2">
                 <FileText className="h-4 w-4" /> Transparência
+              </Link>
+            </li>
+            <li>
+              <Link to="/antidopagem" className="hover:text-gold transition-colors flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4" /> Antidopagem
               </Link>
             </li>
             <li>

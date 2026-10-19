@@ -26,6 +26,7 @@ const nav = [
   { to: "/noticias", label: "Notícias" },
   { to: "/cursos", label: "Cursos" },
   { to: "/transparencia", label: "Transparência" },
+  { to: "/antidopagem", label: "Antidopagem" },
   { to: "/contato", label: "Contato" },
 ] as const;
 

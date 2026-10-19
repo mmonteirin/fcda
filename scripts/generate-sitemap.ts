@@ -8,15 +8,28 @@ const [dotenvConfig, cloudflareVars] = await Promise.all([
 ]);
 const readConfigValue = (...names: string[]) => {
   for (const name of names) {
-    const value = [process.env[name], ...[dotenvConfig, cloudflareVars].map((file) =>
-      file.split(/\r?\n/).find((line) => line.startsWith(`${name}=`))?.slice(name.length + 1),
-    )].find(Boolean);
+    const value = [
+      process.env[name],
+      ...[dotenvConfig, cloudflareVars].map((file) =>
+        file
+          .split(/\r?\n/)
+          .find((line) => line.startsWith(`${name}=`))
+          ?.slice(name.length + 1),
+      ),
+    ].find(Boolean);
     if (value) return value.trim().replace(/^['"]|['"]$/g, "");
   }
   return undefined;
 };
-const supabaseUrl = readConfigValue("VITE_SUPABASE_URL", "SUPABASE_URL") || "https://ucesipxemhrugmqwxtei.supabase.co";
-const supabaseKey = readConfigValue("VITE_SUPABASE_PUBLISHABLE_KEY", "SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_ANON_KEY", "SUPABASE_ANON_KEY");
+const supabaseUrl =
+  readConfigValue("VITE_SUPABASE_URL", "SUPABASE_URL") ||
+  "https://ucesipxemhrugmqwxtei.supabase.co";
+const supabaseKey = readConfigValue(
+  "VITE_SUPABASE_PUBLISHABLE_KEY",
+  "SUPABASE_PUBLISHABLE_KEY",
+  "VITE_SUPABASE_ANON_KEY",
+  "SUPABASE_ANON_KEY",
+);
 const staticPaths = [
   "/",
   "/sobre",
@@ -33,6 +46,7 @@ const staticPaths = [
   "/inscricoes",
   "/filie-se",
   "/contato",
+  "/antidopagem",
 ];
 
 async function fetchValues(table: string, column: string, publishedOnly = true) {
@@ -64,9 +78,7 @@ const paths = [
   ...rankingIds.map((id) => `/rankings/${encodeURIComponent(id)}`),
   ...cursoIds.map((id) => `/cursos/${encodeURIComponent(id)}`),
 ];
-const urls = paths
-  .map((path) => `  <url><loc>${siteUrl}${path}</loc></url>`)
-  .join("\n");
+const urls = paths.map((path) => `  <url><loc>${siteUrl}${path}</loc></url>`).join("\n");
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
 
 await mkdir("public", { recursive: true });

@@ -218,6 +218,17 @@ export function DesktopNav() {
                 Fale com a FCDA
               </span>
             </Link>
+            <Link
+              to="/antidopagem"
+              className="rounded-xl bg-secondary/60 px-3 py-3 text-sm font-bold text-deep transition-colors hover:bg-secondary"
+              role="menuitem"
+              tabIndex={-1}
+            >
+              Antidopagem
+              <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                Esporte limpo e orientação ao atleta
+              </span>
+            </Link>
           </div>
           <div className="grid grid-cols-2 gap-1" role="none">
             {modalidades.map((modalidade) => (

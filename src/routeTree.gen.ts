@@ -25,6 +25,7 @@ import { Route as CursosRouteImport } from './routes/cursos'
 import { Route as ContatoRouteImport } from './routes/contato'
 import { Route as ClubesRouteImport } from './routes/clubes'
 import { Route as CadastroRouteImport } from './routes/cadastro'
+import { Route as AntidopagemRouteImport } from './routes/antidopagem'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TransparenciaIndexRouteImport } from './routes/transparencia.index'
@@ -138,6 +139,11 @@ const ClubesRoute = ClubesRouteImport.update({
 const CadastroRoute = CadastroRouteImport.update({
   id: '/cadastro',
   path: '/cadastro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AntidopagemRoute = AntidopagemRouteImport.update({
+  id: '/antidopagem',
+  path: '/antidopagem',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -332,6 +338,7 @@ const AuthenticatedAdminBannerRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/antidopagem': typeof AntidopagemRoute
   '/cadastro': typeof CadastroRoute
   '/clubes': typeof ClubesRoute
   '/contato': typeof ContatoRoute
@@ -383,6 +390,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/antidopagem': typeof AntidopagemRoute
   '/cadastro': typeof CadastroRoute
   '/clubes': typeof ClubesRoute
   '/contato': typeof ContatoRoute
@@ -432,6 +440,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/antidopagem': typeof AntidopagemRoute
   '/cadastro': typeof CadastroRoute
   '/clubes': typeof ClubesRoute
   '/contato': typeof ContatoRoute
@@ -485,6 +494,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/antidopagem'
     | '/cadastro'
     | '/clubes'
     | '/contato'
@@ -536,6 +546,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/antidopagem'
     | '/cadastro'
     | '/clubes'
     | '/contato'
@@ -584,6 +595,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/antidopagem'
     | '/cadastro'
     | '/clubes'
     | '/contato'
@@ -637,6 +649,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AntidopagemRoute: typeof AntidopagemRoute
   CadastroRoute: typeof CadastroRoute
   ClubesRoute: typeof ClubesRoute
   ContatoRoute: typeof ContatoRoute
@@ -768,6 +781,13 @@ declare module '@tanstack/react-router' {
       path: '/cadastro'
       fullPath: '/cadastro'
       preLoaderRoute: typeof CadastroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/antidopagem': {
+      id: '/antidopagem'
+      path: '/antidopagem'
+      fullPath: '/antidopagem'
+      preLoaderRoute: typeof AntidopagemRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -1144,6 +1164,7 @@ const TransparenciaRouteWithChildren = TransparenciaRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AntidopagemRoute: AntidopagemRoute,
   CadastroRoute: CadastroRoute,
   ClubesRoute: ClubesRoute,
   ContatoRoute: ContatoRoute,
