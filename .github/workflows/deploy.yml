@@ -24,6 +24,14 @@ jobs:
       - name: Run type check
         run: bun run typecheck
 
+      - name: Validate Supabase frontend configuration
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          test -n "$VITE_SUPABASE_URL" || { echo "::error::Configure the VITE_SUPABASE_URL Actions variable."; exit 1; }
+          test -n "$VITE_SUPABASE_PUBLISHABLE_KEY" || { echo "::error::Configure the VITE_SUPABASE_PUBLISHABLE_KEY Actions variable."; exit 1; }
+
       - name: Build project
         run: bun run build
         env:
