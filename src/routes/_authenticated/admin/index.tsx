@@ -12,6 +12,7 @@ import {
   transparenciaQuery,
   parceirosQuery,
   cursosQuery,
+  clubesQuery,
 } from "@/lib/api/site-queries";
 import {
   Newspaper,
@@ -57,6 +58,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
       context.queryClient.ensureQueryData(transparenciaQuery(false)),
       context.queryClient.ensureQueryData(parceirosQuery(true)),
       context.queryClient.ensureQueryData(cursosQuery(false)),
+      context.queryClient.ensureQueryData(clubesQuery(false)),
     ]),
   errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
   component: AdminIndex,
@@ -73,12 +75,14 @@ function AdminIndex() {
   const transparencia = useSuspenseQuery(transparenciaQuery(false)).data;
   const parceiros = useSuspenseQuery(parceirosQuery(true)).data;
   const cursos = useSuspenseQuery(cursosQuery(false)).data;
+  const clubes = useSuspenseQuery(clubesQuery(false)).data;
   const unreadCount = mensagens.filter((m) => !m.lido).length;
   const pendentesCount = filiacao.filter((f) => f.status === "pendente").length;
   const publishedNews = noticias.filter((n) => n.publicado).length;
   const publishedCursos = cursos.filter((c) => c.publicado).length;
   const reportRows = [
     { Indicador: "Competições", Total: eventos.length },
+    { Indicador: "Clubes ativos", Total: clubes.filter((clube) => clube.ativo).length },
     { Indicador: "Notícias publicadas", Total: publishedNews },
     { Indicador: "Cursos publicados", Total: publishedCursos },
     { Indicador: "Usuários", Total: users.length },
@@ -125,7 +129,7 @@ function AdminIndex() {
       icon: GraduationCap,
       color: "bg-purple-500",
     },
-    { to: "/admin/clubes", label: "Clubes", count: 0, icon: Building2, color: "bg-orange-500" },
+    { to: "/admin/clubes", label: "Clubes ativos", count: clubes.filter((clube) => clube.ativo).length, icon: Building2, color: "bg-orange-500" },
   ];
 
   const secondaryCards = [

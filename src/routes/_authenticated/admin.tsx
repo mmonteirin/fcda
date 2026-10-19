@@ -7,11 +7,11 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 function AdminLayout() {
   return (
-    <div className="flex min-h-[calc(100vh-73px)] bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <div className="flex min-h-[calc(100vh-73px)] bg-[radial-gradient(ellipse_at_top_left,rgba(0,127,95,0.06),transparent_35%),linear-gradient(135deg,#f8fafc,#f1f5f9)] dark:bg-[radial-gradient(ellipse_at_top_left,rgba(0,127,95,0.14),transparent_35%),linear-gradient(135deg,#0f172a,#111827)]">
       <AdminSidebar />
-      <main className="min-w-0 flex-1 overflow-auto">
+      <main className="min-w-0 flex-1">
         <AdminMobileNavigation />
-        <div className="p-5 md:p-8">
+        <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-6 lg:p-8 xl:p-10">
           <Outlet />
         </div>
       </main>

@@ -14,10 +14,11 @@ import {
   FileText,
   Trophy,
   Award,
-  Settings,
   Bell,
   History,
   ShieldCheck,
+  ExternalLink,
+  Waves as LogoWaves,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -80,9 +81,9 @@ function NavigationLinks({ compact = false }: { compact?: boolean }) {
   return (
     <>
       {navGroups.map((group) => (
-        <section key={group.label} className={compact ? "contents" : "mb-5"}>
+        <section key={group.label} className={compact ? "contents" : "mb-6"}>
           {!compact && (
-            <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+              <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
               {group.label}
             </p>
           )}
@@ -94,16 +95,18 @@ function NavigationLinks({ compact = false }: { compact?: boolean }) {
                   key={item.to}
                   to={item.to}
                   title={compact ? item.label : undefined}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl text-sm font-medium transition-all",
-                    compact ? "shrink-0 px-3 py-2" : "px-3 py-2.5",
+                    "flex items-center rounded-xl text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 motion-reduce:transition-none",
+                    compact ? "shrink-0 gap-2.5 px-3 py-2.5" : "gap-3 px-3 py-2.5",
                     active
-                      ? "bg-gradient-to-r from-primary to-primary/90 text-white shadow-md shadow-primary/20"
-                      : "text-muted-foreground hover:bg-slate-100 hover:text-deep dark:hover:bg-slate-800 dark:hover:text-white",
+                      ? "bg-emerald-500/15 text-emerald-100 ring-1 ring-inset ring-emerald-400/20"
+                      : "text-slate-300 hover:bg-white/[0.07] hover:text-white",
                   )}
                 >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  {!compact && <span>{item.label}</span>}
+                  <item.icon aria-hidden="true" className={cn("h-4 w-4 shrink-0", active && "text-emerald-300")} />
+                  <span className={compact ? "whitespace-nowrap" : undefined}>{item.label}</span>
+                  {active && !compact && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-300" />}
                 </Link>
               );
             })}
@@ -116,15 +119,15 @@ function NavigationLinks({ compact = false }: { compact?: boolean }) {
 
 export function AdminSidebar() {
   return (
-    <aside className="hidden h-[calc(100vh-73px)] w-72 shrink-0 overflow-y-auto border-r border-border bg-white shadow-sm lg:block dark:bg-slate-900">
-      <div className="p-6">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 grid place-items-center text-white shadow-lg">
-            <Award className="h-5 w-5" />
+    <aside className="sticky top-16 hidden h-[calc(100vh-64px)] w-[270px] shrink-0 overflow-y-auto border-r border-white/10 bg-[#0b1f1b] text-white shadow-xl lg:block">
+      <div className="flex min-h-full flex-col p-4">
+        <div className="mb-7 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3.5">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-400 text-emerald-950 shadow-lg shadow-emerald-950/30">
+            <LogoWaves className="h-5 w-5" />
           </div>
           <div>
-            <div className="font-bold text-deep dark:text-white text-lg">FCDA Admin</div>
-            <div className="text-xs text-muted-foreground">Painel Administrativo</div>
+            <div className="font-bold tracking-tight text-white">FCDA <span className="text-emerald-300">Admin</span></div>
+            <div className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">Gestão do portal</div>
           </div>
         </div>
 
@@ -132,12 +135,12 @@ export function AdminSidebar() {
           <NavigationLinks />
         </nav>
 
-        <div className="mt-8 pt-6 border-t border-border">
+        <div className="mt-auto border-t border-white/10 pt-4">
           <Link
             to="/"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-deep dark:hover:text-white transition-all group"
+            className="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
           >
-            <Settings className="h-5 w-5 text-muted-foreground group-hover:text-deep dark:group-hover:text-white" />
+            <ExternalLink aria-hidden="true" className="h-4 w-4 text-slate-400 group-hover:text-emerald-300" />
             <span>Voltar ao site</span>
           </Link>
         </div>
@@ -150,7 +153,7 @@ export function AdminMobileNavigation() {
   return (
     <nav
       aria-label="Navegação administrativa"
-      className="flex gap-2 overflow-x-auto border-b border-border bg-white px-4 py-3 lg:hidden dark:bg-slate-900"
+      className="sticky top-16 z-30 flex gap-2 overflow-x-auto border-b border-border bg-card/95 px-4 py-3 shadow-sm backdrop-blur lg:hidden"
     >
       <NavigationLinks compact />
     </nav>

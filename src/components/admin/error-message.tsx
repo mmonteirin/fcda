@@ -9,8 +9,8 @@ export function ErrorMessage({ error, title = "Erro ao salvar" }: ErrorMessagePr
   if (!error) return null;
 
   return (
-    <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-      <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+    <div role="alert" aria-live="assertive" className="flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+      <AlertCircle aria-hidden="true" className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" />
       <div className="flex-1">
         <p className="text-sm font-semibold text-destructive">{title}</p>
         <p className="text-sm text-destructive/80 mt-1">{error}</p>

@@ -4,7 +4,6 @@ import { clubesQuery, type Clube } from "@/lib/api/site-queries";
 import { saveClube, deleteClube, assertEditor, uploadClubeLogo } from "@/lib/admin.functions";
 import { useAuth } from "@/lib/auth/use-auth";
 import {
-  Plus,
   ExternalLink,
   X,
   MapPin,
@@ -17,6 +16,7 @@ import {
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { createFileRoute } from "@tanstack/react-router";
 import { ErrorMessage, getFriendlyErrorMessage } from "@/components/admin/error-message";
+import { AdminToolbar } from "@/components/admin/ui";
 
 export const Route = createFileRoute("/_authenticated/admin/clubes")({
   loader: ({ context }) => context.queryClient.ensureQueryData(clubesQuery(false)),
@@ -147,25 +147,18 @@ function ClubesAdmin() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-deep">Clubes</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerencie os clubes de natação filiados à FCDA
-          </p>
-        </div>
-        <button
-          onClick={handleNew}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4" /> Novo Clube
-        </button>
-      </div>
+      <AdminToolbar
+        title="Clubes"
+        description="Gerencie os clubes filiados, seus contatos e situação cadastral."
+        breadcrumbs={[{ label: "Clubes" }]}
+        onNew={handleNew}
+      />
 
       <ErrorMessage error={err} title="Erro" />
 
-      <div className="rounded-lg border border-border bg-card">
-        <table className="w-full">
+      <div className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr className="border-b border-border/50 bg-secondary/30">
               <th className="px-4 py-3 text-left text-sm font-semibold">Nome</th>
@@ -238,6 +231,7 @@ function ClubesAdmin() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {modalOpen && (

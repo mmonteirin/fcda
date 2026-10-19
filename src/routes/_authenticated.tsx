@@ -66,30 +66,30 @@ function AuthenticatedLayout() {
 
   return (
     <div className="min-h-screen bg-secondary/40">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex items-center justify-between gap-6">
+      <header className="sticky top-0 z-40 border-b border-border/80 bg-card/95 shadow-sm backdrop-blur-xl">
+        <div className="mx-auto flex min-h-16 max-w-[1800px] items-center justify-between gap-4 px-4 py-2.5 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-full bg-emerald-gradient grid place-items-center">
-              <Waves className="h-4 w-4 text-primary-foreground" />
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-deep text-primary-foreground shadow-sm">
+              <Waves className="h-5 w-5" />
             </div>
             <div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                Painel
-              </div>
-              <div className="font-bold text-deep text-sm">FCDA Admin</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">Painel de gestão</div>
+              <div className="font-bold tracking-tight text-deep">FCDA Admin</div>
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <Link to="/" className="text-muted-foreground hover:text-deep">
-              Ver site
+            <Link to="/" className="hidden items-center gap-2 rounded-xl border border-border px-3.5 py-2 text-xs font-semibold text-muted-foreground transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary sm:inline-flex">
+              <span>Ver site</span>
             </Link>
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-secondary"
+                className="flex items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 text-left transition hover:border-border hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 aria-expanded={userMenuOpen}
+                aria-haspopup="menu"
+                aria-label={`Menu do usuário ${displayName}`}
               >
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-sm">
                   {initials}
                 </span>
                 <span className="hidden sm:block">
@@ -99,18 +99,20 @@ function AuthenticatedLayout() {
                 <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </button>
               {userMenuOpen && (
-                <div className="absolute right-0 top-full z-50 mt-2 w-52 rounded-xl border border-border bg-card p-2 shadow-elegant">
+                <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-border bg-card p-2 shadow-elegant">
                   <Link
                     to="/admin"
                     onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-secondary"
+                    role="menuitem"
+                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <LayoutDashboard className="h-4 w-4" /> Painel
                   </Link>
                   <Link
                     to="/admin/perfil"
                     onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold hover:bg-secondary"
+                    role="menuitem"
+                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <UserCircle className="h-4 w-4" /> Perfil
                   </Link>
@@ -120,7 +122,8 @@ function AuthenticatedLayout() {
                       await signOut();
                       navigate({ to: "/login", replace: true });
                     }}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-destructive hover:bg-destructive/10"
+                    role="menuitem"
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-destructive transition hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive"
                   >
                     <LogOut className="h-4 w-4" /> Sair
                   </button>

@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth/use-auth";
 import { supabase } from "@/integrations/supabase/client";
+import { AdminToolbar } from "@/components/admin/ui";
+import { inputClass } from "@/components/admin/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/perfil")({
   component: Perfil,
@@ -31,21 +33,20 @@ function Perfil() {
   }
 
   return (
-    <div className="max-w-xl">
-      <h1 className="text-3xl font-bold text-deep">Meu perfil</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Atualize as informações exibidas no painel.
-      </p>
+    <div className="space-y-6">
+      <AdminToolbar title="Meu perfil" description="Atualize suas informações de acesso ao painel da FCDA." />
+      <section className="max-w-2xl rounded-2xl border border-border/80 bg-card p-5 shadow-sm sm:p-7">
+      <div className="mb-6"><h2 className="text-lg font-bold text-deep">Dados da conta</h2><p className="mt-1 text-sm text-muted-foreground">Essas informações identificam você nas atividades administrativas.</p></div>
       <form
         onSubmit={salvar}
-        className="mt-8 space-y-5 rounded-2xl border border-border bg-card p-6 shadow-card"
+        className="space-y-5"
       >
         <label className="block text-sm font-semibold text-deep">
           Nome
           <input
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            className="mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 font-normal"
+            className={`${inputClass} mt-2 font-normal`}
             required
           />
         </label>
@@ -57,14 +58,16 @@ function Perfil() {
           <span className="font-semibold text-deep">Função: </span>
           <span className="text-muted-foreground">{isAdmin ? "Administrador" : "Editor"}</span>
         </div>
-        {status && <p className="text-sm text-primary">{status}</p>}
+        {status && <p role="status" aria-live="polite" className={`rounded-xl px-4 py-3 text-sm ${status.includes("não") ? "bg-destructive/5 text-destructive" : "bg-primary/5 text-primary"}`}>{status}</p>}
         <button
+          type="submit"
           disabled={busy}
-          className="rounded-lg bg-deep px-4 py-2 text-sm font-bold text-deep-foreground disabled:opacity-60"
+          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground shadow-sm transition hover:bg-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {busy ? "Salvando..." : "Salvar perfil"}
         </button>
       </form>
+      </section>
     </div>
   );
 }

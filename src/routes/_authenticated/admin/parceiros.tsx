@@ -73,7 +73,6 @@ function ParceirosAdmin() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este parceiro?")) return;
     if (!user) return;
     try {
       await assertEditor(supabase, user.id);
@@ -196,7 +195,11 @@ function ParceirosAdmin() {
               <td className="px-5 py-4">
                 <RowActions
                   onEdit={() => handleEdit(parceiro)}
-                  onDelete={() => handleDelete(parceiro.id)}
+                  confirmMessage="Tem certeza que deseja excluir este parceiro?"
+                  onDelete={() => {
+                    if (!user) return;
+                    void handleDelete(parceiro.id);
+                  }}
                 />
               </td>
             </tr>
