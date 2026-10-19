@@ -17,7 +17,6 @@ import {
   Bell,
   History,
   ShieldCheck,
-  Waves as LogoWaves,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -80,7 +79,7 @@ function NavigationLinks({ compact = false }: { compact?: boolean }) {
   return (
     <>
       {navGroups.map((group) => (
-        <section key={group.label} className={compact ? "contents" : "mb-6"}>
+        <section key={group.label} className={compact ? "contents" : "mb-5"}>
           {!compact && (
             <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
               {group.label}
@@ -123,22 +122,8 @@ function NavigationLinks({ compact = false }: { compact?: boolean }) {
 
 export function AdminSidebar() {
   return (
-    <aside className="sticky top-16 hidden h-[calc(100vh-64px)] w-[270px] shrink-0 overflow-y-auto border-r border-white/10 bg-[#0b1f1b] text-white shadow-xl lg:block">
-      <div className="flex min-h-full flex-col p-4">
-        <div className="mb-7 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3.5">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-400 text-emerald-950 shadow-lg shadow-emerald-950/30">
-            <LogoWaves className="h-5 w-5" />
-          </div>
-          <div>
-            <div className="font-bold tracking-tight text-white">
-              FCDA <span className="text-emerald-300">Admin</span>
-            </div>
-            <div className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
-              Gestão do portal
-            </div>
-          </div>
-        </div>
-
+    <aside className="sticky top-16 hidden h-[calc(100vh-64px)] w-[250px] shrink-0 overflow-y-auto border-r border-white/10 bg-[#0b1f1b] text-white shadow-xl lg:block">
+      <div className="min-h-full p-3 pt-5">
         <nav aria-label="Navegação administrativa">
           <NavigationLinks />
         </nav>
