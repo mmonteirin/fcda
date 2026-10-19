@@ -37,6 +37,25 @@ function AdminNotifications() {
     void loadNotifications();
   }, []);
 
+  const groupedNotifications = notifications.reduce<Array<Notification & { count: number }>>(
+    (groups, notification) => {
+      const existing = groups.find(
+        (group) =>
+          group.titulo === notification.titulo &&
+          group.descricao === notification.descricao &&
+          group.tipo === notification.tipo,
+      );
+      if (existing) {
+        existing.count += 1;
+        existing.lida = existing.lida && notification.lida;
+      } else {
+        groups.push({ ...notification, count: 1 });
+      }
+      return groups;
+    },
+    [],
+  );
+
   async function markAllRead() {
     await asDynamicSupabase(supabase)
       .from("admin_notificacoes")
@@ -68,7 +87,7 @@ function AdminNotifications() {
             Nenhuma notificação registrada ainda.
           </p>
         ) : null}
-        {notifications.map((item) => (
+        {groupedNotifications.map((item) => (
           <article
             key={item.id}
             className={`flex gap-4 border-b border-border p-5 last:border-0 ${item.lida ? "opacity-70" : "bg-primary/[0.03]"}`}
@@ -83,7 +102,16 @@ function AdminNotifications() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-semibold leading-snug text-deep dark:text-white">{item.titulo}</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-semibold leading-snug text-deep dark:text-white">
+                  {item.titulo}
+                </h2>
+                {item.count > 1 && (
+                  <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                    {item.count} alterações
+                  </span>
+                )}
+              </div>
               <p className="mt-1 text-sm text-muted-foreground">{item.descricao}</p>
               <time className="mt-2 block text-xs text-muted-foreground">
                 {new Date(item.created_at).toLocaleString("pt-BR")}

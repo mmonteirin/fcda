@@ -17,7 +17,6 @@ import {
   Bell,
   History,
   ShieldCheck,
-  ExternalLink,
   Waves as LogoWaves,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -83,7 +82,7 @@ function NavigationLinks({ compact = false }: { compact?: boolean }) {
       {navGroups.map((group) => (
         <section key={group.label} className={compact ? "contents" : "mb-6"}>
           {!compact && (
-              <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
+            <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
               {group.label}
             </p>
           )}
@@ -104,9 +103,14 @@ function NavigationLinks({ compact = false }: { compact?: boolean }) {
                       : "text-slate-300 hover:bg-white/[0.07] hover:text-white",
                   )}
                 >
-                  <item.icon aria-hidden="true" className={cn("h-4 w-4 shrink-0", active && "text-emerald-300")} />
+                  <item.icon
+                    aria-hidden="true"
+                    className={cn("h-4 w-4 shrink-0", active && "text-emerald-300")}
+                  />
                   <span className={compact ? "whitespace-nowrap" : undefined}>{item.label}</span>
-                  {active && !compact && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-300" />}
+                  {active && !compact && (
+                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                  )}
                 </Link>
               );
             })}
@@ -126,24 +130,18 @@ export function AdminSidebar() {
             <LogoWaves className="h-5 w-5" />
           </div>
           <div>
-            <div className="font-bold tracking-tight text-white">FCDA <span className="text-emerald-300">Admin</span></div>
-            <div className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">Gestão do portal</div>
+            <div className="font-bold tracking-tight text-white">
+              FCDA <span className="text-emerald-300">Admin</span>
+            </div>
+            <div className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400">
+              Gestão do portal
+            </div>
           </div>
         </div>
 
         <nav aria-label="Navegação administrativa">
           <NavigationLinks />
         </nav>
-
-        <div className="mt-auto border-t border-white/10 pt-4">
-          <Link
-            to="/"
-            className="group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/[0.07] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
-          >
-            <ExternalLink aria-hidden="true" className="h-4 w-4 text-slate-400 group-hover:text-emerald-300" />
-            <span>Voltar ao site</span>
-          </Link>
-        </div>
       </div>
     </aside>
   );

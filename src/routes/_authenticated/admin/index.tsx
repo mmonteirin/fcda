@@ -129,7 +129,13 @@ function AdminIndex() {
       icon: GraduationCap,
       color: "bg-purple-500",
     },
-    { to: "/admin/clubes", label: "Clubes ativos", count: clubes.filter((clube) => clube.ativo).length, icon: Building2, color: "bg-orange-500" },
+    {
+      to: "/admin/clubes",
+      label: "Clubes ativos",
+      count: clubes.filter((clube) => clube.ativo).length,
+      icon: Building2,
+      color: "bg-orange-500",
+    },
   ];
 
   const secondaryCards = [
@@ -229,7 +235,9 @@ function AdminIndex() {
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-border bg-white p-6 shadow-sm dark:bg-slate-900">
           <div className="mb-5">
-            <h2 className="text-lg font-bold text-deep dark:text-white">Competições por modalidade</h2>
+            <h2 className="text-lg font-bold text-deep dark:text-white">
+              Competições por modalidade
+            </h2>
             <p className="text-sm text-muted-foreground">Distribuição dos eventos cadastrados.</p>
           </div>
           <div className="h-64">
@@ -356,37 +364,6 @@ function AdminIndex() {
               </div>
             </Link>
           ))}
-        </div>
-      </section>
-
-      {/* Quick Actions */}
-      <section className="rounded-2xl bg-gradient-to-r from-primary/5 to-primary/10 border border-border p-6">
-        <h2 className="text-xl font-bold text-deep dark:text-white mb-6">Ações Rápidas</h2>
-        <div className="flex flex-wrap gap-4">
-          <Link
-            to="/admin/noticias"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-deep to-deep/90 text-white px-5 py-3 text-sm font-semibold hover:shadow-lg hover:shadow-deep/25 transition-all hover:-translate-y-0.5"
-          >
-            <Newspaper className="h-4 w-4" /> Nova notícia
-          </Link>
-          <Link
-            to="/admin/eventos"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary/90 text-white px-5 py-3 text-sm font-semibold hover:shadow-lg hover:shadow-primary/25 transition-all hover:-translate-y-0.5"
-          >
-            <Calendar className="h-4 w-4" /> Novo evento
-          </Link>
-          <Link
-            to="/admin/cursos"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-gold to-gold/90 text-deep px-5 py-3 text-sm font-semibold hover:shadow-lg hover:shadow-gold/25 transition-all hover:-translate-y-0.5"
-          >
-            <GraduationCap className="h-4 w-4" /> Novo curso
-          </Link>
-          <Link
-            to="/admin/filiacoes"
-            className="inline-flex items-center gap-2 rounded-xl border-2 border-border bg-white dark:bg-slate-900 px-5 py-3 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-          >
-            <Building2 className="h-4 w-4" /> Revisar inscrições
-          </Link>
         </div>
       </section>
     </div>
