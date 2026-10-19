@@ -18,7 +18,7 @@ export const Route = createFileRoute("/transparencia/")({
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(transparenciaQuery(true)),
   errorComponent: ({ error }) => (
-    <div className="p-12 text-destructive">Erro ao carregar: {error.message}</div>
+    <div className="p-12 text-destructive">Erro ao carregar: {error instanceof Error ? error.message : "Erro inesperado"}</div>
   ),
   component: Transparencia,
 });

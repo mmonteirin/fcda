@@ -11,7 +11,7 @@ import { Users } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/diretores")({
   loader: ({ context }) => context.queryClient.ensureQueryData(diretoresQuery),
-  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error instanceof Error ? error.message : "Erro inesperado"}</div>,
   component: AdminDiretores,
 });
 

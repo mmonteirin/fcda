@@ -21,7 +21,7 @@ export const Route = createFileRoute("/noticias/")({
       context.queryClient.ensureQueryData(eventosQuery()),
     ]),
   errorComponent: ({ error }) => (
-    <div className="p-12 text-destructive">Erro ao carregar: {error.message}</div>
+    <div className="p-12 text-destructive">Erro ao carregar: {error instanceof Error ? error.message : "Erro inesperado"}</div>
   ),
   component: Noticias,
 });

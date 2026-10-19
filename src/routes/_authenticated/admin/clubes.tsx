@@ -20,8 +20,8 @@ import { AdminToolbar } from "@/components/admin/ui";
 
 export const Route = createFileRoute("/_authenticated/admin/clubes")({
   loader: ({ context }) => context.queryClient.ensureQueryData(clubesQuery(false)),
-  errorComponent: ({ error }: { error: { message: string } }) => (
-    <div className="text-destructive">Erro: {error.message}</div>
+  errorComponent: ({ error }) => (
+    <div className="text-destructive">Erro: {error instanceof Error ? error.message : "Erro inesperado"}</div>
   ),
   component: ClubesAdmin,
 });

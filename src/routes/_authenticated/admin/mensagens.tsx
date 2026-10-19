@@ -11,7 +11,7 @@ import { Mail, Trash2, Check, Clock, User, Phone } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/mensagens")({
   loader: ({ context }) => context.queryClient.ensureQueryData(mensagensQuery),
-  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error instanceof Error ? error.message : "Erro inesperado"}</div>,
   component: AdminMensagens,
 });
 

@@ -11,7 +11,7 @@ import { useInvalidate, inputClass } from "@/components/admin/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/banner")({
   loader: ({ context }) => context.queryClient.ensureQueryData(bannerQuery),
-  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error instanceof Error ? error.message : "Erro inesperado"}</div>,
   component: AdminBanner,
 });
 

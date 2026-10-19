@@ -64,7 +64,7 @@ export const Route = createFileRoute("/eventos/")({
       context.queryClient.ensureQueryData(eventosPdfsQuery),
     ]),
   errorComponent: ({ error }) => (
-    <div className="p-12 text-destructive">Erro ao carregar: {error.message}</div>
+    <div className="p-12 text-destructive">Erro ao carregar: {error instanceof Error ? error.message : "Erro inesperado"}</div>
   ),
   component: Eventos,
 });

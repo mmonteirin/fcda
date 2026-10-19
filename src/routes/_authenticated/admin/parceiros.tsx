@@ -16,8 +16,8 @@ import { inputClass, useInvalidate } from "@/components/admin/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/parceiros")({
   loader: ({ context }) => context.queryClient.ensureQueryData(parceirosQuery(false)),
-  errorComponent: ({ error }: { error: { message: string } }) => (
-    <div className="text-destructive">Erro: {error.message}</div>
+  errorComponent: ({ error }) => (
+    <div className="text-destructive">Erro: {error instanceof Error ? error.message : "Erro inesperado"}</div>
   ),
   component: ParceirosAdmin,
 });

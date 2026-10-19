@@ -17,7 +17,7 @@ import { Upload, X, FileText } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/transparencia")({
   loader: ({ context }) => context.queryClient.ensureQueryData(transparenciaQuery(false)),
-  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error instanceof Error ? error.message : "Erro inesperado"}</div>,
   component: AdminTransparencia,
 });
 

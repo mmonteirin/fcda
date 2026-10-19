@@ -35,6 +35,8 @@ import {
   Search,
   ListChecks,
   Info,
+  Building2,
+  UsersRound,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ReadingProgress } from "@/components/ui/reading-progress";
@@ -949,6 +951,104 @@ function displaySwimField(value: unknown): string {
   return "";
 }
 
+function formatSwimDateTime(value: unknown, includeDate = true): string {
+  const raw = displayValue(value);
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:T|\s)?(\d{2})?:?(\d{2})?/);
+  if (!match) return raw;
+
+  const [, year, month, day, hours, minutes] = match;
+  const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  const dateLabel = includeDate
+    ? date.toLocaleDateString("pt-BR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      })
+    : "";
+  const timeLabel = hours ? `${hours}:${minutes || "00"}` : "";
+  return [dateLabel, timeLabel].filter(Boolean).join(" · ") || raw;
+}
+
+function getSwimEventHeats(event: Record<string, unknown>): Record<string, unknown>[] {
+  return Array.isArray(event.heats)
+    ? (event.heats as Record<string, unknown>[])
+    : [];
+}
+
+function getSwimStrokeLabel(value: unknown): string {
+  const stroke = displaySwimField(value).toUpperCase();
+  const labels: Record<string, string> = {
+    FREE: "Livre",
+    FREESTYLE: "Livre",
+    BACK: "Costas",
+    BACKSTROKE: "Costas",
+    BREAST: "Peito",
+    BREASTSTROKE: "Peito",
+    FLY: "Borboleta",
+    BUTTERFLY: "Borboleta",
+    MEDLEY: "Medley",
+    IM: "Medley",
+  };
+  return labels[stroke] || displaySwimField(value);
+}
+
+function getSwimEventTitle(event: Record<string, unknown>): string {
+  const explicitName =
+    displaySwimField(event.name) ||
+    displaySwimField(event.eventName) ||
+    displaySwimField(event.title);
+  if (explicitName) return explicitName;
+
+  const style = event.swimStyle as Record<string, unknown> | undefined;
+  const distance = displayValue(style?.distance ?? event.distance);
+  const stroke = getSwimStrokeLabel(style?.stroke ?? event.stroke);
+  const relayCount = Number(style?.relayCount ?? event.relayCount);
+  const distanceLabel = distance
+    ? `${relayCount > 1 ? `${relayCount}×` : ""}${distance}m`
+    : "";
+  return [distanceLabel, stroke].filter(Boolean).join(" ") || "Prova";
+}
+
+function getSwimRoundLabel(value: unknown): string {
+  const round = displaySwimField(value).toUpperCase();
+  const labels: Record<string, string> = {
+    TIM: "Final Direta",
+    TIME_FINAL: "Final Direta",
+    PRE: "Eliminatórias",
+    PRELIM: "Eliminatórias",
+    FIN: "Final",
+    FINAL: "Final",
+    SEMI: "Semifinal",
+    SEMIFINAL: "Semifinal",
+  };
+  return labels[round] || displaySwimField(value);
+}
+
+function getSwimStatusLabel(value: unknown): string {
+  const status = displaySwimField(value).toUpperCase();
+  const labels: Record<string, string> = {
+    ENTRIES: "Inscrições abertas",
+    SEEDED: "Balizado",
+    OFFICIAL: "Resultado oficial",
+    RESULTS: "Resultados publicados",
+    FINALIZED: "Finalizado",
+    DNS: "Não largou",
+    DNF: "Não terminou",
+    DQ: "Desclassificado",
+    DSQ: "Desclassificado",
+  };
+  return labels[status] || displaySwimField(value) || "Status não informado";
+}
+
+function getSwimGenderLabel(value: unknown): string {
+  const gender = displaySwimField(value).toUpperCase();
+  if (gender === "F" || gender === "FEMALE") return "Feminino";
+  if (gender === "M" || gender === "MALE") return "Masculino";
+  if (gender === "X" || gender === "MIXED") return "Misto";
+  return displaySwimField(value);
+}
+
 function SwimSystemCompetitionPanel({
   snapshot,
   syncedAt,
@@ -965,17 +1065,33 @@ function SwimSystemCompetitionPanel({
   const sessions = data.sessions ?? [];
   const events = data.events ?? [];
   const results = data.results?.results ?? [];
+  const meetCounts = data.meet?.counts as Record<string, unknown> | undefined;
+  const totalAthletes = Number(meetCounts?.athletes) || 0;
+  const totalClubs = Number(meetCounts?.clubs) || 0;
+  const totalHeats = events.reduce((total, event) => total + getSwimEventHeats(event).length, 0);
+  const totalEntries = events.reduce((total, event) => total + (Number(event.entriesCount) || 0), 0);
+  const entriesByEvent = new Map(events.map((event) => [displayValue(event.id), event]));
+  const eventsByNumber = new Map(
+    events.map((event) => [displayValue(event.number ?? event.eventNumber), event]),
+  );
+  const heatsById = new Map(
+    events.flatMap((event) =>
+      getSwimEventHeats(event).map((heat) => [displayValue(heat.id), heat] as const),
+    ),
+  );
+  const sessionsById = new Map(sessions.map((session) => [displayValue(session.id), session]));
   const swimSystemUrl = `https://www.swimsystem.app/meets/sw/${encodeURIComponent(meetId)}`;
   const filteredEvents = events.filter((event, index) => {
     const haystack = [
-      displaySwimField(event.name),
-      displaySwimField(event.eventName),
-      displaySwimField(event.title),
-      displaySwimField(event.gender),
-      displaySwimField(event.agegroup),
+      getSwimEventTitle(event),
+      getSwimGenderLabel(event.gender),
+      Array.isArray(event.agegroups)
+        ? (event.agegroups as Record<string, unknown>[]).map((agegroup) => displaySwimField(agegroup.name)).join(" ")
+        : displaySwimField(event.agegroup),
       displaySwimField(event.category),
-      displaySwimField(event.round),
-      displayValue(event.eventNumber) || String(index + 1),
+      getSwimRoundLabel(event.round),
+      displayValue(event.number ?? event.eventNumber) || String(index + 1),
+      getSwimStatusLabel(event.status),
     ]
       .join(" ")
       .toLocaleLowerCase("pt-BR");
@@ -985,14 +1101,19 @@ function SwimSystemCompetitionPanel({
     const athlete = result.athlete as Record<string, unknown> | undefined;
     const club = result.club as Record<string, unknown> | undefined;
     const agegroup = result.agegroup as Record<string, unknown> | undefined;
+    const event = entriesByEvent.get(displayValue(result.eventId)) || eventsByNumber.get(displayValue(result.eventNumber));
+    const heat = heatsById.get(displayValue(result.heatId));
     const haystack = [
       [athlete?.firstName, athlete?.lastName].map(displayValue).filter(Boolean).join(" "),
       displayValue(club?.shortname),
       displayValue(club?.name),
       displayValue(agegroup?.name),
       displayValue(result.eventNumber),
-      displaySwimField(result.event),
-      displaySwimField(result.eventName),
+      getSwimEventTitle(event || result),
+      getSwimGenderLabel(event?.gender),
+      getSwimRoundLabel(event?.round),
+      displayValue(result.lane),
+      displayValue(heat?.number),
     ]
       .join(" ")
       .toLocaleLowerCase("pt-BR");
@@ -1007,6 +1128,9 @@ function SwimSystemCompetitionPanel({
         dateStyle: "short",
         timeStyle: "short",
       });
+  const meetDates = data.meet?.dates as Record<string, unknown> | undefined;
+  const meetAcceptingEntries = data.meet?.acceptingEntries === true;
+  const entryDeadline = meetDates?.entriesUntil;
 
   return (
     <section className="mb-8 overflow-hidden rounded-3xl border border-sky-500/20 bg-card shadow-sm">
@@ -1039,19 +1163,21 @@ function SwimSystemCompetitionPanel({
       </header>
 
       <div className="p-5 sm:p-8">
-        <div className="mb-6 grid gap-3 sm:grid-cols-3">
+        <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {[
-            { label: "Etapas", count: sessions.length, icon: Calendar },
-            { label: "Provas", count: events.length, icon: ListChecks },
-            { label: "Resultados", count: results.length, icon: Trophy },
+            { label: "Provas", count: Number(meetCounts?.events) || events.length, icon: ListChecks },
+            { label: "Atletas", count: totalAthletes, icon: UsersRound },
+            { label: "Clubes", count: totalClubs, icon: Building2 },
+            { label: "Séries", count: totalHeats, icon: Calendar },
+            { label: "Inscrições", count: totalEntries, icon: FileText },
           ].map(({ label, count, icon: Icon }) => (
-            <div key={label} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-4">
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-sky-600 text-white shadow-sm">
-                <Icon className="h-5 w-5" aria-hidden="true" />
+            <div key={label} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3.5">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-sky-600 text-white shadow-sm">
+                <Icon className="h-4.5 w-4.5" aria-hidden="true" />
               </span>
               <span>
-                <span className="block text-2xl font-bold leading-none text-deep">{count}</span>
-                <span className="mt-1 block text-sm text-muted-foreground">{label} publicados</span>
+                <span className="block text-xl font-bold leading-none text-deep">{count.toLocaleString("pt-BR")}</span>
+                <span className="mt-1 block text-xs text-muted-foreground">{label}</span>
               </span>
             </div>
           ))}
@@ -1061,7 +1187,7 @@ function SwimSystemCompetitionPanel({
           {([
             ["overview", "Visão geral", Calendar],
             ["program", `Programa (${events.length})`, ListChecks],
-            ["results", `Resultados (${results.length})`, Trophy],
+            ["results", `Inscritos e resultados (${results.length})`, Trophy],
           ] as const).map(([view, label, Icon]) => (
             <button
               key={view}
@@ -1077,29 +1203,60 @@ function SwimSystemCompetitionPanel({
 
         {(activeView === "overview" || activeView === "program") && (
           <div aria-label="Programação da competição" className="space-y-7">
+            {(data.meet?.acceptingEntries !== undefined || Boolean(entryDeadline)) && (
+              <div className={`flex items-start gap-3 rounded-2xl border p-4 ${meetAcceptingEntries ? "border-emerald-500/30 bg-emerald-500/10" : "border-border bg-secondary/35"}`}>
+                <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${meetAcceptingEntries ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>
+                  <Check className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div>
+                  <h3 className="font-bold text-deep">{meetAcceptingEntries ? "Inscrições abertas" : "Inscrições encerradas"}</h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {entryDeadline ? `${meetAcceptingEntries ? "Inscreva-se até" : "Prazo de inscrição até"} ${formatSwimDateTime(entryDeadline)}.` : "Consulte a organização da competição para mais informações."}
+                  </p>
+                </div>
+              </div>
+            )}
             {sessions.length > 0 && (
               <section>
                 <div className="mb-3 flex items-end justify-between gap-3">
                   <div>
                     <h3 className="font-bold text-deep">Etapas e horários</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">Confira os períodos de cada sessão.</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Programação oficial, aquecimento e volume de cada etapa.</p>
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {sessions.map((session, index) => (
-                    <article key={displayValue(session.id) || index} className="rounded-2xl border border-border/70 bg-secondary/25 p-4">
-                      <p className="font-semibold text-deep">{displayValue(session.name) || `Etapa ${displayValue(session.number) || index + 1}`}</p>
-                      <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4 shrink-0" aria-hidden="true" />
-                        {[session.date, session.daytime].map(displayValue).filter(Boolean).join(" · ") || "Horário não informado"}
-                      </p>
-                      {(displayValue(session.warmupFrom) || displayValue(session.warmupUntil)) && (
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          Aquecimento: {displayValue(session.warmupFrom) || "—"}{displayValue(session.warmupUntil) && `–${displayValue(session.warmupUntil)}`}
+                  {sessions.map((session, index) => {
+                    const sessionEvents = events.filter((event) => {
+                      const eventSession = event.session as Record<string, unknown> | undefined;
+                      return (
+                        (displayValue(eventSession?.id) && displayValue(eventSession?.id) === displayValue(session.id)) ||
+                        (displayValue(eventSession?.number) && displayValue(eventSession?.number) === displayValue(session.number)) ||
+                        (displayValue(eventSession?.name) && displayValue(eventSession?.name) === displayValue(session.name))
+                      );
+                    });
+                    const sessionHeats = sessionEvents.reduce((count, event) => count + getSwimEventHeats(event).length, 0);
+                    const sessionEntries = sessionEvents.reduce((count, event) => count + (Number(event.entriesCount) || 0), 0);
+                    return (
+                      <article key={displayValue(session.id) || index} className="rounded-2xl border border-border/70 bg-secondary/25 p-4">
+                        <p className="font-semibold text-deep">{displayValue(session.name) || `Etapa ${displayValue(session.number) || index + 1}`}</p>
+                        <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          {formatSwimDateTime(session.date ?? session.daytime) || "Data a confirmar"}
+                          {displayValue(session.daytime) && displayValue(session.daytime) !== displayValue(session.date) && ` · Início ${formatSwimDateTime(session.daytime, false)}`}
                         </p>
-                      )}
-                    </article>
-                  ))}
+                        {(displayValue(session.warmupFrom) || displayValue(session.warmupUntil)) && (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            Aquecimento: {formatSwimDateTime(session.warmupFrom, false) || "—"}{displayValue(session.warmupUntil) && `–${formatSwimDateTime(session.warmupUntil, false)}`}
+                          </p>
+                        )}
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium text-sky-800 dark:text-sky-200">
+                          <span className="rounded-full bg-sky-500/10 px-2.5 py-1">{Number(session.eventsCount) || sessionEvents.length} provas</span>
+                          <span className="rounded-full bg-sky-500/10 px-2.5 py-1">{sessionHeats} séries</span>
+                          <span className="rounded-full bg-sky-500/10 px-2.5 py-1">{sessionEntries.toLocaleString("pt-BR")} inscrições</span>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -1128,16 +1285,54 @@ function SwimSystemCompetitionPanel({
                 <div className="grid gap-3 sm:grid-cols-2">
                   {filteredEvents.map((event, index) => {
                     const eventPosition = events.indexOf(event) + 1;
-                    const eventName = displaySwimField(event.name) || displaySwimField(event.eventName) || displaySwimField(event.title) || [displayValue(event.distance), displaySwimField(event.stroke)].filter(Boolean).join("m ") || `Prova ${displayValue(event.eventNumber) || eventPosition}`;
-                    const details = [displaySwimField(event.gender), displaySwimField(event.agegroup), displaySwimField(event.category), displaySwimField(event.round)].filter(Boolean);
+                    const eventNumber = displayValue(event.number ?? event.eventNumber) || String(eventPosition);
+                    const eventName = getSwimEventTitle(event);
+                    const agegroups = Array.isArray(event.agegroups)
+                      ? (event.agegroups as Record<string, unknown>[]).map((agegroup) => displaySwimField(agegroup.name)).filter(Boolean)
+                      : [displaySwimField(event.agegroup)].filter(Boolean);
+                    const eventSession = event.session as Record<string, unknown> | undefined;
+                    const session = sessionsById.get(displayValue(eventSession?.id)) || sessions.find((item) => displayValue(item.number) === displayValue(eventSession?.number));
+                    const heats = getSwimEventHeats(event);
+                    const entriesCount = Number(event.entriesCount) || 0;
+                    const scheduledAt = displayValue(event.startTime) || displayValue(eventSession?.daytime) || displayValue(session?.daytime);
                     return (
-                      <article key={displayValue(event.id) || index} className="flex items-start gap-3 rounded-2xl border border-border/70 bg-card p-4 transition hover:border-sky-500/40 hover:bg-sky-50/40 dark:hover:bg-sky-950/15">
-                        <span className="grid h-10 min-w-10 place-items-center rounded-xl bg-sky-600/10 px-2 text-sm font-bold text-sky-800 dark:text-sky-200">{displayValue(event.eventNumber) || eventPosition}</span>
-                        <span className="min-w-0">
-                          <span className="block font-semibold text-deep">{eventName}</span>
-                          {details.length > 0 && <span className="mt-1 block text-sm text-muted-foreground">{details.join(" · ")}</span>}
-                          {displayValue(event.startTime) && <span className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-sky-800 dark:text-sky-200"><Calendar className="h-3.5 w-3.5" aria-hidden="true" />{displayValue(event.startTime)}</span>}
-                        </span>
+                      <article key={displayValue(event.id) || index} className="rounded-2xl border border-border/70 bg-card p-4 transition hover:border-sky-500/40 hover:bg-sky-50/40 dark:hover:bg-sky-950/15">
+                        <div className="flex items-start gap-3">
+                          <span className="grid h-10 min-w-10 shrink-0 place-items-center rounded-xl bg-sky-600/10 px-2 text-sm font-bold text-sky-800 dark:text-sky-200">{eventNumber}</span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="font-semibold text-deep">{eventName}</h4>
+                              <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">{getSwimGenderLabel(event.gender) || "Sexo não informado"}</span>
+                              {agegroups.map((agegroup) => <span key={agegroup} className="rounded-full bg-violet-500/10 px-2 py-0.5 text-xs font-medium text-violet-800 dark:text-violet-200">{agegroup}</span>)}
+                            </div>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                              {getSwimRoundLabel(event.round) && <span>{getSwimRoundLabel(event.round)}</span>}
+                              {session && <><span aria-hidden="true">·</span><span>{displayValue(session.name)}</span></>}
+                              {scheduledAt && <><span aria-hidden="true">·</span><span>{formatSwimDateTime(scheduledAt)}</span></>}
+                            </div>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${String(event.status).toUpperCase() === "SEEDED" ? "bg-sky-500/10 text-sky-800 dark:text-sky-200" : "bg-amber-500/10 text-amber-800 dark:text-amber-200"}`}>{getSwimStatusLabel(event.status)}</span>
+                        </div>
+                        <div className="mt-4 flex flex-wrap gap-2 border-t border-border/70 pt-3 text-xs font-medium text-muted-foreground">
+                          <span className="rounded-lg bg-secondary/60 px-2.5 py-1.5">{heats.length} séries</span>
+                          <span className="rounded-lg bg-secondary/60 px-2.5 py-1.5">{entriesCount.toLocaleString("pt-BR")} atletas inscritos</span>
+                          {displayValue(event.actualStart) && <span className="rounded-lg bg-secondary/60 px-2.5 py-1.5">Início real: {formatSwimDateTime(event.actualStart)}</span>}
+                        </div>
+                        {heats.length > 0 && (
+                          <details className="group mt-3 rounded-xl bg-secondary/35 px-3.5 py-2.5">
+                            <summary className="cursor-pointer list-none text-sm font-semibold text-sky-800 outline-none marker:hidden focus-visible:ring-2 focus-visible:ring-sky-600 dark:text-sky-200">
+                              Ver séries e status <span className="font-normal text-muted-foreground">({heats.length})</span>
+                            </summary>
+                            <div className="mt-3 grid gap-2 border-t border-border/70 pt-3 sm:grid-cols-2">
+                              {heats.map((heat, heatIndex) => (
+                                <div key={displayValue(heat.id) || heatIndex} className="flex items-center justify-between gap-3 rounded-lg bg-background/70 px-3 py-2 text-sm">
+                                  <span className="font-medium text-deep">{displayValue(heat.name) || `Série ${displayValue(heat.number) || heatIndex + 1}`}</span>
+                                  <span className="text-xs text-muted-foreground">{getSwimStatusLabel(heat.racestatus)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        )}
                       </article>
                     );
                   })}
@@ -1153,9 +1348,9 @@ function SwimSystemCompetitionPanel({
           <section aria-label="Resultados da competição" className={activeView === "overview" ? "mt-8 border-t border-border pt-7" : ""}>
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h3 className="font-bold text-deep">Resultados oficiais</h3>
+                <h3 className="font-bold text-deep">Atletas inscritos e resultados oficiais</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {data.results?.pointsTableLabel ? `Tabela: ${data.results.pointsTableLabel} · ` : ""}{results.length} resultados publicados.
+                  {data.results?.pointsTableLabel ? `Tabela: ${data.results.pointsTableLabel} · ` : ""}{results.length.toLocaleString("pt-BR")} registros publicados, incluindo tempos de inscrição e resultados quando disponíveis.
                 </p>
               </div>
               {results.length > 0 && (
@@ -1165,8 +1360,8 @@ function SwimSystemCompetitionPanel({
                     type="search"
                     value={resultSearch}
                     onChange={(event) => setResultSearch(event.target.value)}
-                    placeholder="Buscar atleta, clube ou prova"
-                    aria-label="Buscar nos resultados"
+                    placeholder="Buscar atleta, clube, prova ou raia"
+                    aria-label="Buscar em atletas inscritos e resultados"
                     className="w-full rounded-xl border border-border bg-background py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-sky-600 focus:ring-2 focus:ring-sky-600/20"
                   />
                 </label>
@@ -1177,14 +1372,16 @@ function SwimSystemCompetitionPanel({
                 <p className="mb-2 text-xs text-muted-foreground">Exibindo {filteredResults.length} de {results.length}</p>
                 <div className="overflow-hidden rounded-2xl border border-border">
                   <div className="max-h-[34rem] overflow-auto">
-                    <table className="w-full min-w-[680px] text-left text-sm">
+                    <table className="w-full min-w-[1050px] text-left text-sm">
                       <thead className="sticky top-0 z-10 bg-secondary text-xs uppercase tracking-wide text-muted-foreground shadow-sm">
                         <tr>
                           <th scope="col" className="px-4 py-3">Prova</th>
+                          <th scope="col" className="px-4 py-3">Série / raia</th>
                           <th scope="col" className="px-4 py-3">Atleta</th>
                           <th scope="col" className="px-4 py-3">Clube</th>
                           <th scope="col" className="px-4 py-3">Categoria</th>
-                          <th scope="col" className="px-4 py-3">Tempo</th>
+                          <th scope="col" className="px-4 py-3">Inscrição</th>
+                          <th scope="col" className="px-4 py-3">Resultado</th>
                           <th scope="col" className="px-4 py-3">Colocação</th>
                         </tr>
                       </thead>
@@ -1193,18 +1390,28 @@ function SwimSystemCompetitionPanel({
                           const athlete = result.athlete as Record<string, unknown> | undefined;
                           const club = result.club as Record<string, unknown> | undefined;
                           const agegroup = result.agegroup as Record<string, unknown> | undefined;
+                          const event = entriesByEvent.get(displayValue(result.eventId)) || eventsByNumber.get(displayValue(result.eventNumber));
+                          const heat = heatsById.get(displayValue(result.heatId));
                           const placements = Array.isArray(result.placements) ? result.placements as Record<string, unknown>[] : [];
                           const bestPlacement = placements[0];
                           const athleteName = [athlete?.firstName, athlete?.lastName].map(displayValue).filter(Boolean).join(" ");
                           const place = displayValue(bestPlacement?.place);
+                          const eventTitle = event ? getSwimEventTitle(event) : "";
+                          const eventDescription = [
+                            eventTitle,
+                            getSwimGenderLabel(event?.gender),
+                            Array.isArray(event?.agegroups) ? (event.agegroups as Record<string, unknown>[]).map((agegroup) => displaySwimField(agegroup.name)).filter(Boolean).join(", ") : "",
+                          ].filter(Boolean).join(" · ");
                           return (
                             <tr key={displayValue(result.id) || index} className="border-t border-border odd:bg-background even:bg-secondary/20">
-                              <td className="px-4 py-3 font-medium text-deep">{displayValue(result.eventNumber) || "—"}</td>
+                              <td className="px-4 py-3 font-medium text-deep">{eventDescription || `Prova ${displayValue(result.eventNumber) || "—"}`}<span className="mt-1 block text-xs font-normal text-muted-foreground">{getSwimRoundLabel(event?.round)}</span></td>
+                              <td className="px-4 py-3">{displayValue(heat?.name) || (heat?.number ? `Série ${displayValue(heat.number)}` : "—")}<span className="mt-1 block text-xs text-muted-foreground">{result.lane ? `Raia ${displayValue(result.lane)}` : "Raia —"}</span></td>
                               <td className="px-4 py-3">{athleteName || "Revezamento"}</td>
                               <td className="px-4 py-3">{displayValue(club?.shortname) || displayValue(club?.name) || "—"}</td>
                               <td className="px-4 py-3">{displayValue(agegroup?.name) || "—"}</td>
+                              <td className="px-4 py-3 font-mono tabular-nums">{formatSwimTime(result.entryTimeMs)}</td>
                               <td className="px-4 py-3 font-mono tabular-nums">{formatSwimTime(result.resultTimeMs)}</td>
-                              <td className="px-4 py-3">{place ? <span className="inline-flex items-center gap-1.5 font-semibold text-deep">{place === "1" && <Award className="h-4 w-4 text-amber-500" aria-label="1º lugar" />}{place}º</span> : displayValue(result.resultStatus) || "—"}</td>
+                              <td className="px-4 py-3">{place ? <span className="inline-flex items-center gap-1.5 font-semibold text-deep">{place === "1" && <Award className="h-4 w-4 text-amber-500" aria-label="1º lugar" />}{place}º</span> : getSwimStatusLabel(result.resultStatus)}</td>
                             </tr>
                           );
                         })}

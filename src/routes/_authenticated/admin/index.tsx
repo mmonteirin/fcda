@@ -60,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
       context.queryClient.ensureQueryData(cursosQuery(false)),
       context.queryClient.ensureQueryData(clubesQuery(false)),
     ]),
-  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error instanceof Error ? error.message : "Erro inesperado"}</div>,
   component: AdminIndex,
 });
 

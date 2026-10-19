@@ -11,7 +11,7 @@ import { ErrorMessage, getFriendlyErrorMessage } from "@/components/admin/error-
 
 export const Route = createFileRoute("/_authenticated/admin/categorias-modalidades")({
   loader: ({ context }) => context.queryClient.ensureQueryData(categoriasModalidadesQuery),
-  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error instanceof Error ? error.message : "Erro inesperado"}</div>,
   component: AdminCategoriasModalidades,
 });
 

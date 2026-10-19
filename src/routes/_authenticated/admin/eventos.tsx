@@ -12,7 +12,7 @@ import { Filter, Calendar, ImagePlus, LoaderCircle, ExternalLink } from "lucide-
 
 export const Route = createFileRoute("/_authenticated/admin/eventos")({
   loader: ({ context }) => context.queryClient.ensureQueryData(eventosQuery()),
-  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error instanceof Error ? error.message : "Erro inesperado"}</div>,
   component: AdminEventos,
 });
 

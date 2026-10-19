@@ -17,7 +17,7 @@ export const Route = createFileRoute("/sobre")({
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(diretoresQuery),
-  errorComponent: ({ error }) => <div className="p-12 text-destructive">Erro: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="p-12 text-destructive">Erro: {error instanceof Error ? error.message : "Erro inesperado"}</div>,
   component: Sobre,
 });
 

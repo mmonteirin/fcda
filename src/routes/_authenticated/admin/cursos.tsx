@@ -9,7 +9,7 @@ import { Upload, X, GraduationCap } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/cursos")({
   loader: ({ context }) => context.queryClient.ensureQueryData(cursosQuery(false)),
-  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive">Erro: {error instanceof Error ? error.message : "Erro inesperado"}</div>,
   component: AdminCursos,
 });
 

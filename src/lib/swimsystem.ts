@@ -50,10 +50,16 @@ function removePrivateFields(value: unknown): unknown {
     "license",
     "externalRef",
     "external_references",
+    "externalReferences",
+    "externalReference",
     "email",
     "cpf",
     "birthDate",
+    "birthdate",
     "dateOfBirth",
+    "photo",
+    "phone",
+    "address",
   ]);
   return Object.fromEntries(
     Object.entries(value)

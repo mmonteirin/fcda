@@ -17,7 +17,7 @@ export const Route = createFileRoute("/clubes")({
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(clubesQuery(true)),
-  errorComponent: ({ error }) => <div className="text-destructive p-8 text-center">Erro: {error.message}</div>,
+  errorComponent: ({ error }) => <div className="text-destructive p-8 text-center">Erro: {error instanceof Error ? error.message : "Erro inesperado"}</div>,
   component: Clubes,
 });
 
