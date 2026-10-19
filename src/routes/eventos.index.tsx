@@ -197,12 +197,22 @@ function Eventos() {
               Acompanhe o calendário oficial da natação cearense. Encontre datas, locais, inscrições
               e resultados em um só lugar.
             </p>
-            <a
-              href="#calendario"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-3 font-bold text-deep transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
-            >
-              Ver calendário <ArrowDown className="h-4 w-4" aria-hidden="true" />
-            </a>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <a
+                href="#calendario"
+                className="inline-flex items-center gap-2 rounded-xl bg-gold px-5 py-3 font-bold text-deep transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold"
+              >
+                Ver calendário <ArrowDown className="h-4 w-4" aria-hidden="true" />
+              </a>
+              <a
+                href="https://www.swimsystem.app/meets/org/8db472d3-cb28-4f0f-b9f3-c673c95ab0c6"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 py-3 font-bold text-white transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              >
+                Calendário ao vivo <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              </a>
+            </div>
           </div>
           <div className="hidden rounded-2xl border border-white/15 bg-white/5 p-5 backdrop-blur-sm md:block">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary-foreground/60">
@@ -217,10 +227,7 @@ function Eventos() {
         </div>
       </section>
 
-      <nav
-        className="border-b border-border/80 bg-card shadow-sm"
-        aria-label="Seções de eventos"
-      >
+      <nav className="border-b border-border/80 bg-card shadow-sm" aria-label="Seções de eventos">
         <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-6 py-3 text-sm font-semibold text-muted-foreground">
           <a
             href="#calendario"

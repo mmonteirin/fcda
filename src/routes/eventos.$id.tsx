@@ -393,12 +393,60 @@ function EventoDetalhes() {
       {/* ── CORPO PRINCIPAL COM GRID RESPONSIVO MODERNO ── */}
       <section className="py-12 lg:py-16 bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {evento.swimsystem_meet_id && swimSystemCache.data?.snapshot && (
-            <SwimSystemCompetitionPanel
-              snapshot={swimSystemCache.data.snapshot}
-              syncedAt={swimSystemCache.data.synced_at}
-            />
-          )}
+          {evento.swimsystem_meet_id &&
+            (swimSystemCache.data?.snapshot ? (
+              <SwimSystemCompetitionPanel
+                snapshot={swimSystemCache.data.snapshot}
+                syncedAt={swimSystemCache.data.synced_at}
+                meetId={evento.swimsystem_meet_id}
+              />
+            ) : (
+              <section className="mb-8 rounded-3xl border border-sky-500/20 bg-card p-6 shadow-sm sm:p-8">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-sky-500/10 text-sky-700 dark:text-sky-300">
+                      <Waves className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-sky-700 dark:text-sky-300">
+                        Integração SwimSystem
+                      </p>
+                      <h2 className="mt-1 text-lg font-bold text-deep">
+                        {swimSystemCache.isPending
+                          ? "Carregando dados da competição…"
+                          : swimSystemCache.isError
+                            ? "Não foi possível sincronizar os dados agora"
+                            : "Os dados da competição ainda não estão disponíveis"}
+                      </h2>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {swimSystemCache.isError
+                          ? "Você pode abrir a página oficial no SwimSystem ou tentar carregar novamente."
+                          : "A programação, inscrições e resultados serão exibidos aqui assim que estiverem sincronizados."}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 sm:shrink-0">
+                    {swimSystemCache.isError && (
+                      <button
+                        type="button"
+                        onClick={() => void swimSystemCache.refetch()}
+                        className="rounded-xl border border-border px-4 py-2.5 text-sm font-bold text-deep transition hover:bg-secondary"
+                      >
+                        Tentar novamente
+                      </button>
+                    )}
+                    <a
+                      href={`https://www.swimsystem.app/meets/sw/${encodeURIComponent(evento.swimsystem_meet_id)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-xl bg-sky-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-sky-800"
+                    >
+                      Abrir no SwimSystem <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </div>
+                </div>
+              </section>
+            ))}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* COLUNA PRINCIPAL (Esquerda - 8 colunas) */}
             <div className="lg:col-span-8 space-y-8">
@@ -881,16 +929,32 @@ function formatSwimTime(value: unknown): string {
   return minutes > 0 ? `${minutes}:${seconds}` : seconds;
 }
 
+function displaySwimField(value: unknown): string {
+  const direct = displayValue(value);
+  if (direct) return direct;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
+  const record = value as Record<string, unknown>;
+  for (const key of ["name", "label", "title", "shortName", "code"]) {
+    const text = displayValue(record[key]);
+    if (text) return text;
+  }
+  return "";
+}
+
 function SwimSystemCompetitionPanel({
   snapshot,
   syncedAt,
+  meetId,
 }: {
   snapshot: SwimSystemCompetitionCache["snapshot"];
   syncedAt: string;
+  meetId: string;
 }) {
   const data = snapshot;
   const sessions = data.sessions ?? [];
+  const events = data.events ?? [];
   const results = data.results?.results ?? [];
+  const swimSystemUrl = `https://www.swimsystem.app/meets/sw/${encodeURIComponent(meetId)}`;
 
   return (
     <section className="mb-8 rounded-3xl border border-sky-500/20 bg-card p-6 shadow-sm sm:p-8">
@@ -904,10 +968,41 @@ function SwimSystemCompetitionPanel({
             <p className="mt-1 text-sm text-muted-foreground">{displayValue(data.meet?.name)}</p>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">
-          Atualizado em{" "}
-          {new Date(syncedAt).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })}
-        </p>
+        <div className="flex flex-col items-start gap-2 sm:items-end">
+          <p className="text-xs text-muted-foreground">
+            Sincronizado em{" "}
+            {new Date(syncedAt).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })}
+          </p>
+          <a
+            href={swimSystemUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm font-bold text-sky-700 hover:text-sky-900 dark:text-sky-300 dark:hover:text-sky-100"
+          >
+            Abrir competição no SwimSystem <ExternalLink className="h-4 w-4" />
+          </a>
+        </div>
+      </div>
+
+      <div className="mb-8 grid gap-3 sm:grid-cols-3">
+        {[
+          { label: "Etapas", count: sessions.length, icon: Calendar },
+          { label: "Provas", count: events.length, icon: Waves },
+          { label: "Inscrições e resultados", count: results.length, icon: Trophy },
+        ].map(({ label, count, icon: Icon }) => (
+          <div
+            key={label}
+            className="flex items-center gap-3 rounded-2xl border border-border/70 bg-secondary/35 p-4"
+          >
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-card text-sky-700 shadow-sm dark:text-sky-300">
+              <Icon className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <span>
+              <span className="block text-xl font-bold leading-none text-deep">{count}</span>
+              <span className="mt-1 block text-xs text-muted-foreground">{label}</span>
+            </span>
+          </div>
+        ))}
       </div>
 
       {sessions.length > 0 && (
@@ -937,8 +1032,70 @@ function SwimSystemCompetitionPanel({
         </div>
       )}
 
+      {events.length > 0 && (
+        <div className="mb-8">
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <h3 className="font-bold text-deep">Programa de provas</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Provas e categorias sincronizadas do SwimSystem.
+              </p>
+            </div>
+            {events.length > 8 && (
+              <span className="text-xs text-muted-foreground">Exibindo 8 de {events.length}</span>
+            )}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {events.slice(0, 8).map((event, index) => {
+              const eventName =
+                displaySwimField(event.name) ||
+                displaySwimField(event.eventName) ||
+                displaySwimField(event.title) ||
+                [displayValue(event.distance), displaySwimField(event.stroke)]
+                  .filter(Boolean)
+                  .join("m ") ||
+                `Prova ${displayValue(event.eventNumber) || index + 1}`;
+              const details = [
+                displaySwimField(event.gender),
+                displaySwimField(event.agegroup),
+                displaySwimField(event.category),
+                displaySwimField(event.round),
+              ].filter(Boolean);
+              return (
+                <div
+                  key={displayValue(event.id) || index}
+                  className="flex items-start gap-3 rounded-xl border border-border/70 bg-card p-4"
+                >
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-sky-500/10 text-sm font-bold text-sky-800 dark:text-sky-200">
+                    {displayValue(event.eventNumber) || index + 1}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block font-semibold text-deep">{eventName}</span>
+                    {details.length > 0 && (
+                      <span className="mt-1 block text-xs text-muted-foreground">
+                        {details.join(" · ")}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div>
-        <h3 className="mb-3 font-bold text-deep">Inscrições e resultados oficiais</h3>
+        <div className="mb-3 flex items-end justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-deep">Inscrições e resultados oficiais</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Dados publicados pela organização da competição.
+            </p>
+          </div>
+          {results.length > 100 && (
+            <span className="text-xs text-muted-foreground">Exibindo 100 de {results.length}</span>
+          )}
+        </div>
         {results.length > 0 ? (
           <div className="overflow-x-auto rounded-xl border border-border">
             <table className="w-full min-w-[680px] text-left text-sm">

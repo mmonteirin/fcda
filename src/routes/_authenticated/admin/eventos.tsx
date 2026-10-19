@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminToolbar, AdminTable, RowActions, Modal, Field } from "@/components/admin/ui";
 import { inputClass, useInvalidate } from "@/components/admin/utils";
 import { ErrorMessage, getFriendlyErrorMessage } from "@/components/admin/error-message";
-import { Filter, Calendar, ImagePlus, LoaderCircle } from "lucide-react";
+import { Filter, Calendar, ImagePlus, LoaderCircle, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/eventos")({
   loader: ({ context }) => context.queryClient.ensureQueryData(eventosQuery()),
@@ -25,6 +25,17 @@ function AdminEventos() {
   const [uploading, setUploading] = useState(false);
   const { user } = useAuth();
   const invalidate = useInvalidate(["eventos"]);
+
+  function getSwimSystemMeetId(value: string | null | undefined) {
+    const input = value?.trim() ?? "";
+    if (input.includes("/meets/org/")) {
+      throw new Error(
+        "Este é o link do calendário da Federação. Para vincular um evento, use o ID ou link individual da competição (/meets/sw/...).",
+      );
+    }
+    const meetUrl = input.match(/https?:\/\/(?:www\.)?swimsystem\.app\/meets\/sw\/([\da-f-]{36})/i);
+    return meetUrl?.[1] ?? input;
+  }
 
   // Get unique years from events
   const anos = Array.from(
@@ -50,7 +61,7 @@ function AdminEventos() {
         status: editing.status || null,
         link_inscricao: editing.link_inscricao?.trim() || null,
         imagem_url: editing.imagem_url || null,
-        swimsystem_meet_id: editing.swimsystem_meet_id?.trim() || null,
+        swimsystem_meet_id: getSwimSystemMeetId(editing.swimsystem_meet_id) || null,
       });
       invalidate();
       setEditing(null);
@@ -317,11 +328,21 @@ function AdminEventos() {
                 className={inputClass}
                 value={editing.swimsystem_meet_id ?? ""}
                 onChange={(e) => setEditing({ ...editing, swimsystem_meet_id: e.target.value })}
-                placeholder="UUID da competição no SwimSystem"
+                placeholder="UUID ou link da competição (/meets/sw/...)"
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                Vincula os webhooks à competição e habilita a publicação de horários e resultados sincronizados.
+                Aceita o UUID ou o link individual da competição. O link do calendário da Federação
+                não é um ID de competição. Ao abrir o evento público, o site busca os dados iniciais
+                e depois atualiza pelos webhooks.
               </p>
+              <a
+                href="https://www.swimsystem.app/meets/org/8db472d3-cb28-4f0f-b9f3-c673c95ab0c6"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+              >
+                Abrir calendário FCDA no SwimSystem <ExternalLink className="h-3 w-3" />
+              </a>
             </Field>
             <Field label="Capa do evento">
               <div className="mt-1 overflow-hidden rounded-xl border border-dashed border-border bg-secondary/40">

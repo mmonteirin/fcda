@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { asDynamicSupabase } from "../supabase-helpers";
+import { ensureSwimSystemCompetitionCache } from "@/lib/swimsystem.functions";
 
 export type Modalidade = {
   id: string;
@@ -72,7 +73,8 @@ export const swimSystemCompetitionQuery = (meetId: string) =>
         .eq("meet_id", meetId)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      if (data) return data;
+      return ensureSwimSystemCompetitionCache({ data: { meetId } });
     },
     staleTime: 60_000,
   });
@@ -554,24 +556,24 @@ export const userProfileQuery = (userId: string) =>
     queryKey: ["userProfile", userId],
     queryFn: async (): Promise<UserProfile> => {
       const sb = asDynamicSupabase(supabase);
-      
+
       // Buscar profile básico
       const { data: profile, error: profileError } = await sb
         .from("profiles")
         .select("*")
         .eq("id", userId)
         .single();
-      
+
       if (profileError) throw profileError;
-      
+
       // Buscar roles do usuário
       const { data: roles, error: rolesError } = await sb
         .from("user_roles")
         .select("role")
         .eq("user_id", userId);
-      
+
       if (rolesError) throw rolesError;
-      
+
       return {
         id: profile.id,
         email: profile.email,

@@ -83,14 +83,15 @@ export async function fetchSwimSystemCompetition(
   ]);
 
   return {
-    meet,
-    sessions: sessions.sessions ?? [],
-    events: events.events ?? [],
+    meet: removePrivateFields(meet) as Record<string, unknown>,
+    sessions: removePrivateFields(sessions.sessions ?? []) as Record<string, unknown>[],
+    events: removePrivateFields(events.events ?? []) as Record<string, unknown>[],
     results: {
       pointsTableLabel: results.pointsTableLabel,
-      results: (results.results ?? []).map((result) =>
-        removePrivateFields(result),
-      ) as Record<string, unknown>[],
+      results: (results.results ?? []).map((result) => removePrivateFields(result)) as Record<
+        string,
+        unknown
+      >[],
     },
     scoring: removePrivateFields(scoring),
     medals: removePrivateFields(medals),
